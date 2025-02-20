@@ -4,7 +4,7 @@ from utils.excel_processor import ExcelProcessor
 from utils.visualizations import Visualizer
 import plotly.graph_objects as go
 
-# Page configuration with dark theme
+# Page configuration
 st.set_page_config(
     page_title="Attendance Visualizer",
     page_icon="📊",
@@ -12,16 +12,58 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Theme toggle in sidebar
-theme = st.sidebar.selectbox(
-    "Choose Theme",
-    ["Light", "Dark"],
-    key="theme_selector"
-)
+# Custom CSS for theme toggle and layout
+st.markdown("""
+<style>
+    .theme-toggle {
+        position: fixed;
+        top: 0.5rem;
+        right: 1rem;
+        z-index: 1000;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0.5rem;
+        font-size: 1.5rem;
+    }
+    .dark-theme {
+        background-color: #1E1E1E;
+        color: #FFFFFF;
+    }
+    .light-theme {
+        background-color: #FFFFFF;
+        color: #262730;
+    }
+    .employee-stats {
+        background-color: rgba(33, 150, 243, 0.1);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 10px 0;
+    }
+    .stat-card {
+        background-color: #2D2D2D;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 5px;
+        text-align: center;
+    }
+    .stSelectbox {
+        width: 100%;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Theme toggle in header
+theme = st.session_state.get('theme', 'Light')
+col_spacer, col_toggle = st.columns([6, 1])
+with col_toggle:
+    if st.button('🌞' if theme == 'Dark' else '🌙', key='theme_toggle'):
+        theme = 'Light' if theme == 'Dark' else 'Dark'
+        st.session_state.theme = theme
 
 # Apply theme
 if theme == "Dark":
-    dark_theme = """
+    st.markdown("""
     <style>
         .stApp {
             background-color: #1E1E1E;
@@ -33,26 +75,21 @@ if theme == "Dark":
         .stMarkdown {
             color: #FFFFFF;
         }
-        .employee-stats {
-            background-color: rgba(33, 150, 243, 0.1);
-            border-radius: 10px;
-            padding: 20px;
-            margin: 10px 0;
-        }
-        .stat-card {
-            background-color: #2D2D2D;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 5px;
-            text-align: center;
-        }
     </style>
-    """
-    st.markdown(dark_theme, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 # Load custom CSS
 with open('assets/style.css') as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+def safe_int_convert(value, default=0):
+    """Safely convert value to integer, handling NaN and None"""
+    if pd.isna(value) or value is None:
+        return default
+    try:
+        return int(float(value))
+    except (ValueError, TypeError):
+        return default
 
 def create_employee_dashboard(employee_data, records_list, visualizer):
     """Create a detailed dashboard for a single employee"""
@@ -67,22 +104,40 @@ def create_employee_dashboard(employee_data, records_list, visualizer):
             </div>
         """, unsafe_allow_html=True)
 
-        # Key metrics
-        metrics_html = f"""
-        <div class="stat-card">
-            <h4>Hours</h4>
-            <h2>{int(employee_data.get('Actual_Hours', 0))}/{int(employee_data.get('Required_Hours', 0))}</h2>
-        </div>
-        <div class="stat-card">
-            <h4>Late Minutes</h4>
-            <h2>{int(employee_data.get('Late_Minutes', 0))}</h2>
-        </div>
-        <div class="stat-card">
-            <h4>Early Departures</h4>
-            <h2>{int(employee_data.get('Early_Departure_Minutes', 0))}</h2>
-        </div>
-        """
-        st.markdown(metrics_html, unsafe_allow_html=True)
+        # Key metrics - only show if data exists
+        metrics_html = ""
+
+        # Hours
+        if not pd.isna(employee_data.get('Actual_Hours')) and not pd.isna(employee_data.get('Required_Hours')):
+            metrics_html += f"""
+            <div class="stat-card">
+                <h4>Hours</h4>
+                <h2>{safe_int_convert(employee_data.get('Actual_Hours'))}/{safe_int_convert(employee_data.get('Required_Hours'))}</h2>
+            </div>
+            """
+
+        # Late Minutes
+        if not pd.isna(employee_data.get('Late_Minutes')):
+            metrics_html += f"""
+            <div class="stat-card">
+                <h4>Late Minutes</h4>
+                <h2>{safe_int_convert(employee_data.get('Late_Minutes'))}</h2>
+            </div>
+            """
+
+        # Early Departures
+        if not pd.isna(employee_data.get('Early_Departure_Minutes')):
+            metrics_html += f"""
+            <div class="stat-card">
+                <h4>Early Departures</h4>
+                <h2>{safe_int_convert(employee_data.get('Early_Departure_Minutes'))}</h2>
+            </div>
+            """
+
+        if metrics_html:
+            st.markdown(metrics_html, unsafe_allow_html=True)
+        else:
+            st.warning("No attendance data available for this employee")
 
     with col2:
         # Daily progress
@@ -111,11 +166,14 @@ def main():
     </div>
     """, unsafe_allow_html=True)
 
-    uploaded_file = st.file_uploader(
-        "Upload Excel File",
-        type=['xlsx', 'xls'],
-        help="Upload the attendance Excel file with required sheets: Summary, Shifts, Logs, and Exceptional"
-    )
+    # File uploader in sidebar
+    with st.sidebar:
+        st.subheader("📂 Data Source")
+        uploaded_file = st.file_uploader(
+            "Upload Excel File",
+            type=['xlsx', 'xls'],
+            help="Upload the attendance Excel file with required sheets: Summary, Shifts, Logs, and Exceptional"
+        )
 
     if uploaded_file:
         try:
@@ -130,10 +188,13 @@ def main():
             individual_reports = processor.process_individual_reports()
 
             # Employee selector in sidebar
-            selected_employee = st.sidebar.selectbox(
-                "Select Employee",
-                attendance_summary['Employee_Name'].unique()
-            )
+            with st.sidebar:
+                st.subheader("👤 Employee Selection")
+                selected_employee = st.selectbox(
+                    "Select an employee to view their attendance details",
+                    attendance_summary['Employee_Name'].unique(),
+                    format_func=lambda x: x  # Display full name
+                )
 
             # Create dashboard for selected employee
             employee_data = attendance_summary[

@@ -17,6 +17,18 @@ class ExcelProcessor:
         if missing_sheets:
             raise ValueError(f"Missing required sheets: {', '.join(missing_sheets)}")
 
+    def _normalize_columns(self, df):
+        """Normalize column names by stripping whitespace and replacing spaces with underscores"""
+        df.columns = df.columns.str.strip().str.replace(' ', '_')
+        return df
+
+    def _validate_columns(self, df, required_columns, sheet_name):
+        """Validate that all required columns are present in the DataFrame"""
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            print(f"Available columns in {sheet_name}:", df.columns.tolist())
+            raise ValueError(f"Missing required columns in {sheet_name}: {', '.join(missing_columns)}")
+
     def _convert_numeric_columns(self, df, numeric_columns):
         """Helper method to convert columns to numeric type"""
         for col in numeric_columns:
@@ -25,8 +37,14 @@ class ExcelProcessor:
         return df
 
     def process_attendance_summary(self):
-        df = pd.read_excel(self.excel_file, sheet_name="Summary")
-        # Rename columns according to the structure
+        # Print available columns for debugging
+        df = pd.read_excel(self.excel_file, sheet_name="Summary", header=0)
+        print("Original columns in Summary sheet:", df.columns.tolist())
+
+        df = self._normalize_columns(df)
+        print("Normalized columns in Summary sheet:", df.columns.tolist())
+
+        # Define the expected mapping based on the actual column names
         columns = {
             df.columns[0]: 'Employee_ID',
             df.columns[1]: 'Employee_Name',
@@ -44,6 +62,13 @@ class ExcelProcessor:
         }
         df = df.rename(columns=columns)
 
+        # Validate required columns
+        required_columns = [
+            'Employee_ID', 'Employee_Name', 'Department',
+            'Required_Hours', 'Actual_Hours'
+        ]
+        self._validate_columns(df, required_columns, "Summary")
+
         # Convert numeric columns
         numeric_columns = [
             'Required_Hours', 'Actual_Hours', 
@@ -55,13 +80,20 @@ class ExcelProcessor:
         return self._convert_numeric_columns(df, numeric_columns)
 
     def process_shift_table(self):
-        df = pd.read_excel(self.excel_file, sheet_name="Shifts")
+        df = pd.read_excel(self.excel_file, sheet_name="Shifts", header=0)
+        df = self._normalize_columns(df)
+
         base_columns = {
             df.columns[0]: 'Employee_ID',
             df.columns[1]: 'Employee_Name',
             df.columns[2]: 'Department'
         }
         df = df.rename(columns=base_columns)
+
+        # Validate required columns
+        required_columns = ['Employee_ID', 'Employee_Name', 'Department']
+        self._validate_columns(df, required_columns, "Shifts")
+
         # Add day columns (D to AH)
         for i in range(3, len(df.columns)):
             df = df.rename(columns={df.columns[i]: f'Day_{i-2}'})
@@ -79,7 +111,7 @@ class ExcelProcessor:
             employee_name = df.iloc[i].iloc[0]  # First cell contains employee name
             schedule_row = df.iloc[i+1]
 
-            # Process each time entry (4 entries per day: initial entry, midday exit, midday entry, final exit)
+            # Process each time entry (4 entries per day)
             for j in range(0, len(schedule_row), 4):
                 if pd.notna(schedule_row.iloc[j]):
                     record = {
@@ -94,7 +126,9 @@ class ExcelProcessor:
         return pd.DataFrame(records)
 
     def process_individual_reports(self):
-        df = pd.read_excel(self.excel_file, sheet_name="Exceptional")
+        df = pd.read_excel(self.excel_file, sheet_name="Exceptional", header=0)
+        df = self._normalize_columns(df)
+
         columns = {
             df.columns[0]: 'Employee_ID',
             df.columns[1]: 'Employee_Name',
@@ -110,6 +144,13 @@ class ExcelProcessor:
             df.columns[11]: 'Comments'
         }
         df = df.rename(columns=columns)
+
+        # Validate required columns
+        required_columns = [
+            'Employee_ID', 'Employee_Name', 'Department',
+            'Late_Minutes', 'Early_Leave_Minutes', 'Total_Minutes'
+        ]
+        self._validate_columns(df, required_columns, "Individual Reports")
 
         # Convert numeric columns
         numeric_columns = ['Late_Minutes', 'Early_Leave_Minutes', 'Total_Minutes']

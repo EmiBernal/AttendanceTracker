@@ -10,5 +10,6 @@ dependencies = [
     "plotly>=6.0.0",
     "streamlit>=1.42.1",
     "trafilatura>=2.0.0",
+    "twilio>=9.4.5",
     "xlrd>=2.0.1",
 ]

@@ -17,6 +17,13 @@ class ExcelProcessor:
         if missing_sheets:
             raise ValueError(f"Missing required sheets: {', '.join(missing_sheets)}")
 
+    def _convert_numeric_columns(self, df, numeric_columns):
+        """Helper method to convert columns to numeric type"""
+        for col in numeric_columns:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(float)
+        return df
+
     def process_attendance_summary(self):
         df = pd.read_excel(self.excel_file, sheet_name="Summary")
         # Rename columns according to the structure
@@ -35,7 +42,17 @@ class ExcelProcessor:
             df.columns[11]: 'Attendance_Ratio',
             df.columns[13]: 'Absences'
         }
-        return df.rename(columns=columns)
+        df = df.rename(columns=columns)
+
+        # Convert numeric columns
+        numeric_columns = [
+            'Required_Hours', 'Actual_Hours', 
+            'Late_Count', 'Late_Minutes',
+            'Early_Departure_Count', 'Early_Departure_Minutes',
+            'Normal_Overtime', 'Special_Overtime',
+            'Attendance_Ratio', 'Absences'
+        ]
+        return self._convert_numeric_columns(df, numeric_columns)
 
     def process_shift_table(self):
         df = pd.read_excel(self.excel_file, sheet_name="Shifts")
@@ -92,4 +109,8 @@ class ExcelProcessor:
             df.columns[10]: 'Total_Minutes',
             df.columns[11]: 'Comments'
         }
-        return df.rename(columns=columns)
+        df = df.rename(columns=columns)
+
+        # Convert numeric columns
+        numeric_columns = ['Late_Minutes', 'Early_Leave_Minutes', 'Total_Minutes']
+        return self._convert_numeric_columns(df, numeric_columns)

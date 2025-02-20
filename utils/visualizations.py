@@ -71,9 +71,9 @@ class Visualizer:
 
     def create_attendance_stats(self, df):
         stats = {
-            'On Time': len(df[df['Late_Minutes'] == 0]),
-            'Late': len(df[df['Late_Minutes'] > 0]),
-            'Early Departure': len(df[df['Early_Departure_Minutes'] > 0])
+            'On Time': int(len(df[df['Late_Minutes'] == 0])),
+            'Late': int(len(df[df['Late_Minutes'] > 0])),
+            'Early Departure': int(len(df[df['Early_Departure_Minutes'] > 0]))
         }
 
         fig = go.Figure(data=[go.Pie(
@@ -162,15 +162,15 @@ class Visualizer:
                 <div style="display: flex; justify-content: space-between; margin-top: 10px;">
                     <div>
                         <span style="color: #888; font-size: 12px;">Hours</span><br>
-                        <span style="color: #FFFFFF;">{employee_data['Actual_Hours']}/{employee_data['Required_Hours']}</span>
+                        <span style="color: #FFFFFF;">{int(employee_data['Actual_Hours'])}/{int(employee_data['Required_Hours'])}</span>
                     </div>
                     <div>
                         <span style="color: #888; font-size: 12px;">Late</span><br>
-                        <span style="color: #FFFFFF;">{employee_data['Late_Minutes']} min</span>
+                        <span style="color: #FFFFFF;">{int(employee_data['Late_Minutes'])} min</span>
                     </div>
                     <div>
                         <span style="color: #888; font-size: 12px;">Early Leave</span><br>
-                        <span style="color: #FFFFFF;">{employee_data['Early_Leave_Minutes']} min</span>
+                        <span style="color: #FFFFFF;">{int(employee_data['Early_Leave_Minutes'])} min</span>
                     </div>
                 </div>
             </div>

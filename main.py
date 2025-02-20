@@ -54,7 +54,7 @@ if theme == "Dark":
 with open('assets/style.css') as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
-def create_employee_dashboard(employee_data, visualizer):
+def create_employee_dashboard(employee_data, records_list, visualizer):
     """Create a detailed dashboard for a single employee"""
     col1, col2 = st.columns([1, 3])
 
@@ -71,15 +71,15 @@ def create_employee_dashboard(employee_data, visualizer):
         metrics_html = f"""
         <div class="stat-card">
             <h4>Hours</h4>
-            <h2>{int(employee_data['Actual_Hours'])}/{int(employee_data['Required_Hours'])}</h2>
+            <h2>{int(employee_data.get('Actual_Hours', 0))}/{int(employee_data.get('Required_Hours', 0))}</h2>
         </div>
         <div class="stat-card">
             <h4>Late Minutes</h4>
-            <h2>{int(employee_data['Late_Minutes'])}</h2>
+            <h2>{int(employee_data.get('Late_Minutes', 0))}</h2>
         </div>
         <div class="stat-card">
             <h4>Early Departures</h4>
-            <h2>{int(employee_data['Early_Departure_Minutes'])}</h2>
+            <h2>{int(employee_data.get('Early_Departure_Minutes', 0))}</h2>
         </div>
         """
         st.markdown(metrics_html, unsafe_allow_html=True)
@@ -87,9 +87,8 @@ def create_employee_dashboard(employee_data, visualizer):
     with col2:
         # Daily progress
         st.subheader("Daily Progress")
-        daily_chart = visualizer.create_employee_timeline(
-            pd.DataFrame([employee_data])
-        )
+        employee_records = records_list[records_list['Employee_Name'] == employee_data['Employee_Name']]
+        daily_chart = visualizer.create_employee_timeline(employee_records)
         st.plotly_chart(daily_chart, use_container_width=True)
 
         # Monthly statistics
@@ -101,9 +100,7 @@ def create_employee_dashboard(employee_data, visualizer):
 
         with col_stats2:
             st.subheader("Attendance Analysis")
-            attendance_chart = visualizer.create_attendance_stats(
-                pd.DataFrame([employee_data])
-            )
+            attendance_chart = visualizer.create_attendance_stats(pd.Series(employee_data))
             st.plotly_chart(attendance_chart, use_container_width=True)
 
 def main():
@@ -141,8 +138,9 @@ def main():
             # Create dashboard for selected employee
             employee_data = attendance_summary[
                 attendance_summary['Employee_Name'] == selected_employee
-            ].iloc[0]
-            create_employee_dashboard(employee_data, visualizer)
+            ].iloc[0].to_dict()  # Convert to dictionary to avoid index issues
+
+            create_employee_dashboard(employee_data, records_list, visualizer)
 
             # Department overview tab
             with st.expander("📊 Department Overview"):

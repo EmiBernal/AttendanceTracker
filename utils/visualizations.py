@@ -40,21 +40,36 @@ class Visualizer:
 
         colors = px.colors.qualitative.Set3
 
-        for idx, row in df.iterrows():
-            times = [
-                row['Initial_Entry'],
-                row['Midday_Exit'],
-                row['Midday_Entry'],
-                row['Final_Exit']
-            ]
-            times = [t for t in times if pd.notna(t)]
+        # Ensure df is not empty
+        if df.empty:
+            return fig
 
-            if len(times) > 1:
+        # Create timeline for each row
+        for idx, row in df.iterrows():
+            times = []
+            labels = []
+
+            if pd.notna(row.get('Initial_Entry')):
+                times.append(row['Initial_Entry'])
+                labels.append('Entry')
+            if pd.notna(row.get('Midday_Exit')):
+                times.append(row['Midday_Exit'])
+                labels.append('Break Start')
+            if pd.notna(row.get('Midday_Entry')):
+                times.append(row['Midday_Entry'])
+                labels.append('Break End')
+            if pd.notna(row.get('Final_Exit')):
+                times.append(row['Final_Exit'])
+                labels.append('Exit')
+
+            if times:  # Only add trace if there are valid times
                 fig.add_trace(go.Scatter(
                     x=times,
                     y=[row['Employee_Name']] * len(times),
                     mode='lines+markers',
                     name=row['Employee_Name'],
+                    text=labels,
+                    hovertemplate='%{text}<br>%{x}',
                     line=dict(color=colors[idx % len(colors)], width=2),
                     marker=dict(size=8, symbol='circle')
                 ))
@@ -71,13 +86,14 @@ class Visualizer:
         return fig
 
     def create_hours_distribution(self, employee_data):
-        labels = ['Required', 'Actual', 'Overtime']
-        values = [
-            float(employee_data['Required_Hours']),
-            float(employee_data['Actual_Hours']),
-            float(employee_data['Normal_Overtime']) + float(employee_data['Special_Overtime'])
-        ]
+        # Get values with safe fallbacks
+        required = float(employee_data.get('Required_Hours', 0))
+        actual = float(employee_data.get('Actual_Hours', 0))
+        normal_ot = float(employee_data.get('Normal_Overtime', 0))
+        special_ot = float(employee_data.get('Special_Overtime', 0))
 
+        labels = ['Required', 'Actual', 'Overtime']
+        values = [required, actual, normal_ot + special_ot]
         colors = ['#2196F3', '#4CAF50', '#FFC107']
 
         fig = go.Figure(data=[go.Pie(
@@ -96,11 +112,15 @@ class Visualizer:
         )
         return fig
 
-    def create_attendance_stats(self, df):
+    def create_attendance_stats(self, employee_data):
+        # Get values with safe fallbacks
+        late_minutes = float(employee_data.get('Late_Minutes', 0))
+        early_minutes = float(employee_data.get('Early_Departure_Minutes', 0))
+
         stats = {
-            'On Time': int(len(df[df['Late_Minutes'] == 0])),
-            'Late': int(len(df[df['Late_Minutes'] > 0])),
-            'Early Departure': int(len(df[df['Early_Departure_Minutes'] > 0]))
+            'On Time': 1 if late_minutes == 0 else 0,
+            'Late': 1 if late_minutes > 0 else 0,
+            'Early Departure': 1 if early_minutes > 0 else 0
         }
 
         colors = ['#4CAF50', '#FFC107', '#F44336']

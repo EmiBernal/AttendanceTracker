@@ -1,0 +1,61 @@
+1era hoja: Resumen de asistencias (summary)
+
+A - Numero identificador
+B - Nombre persona
+C - Departamento
+
+- Horas trabajadas
+	D - Horas de trabajo que un empleado debe cumplir (Requeridas)
+	E - Horas de trabajo que un empleado realmente ha trabajado (Actuales)
+
+- Retraso
+	F - Cantidad de veces que el empleado llego tarde (Cantidad)
+	G - Minutos de retraso acumulados (Minutos)
+
+- Salida temprana
+	H - Cantidad de veces que el empleado salio antes de su hora (Cantidad)
+	I - Minutos de salida temprana acumulados	(Minutos)	
+
+- Horas Extra
+	J - Horas extras trabajadas en condiciones normales
+	K - Horas extras trabajadas en condiciones especiales 
+
+L - Asistencia requerida/actual
+N - Ausencias
+	
+2da hoja : Tabla de shifts (shifts table)
+
+A - Numero identificador
+B - Nombre persona
+C - Departamento
+
+De la columna D hasta la AH esta generada una tabla donde permite visualizar de manera rápida qué empleados trabajan cada día, quiénes tienen permisos o viajes, y qué departamentos están cubiertos en cada fecha.
+
+3era hoja : Lista de registros
+
+Desde la fila 5 empieza el listado de los empleados, desde el 5 cada 1 fila le sigue el otro empleado
+
+Desde la fila 6 estan los horarios de ingreso de los empleados, desde el 6 cada 1 fila le sigue los horarios de otro empleado
+
+La informacion en la columna esta integrada por un horario de entrada seguido de un horario de salida.
+
+Entrada inicial
+Salida (de por medio)
+Entrada (de por medio)
+Salida final
+
+4ta hoja: Reporte de asistencia y puntualidad para un empleado (excepcional)
+
+A - Numero identificador
+B - Nombre empleado
+C - Departamento
+D - Fecha del registro de asistencia.
+E y F - AM (In / Out) – Hora de entrada y salida en la mañana. Si la salida está en rojo, significa que no se registró o hubo una incidencia.
+G y H - PM (In / Out) – Hora de entrada y salida en la tarde. Si la salida está en rojo, significa que no se registró o hubo una incidencia.
+I - Minutos de retraso al ingresar en la mañana (Late in)
+J - Minutos de salida anticipada en la tarde (Early Leave)
+K - Suma de minutos de tardanza o salida temprana (total)
+L - Comentarios
+
+
+

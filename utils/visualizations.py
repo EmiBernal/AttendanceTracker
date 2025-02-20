@@ -6,7 +6,7 @@ import pandas as pd
 
 class Visualizer:
     def create_department_chart(self, df):
-        dept_stats = df.groupby('Summary_Department').agg({
+        dept_stats = df.groupby('Department').agg({
             'Required_Hours': 'sum',
             'Actual_Hours': 'sum'
         }).reset_index()
@@ -14,43 +14,58 @@ class Visualizer:
         fig = go.Figure()
         fig.add_trace(go.Bar(
             name='Required Hours',
-            x=dept_stats['Summary_Department'],
+            x=dept_stats['Department'],
             y=dept_stats['Required_Hours'],
             marker_color='#2196F3'
         ))
         fig.add_trace(go.Bar(
             name='Actual Hours',
-            x=dept_stats['Summary_Department'],
+            x=dept_stats['Department'],
             y=dept_stats['Actual_Hours'],
             marker_color='#4CAF50'
         ))
 
         fig.update_layout(
             barmode='group',
-            plot_bgcolor='white',
-            margin=dict(t=20, l=20, r=20, b=20)
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(t=20, l=20, r=20, b=20),
+            font=dict(color='#FFFFFF')
         )
         return fig
 
     def create_employee_timeline(self, df):
         fig = go.Figure()
 
+        colors = px.colors.qualitative.Set3
+
         for idx, row in df.iterrows():
-            fig.add_trace(go.Scatter(
-                x=[row['Entry_Time'], row['Exit_Time']],
-                y=[idx, idx],
-                mode='lines+markers',
-                name=row['Name'],
-                line=dict(color='#2196F3', width=2),
-                marker=dict(size=8, symbol='circle')
-            ))
+            times = [
+                row['Initial_Entry'],
+                row['Midday_Exit'],
+                row['Midday_Entry'],
+                row['Final_Exit']
+            ]
+            times = [t for t in times if pd.notna(t)]
+
+            if len(times) > 1:
+                fig.add_trace(go.Scatter(
+                    x=times,
+                    y=[row['Employee_Name']] * len(times),
+                    mode='lines+markers',
+                    name=row['Employee_Name'],
+                    line=dict(color=colors[idx % len(colors)], width=2),
+                    marker=dict(size=8, symbol='circle')
+                ))
 
         fig.update_layout(
             showlegend=False,
-            plot_bgcolor='white',
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
             margin=dict(t=20, l=20, r=20, b=20),
             yaxis_title='Employee',
-            xaxis_title='Time'
+            xaxis_title='Time',
+            font=dict(color='#FFFFFF')
         )
         return fig
 
@@ -58,7 +73,7 @@ class Visualizer:
         stats = {
             'On Time': len(df[df['Late_Minutes'] == 0]),
             'Late': len(df[df['Late_Minutes'] > 0]),
-            'Early Departure': len(df[df['Early_Minutes'] > 0])
+            'Early Departure': len(df[df['Early_Departure_Minutes'] > 0])
         }
 
         fig = go.Figure(data=[go.Pie(
@@ -70,13 +85,16 @@ class Visualizer:
 
         fig.update_layout(
             showlegend=True,
-            margin=dict(t=20, l=20, r=20, b=20)
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(t=20, l=20, r=20, b=20),
+            font=dict(color='#FFFFFF')
         )
         return fig
 
     def create_department_network(self, df):
         G = nx.Graph()
-        departments = df['Summary_Department'].unique()
+        departments = df['Department'].unique()
 
         # Create nodes
         for dept in departments:
@@ -85,7 +103,7 @@ class Visualizer:
         # Create edges based on shared employees
         for i in range(len(departments)):
             for j in range(i+1, len(departments)):
-                shared = len(df[df['Summary_Department'].isin([departments[i], departments[j]])])
+                shared = len(df[df['Department'].isin([departments[i], departments[j]])])
                 if shared > 0:
                     G.add_edge(departments[i], departments[j], weight=shared)
 
@@ -121,24 +139,38 @@ class Visualizer:
                         showlegend=False,
                         hovermode='closest',
                         margin=dict(t=20, l=20, r=20, b=20),
-                        plot_bgcolor='white'
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        font=dict(color='#FFFFFF')
                     ))
         return fig
 
     def create_employee_card(self, employee_data):
+        card_style = """
+        background-color: rgba(33, 150, 243, 0.1);
+        border: 1px solid #2196F3;
+        border-radius: 10px;
+        padding: 15px;
+        margin: 10px 0;
+        """
+
         st.markdown(
             f"""
-            <div class="employee-card">
-                <h3>{employee_data['Name']}</h3>
-                <p>Department: {employee_data['Report_Department']}</p>
-                <div class="stats">
-                    <div class="stat">
-                        <span class="label">Hours</span>
-                        <span class="value">{employee_data['Actual_Hours']}/{employee_data['Required_Hours']}</span>
+            <div style="{card_style}">
+                <h3 style="color: #2196F3; margin: 0;">{employee_data['Employee_Name']}</h3>
+                <p style="color: #888;">Department: {employee_data['Department']}</p>
+                <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                    <div>
+                        <span style="color: #888; font-size: 12px;">Hours</span><br>
+                        <span style="color: #FFFFFF;">{employee_data['Actual_Hours']}/{employee_data['Required_Hours']}</span>
                     </div>
-                    <div class="stat">
-                        <span class="label">Late</span>
-                        <span class="value">{employee_data['Late_Minutes']} min</span>
+                    <div>
+                        <span style="color: #888; font-size: 12px;">Late</span><br>
+                        <span style="color: #FFFFFF;">{employee_data['Late_Minutes']} min</span>
+                    </div>
+                    <div>
+                        <span style="color: #888; font-size: 12px;">Early Leave</span><br>
+                        <span style="color: #FFFFFF;">{employee_data['Early_Leave_Minutes']} min</span>
                     </div>
                 </div>
             </div>

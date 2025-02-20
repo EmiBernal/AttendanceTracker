@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from difflib import get_close_matches
 
 class ExcelProcessor:
     def __init__(self, file):
@@ -17,17 +18,39 @@ class ExcelProcessor:
         if missing_sheets:
             raise ValueError(f"Missing required sheets: {', '.join(missing_sheets)}")
 
+    def _find_column_match(self, expected_name, available_columns):
+        """Find the closest matching column name"""
+        matches = get_close_matches(expected_name, available_columns, n=1, cutoff=0.6)
+        if matches:
+            return matches[0]
+        return None
+
     def _normalize_columns(self, df):
         """Normalize column names by stripping whitespace and replacing spaces with underscores"""
-        df.columns = df.columns.str.strip().str.replace(' ', '_')
+        df.columns = df.columns.str.strip().str.replace(' ', '_').str.replace(':', '')
         return df
 
     def _validate_columns(self, df, required_columns, sheet_name):
         """Validate that all required columns are present in the DataFrame"""
-        missing_columns = [col for col in required_columns if col not in df.columns]
+        missing_columns = []
+        column_mapping = {}
+
+        for col in required_columns:
+            if col not in df.columns:
+                match = self._find_column_match(col, df.columns)
+                if match:
+                    column_mapping[match] = col
+                else:
+                    missing_columns.append(col)
+
         if missing_columns:
             print(f"Available columns in {sheet_name}:", df.columns.tolist())
             raise ValueError(f"Missing required columns in {sheet_name}: {', '.join(missing_columns)}")
+
+        if column_mapping:
+            df = df.rename(columns=column_mapping)
+
+        return df
 
     def _convert_numeric_columns(self, df, numeric_columns):
         """Helper method to convert columns to numeric type"""
@@ -37,39 +60,43 @@ class ExcelProcessor:
         return df
 
     def process_attendance_summary(self):
-        # Print available columns for debugging
+        print("Reading Summary sheet...")
         df = pd.read_excel(self.excel_file, sheet_name="Summary", header=0)
-        print("Original columns in Summary sheet:", df.columns.tolist())
+        print("Original columns:", df.columns.tolist())
 
         df = self._normalize_columns(df)
-        print("Normalized columns in Summary sheet:", df.columns.tolist())
+        print("Normalized columns:", df.columns.tolist())
 
-        # Define the expected mapping based on the actual column names
+        # Expected column mapping
         columns = {
-            df.columns[0]: 'Employee_ID',
-            df.columns[1]: 'Employee_Name',
-            df.columns[2]: 'Department',
-            df.columns[3]: 'Required_Hours',
-            df.columns[4]: 'Actual_Hours',
-            df.columns[5]: 'Late_Count',
-            df.columns[6]: 'Late_Minutes',
-            df.columns[7]: 'Early_Departure_Count',
-            df.columns[8]: 'Early_Departure_Minutes',
-            df.columns[9]: 'Normal_Overtime',
-            df.columns[10]: 'Special_Overtime',
-            df.columns[11]: 'Attendance_Ratio',
-            df.columns[13]: 'Absences'
+            'ID': 'Employee_ID',
+            'Name': 'Employee_Name',
+            'Department': 'Department',
+            'Required': 'Required_Hours',
+            'Actual': 'Actual_Hours',
+            'Late_Count': 'Late_Count',
+            'Late_Min': 'Late_Minutes',
+            'Early_Count': 'Early_Departure_Count',
+            'Early_Min': 'Early_Departure_Minutes',
+            'Normal_OT': 'Normal_Overtime',
+            'Special_OT': 'Special_Overtime',
+            'Attendance': 'Attendance_Ratio',
+            'Absences': 'Absences'
         }
-        df = df.rename(columns=columns)
 
-        # Validate required columns
+        # Try to find and rename columns
+        for expected, target in columns.items():
+            if target not in df.columns:
+                match = self._find_column_match(expected, df.columns)
+                if match:
+                    df = df.rename(columns={match: target})
+
         required_columns = [
             'Employee_ID', 'Employee_Name', 'Department',
             'Required_Hours', 'Actual_Hours'
         ]
-        self._validate_columns(df, required_columns, "Summary")
+        df = self._validate_columns(df, required_columns, "Summary")
 
-        # Convert numeric columns
         numeric_columns = [
             'Required_Hours', 'Actual_Hours', 
             'Late_Count', 'Late_Minutes',
@@ -84,15 +111,19 @@ class ExcelProcessor:
         df = self._normalize_columns(df)
 
         base_columns = {
-            df.columns[0]: 'Employee_ID',
-            df.columns[1]: 'Employee_Name',
-            df.columns[2]: 'Department'
+            'ID': 'Employee_ID',
+            'Name': 'Employee_Name',
+            'Dept': 'Department'
         }
-        df = df.rename(columns=base_columns)
 
-        # Validate required columns
+        for expected, target in base_columns.items():
+            if target not in df.columns:
+                match = self._find_column_match(expected, df.columns)
+                if match:
+                    df = df.rename(columns={match: target})
+
         required_columns = ['Employee_ID', 'Employee_Name', 'Department']
-        self._validate_columns(df, required_columns, "Shifts")
+        df = self._validate_columns(df, required_columns, "Shifts")
 
         # Add day columns (D to AH)
         for i in range(3, len(df.columns)):
@@ -103,23 +134,21 @@ class ExcelProcessor:
         df = pd.read_excel(self.excel_file, sheet_name="Logs", skiprows=4)
         records = []
 
-        # Process every two rows (name and schedule)
         for i in range(0, len(df), 2):
             if i+1 >= len(df):
                 break
 
-            employee_name = df.iloc[i].iloc[0]  # First cell contains employee name
+            employee_name = df.iloc[i].iloc[0]
             schedule_row = df.iloc[i+1]
 
-            # Process each time entry (4 entries per day)
             for j in range(0, len(schedule_row), 4):
                 if pd.notna(schedule_row.iloc[j]):
                     record = {
                         'Employee_Name': employee_name,
-                        'Initial_Entry': schedule_row.iloc[j],
-                        'Midday_Exit': schedule_row.iloc[j+1] if j+1 < len(schedule_row) else None,
-                        'Midday_Entry': schedule_row.iloc[j+2] if j+2 < len(schedule_row) else None,
-                        'Final_Exit': schedule_row.iloc[j+3] if j+3 < len(schedule_row) else None
+                        'Initial_Entry': pd.to_datetime(schedule_row.iloc[j], errors='coerce'),
+                        'Midday_Exit': pd.to_datetime(schedule_row.iloc[j+1], errors='coerce') if j+1 < len(schedule_row) else None,
+                        'Midday_Entry': pd.to_datetime(schedule_row.iloc[j+2], errors='coerce') if j+2 < len(schedule_row) else None,
+                        'Final_Exit': pd.to_datetime(schedule_row.iloc[j+3], errors='coerce') if j+3 < len(schedule_row) else None
                     }
                     records.append(record)
 
@@ -130,28 +159,31 @@ class ExcelProcessor:
         df = self._normalize_columns(df)
 
         columns = {
-            df.columns[0]: 'Employee_ID',
-            df.columns[1]: 'Employee_Name',
-            df.columns[2]: 'Department',
-            df.columns[3]: 'Date',
-            df.columns[4]: 'AM_Entry',
-            df.columns[5]: 'AM_Exit',
-            df.columns[6]: 'PM_Entry',
-            df.columns[7]: 'PM_Exit',
-            df.columns[8]: 'Late_Minutes',
-            df.columns[9]: 'Early_Leave_Minutes',
-            df.columns[10]: 'Total_Minutes',
-            df.columns[11]: 'Comments'
+            'ID': 'Employee_ID',
+            'Name': 'Employee_Name',
+            'Dept': 'Department',
+            'Date': 'Date',
+            'AM_In': 'AM_Entry',
+            'AM_Out': 'AM_Exit',
+            'PM_In': 'PM_Entry',
+            'PM_Out': 'PM_Exit',
+            'Late': 'Late_Minutes',
+            'Early': 'Early_Leave_Minutes',
+            'Total': 'Total_Minutes',
+            'Comments': 'Comments'
         }
-        df = df.rename(columns=columns)
 
-        # Validate required columns
+        for expected, target in columns.items():
+            if target not in df.columns:
+                match = self._find_column_match(expected, df.columns)
+                if match:
+                    df = df.rename(columns={match: target})
+
         required_columns = [
             'Employee_ID', 'Employee_Name', 'Department',
             'Late_Minutes', 'Early_Leave_Minutes', 'Total_Minutes'
         ]
-        self._validate_columns(df, required_columns, "Individual Reports")
+        df = self._validate_columns(df, required_columns, "Individual Reports")
 
-        # Convert numeric columns
         numeric_columns = ['Late_Minutes', 'Early_Leave_Minutes', 'Total_Minutes']
         return self._convert_numeric_columns(df, numeric_columns)

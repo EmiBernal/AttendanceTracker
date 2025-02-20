@@ -3,6 +3,7 @@ import plotly.express as px
 import networkx as nx
 import streamlit as st
 import pandas as pd
+import numpy as np
 
 class Visualizer:
     def create_department_chart(self, df):
@@ -63,8 +64,34 @@ class Visualizer:
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
             margin=dict(t=20, l=20, r=20, b=20),
-            yaxis_title='Employee',
+            yaxis_title='Time Records',
             xaxis_title='Time',
+            font=dict(color='#FFFFFF')
+        )
+        return fig
+
+    def create_hours_distribution(self, employee_data):
+        labels = ['Required', 'Actual', 'Overtime']
+        values = [
+            float(employee_data['Required_Hours']),
+            float(employee_data['Actual_Hours']),
+            float(employee_data['Normal_Overtime']) + float(employee_data['Special_Overtime'])
+        ]
+
+        colors = ['#2196F3', '#4CAF50', '#FFC107']
+
+        fig = go.Figure(data=[go.Pie(
+            labels=labels,
+            values=values,
+            hole=.3,
+            marker_colors=colors
+        )])
+
+        fig.update_layout(
+            showlegend=True,
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(t=20, l=20, r=20, b=20),
             font=dict(color='#FFFFFF')
         )
         return fig
@@ -76,11 +103,13 @@ class Visualizer:
             'Early Departure': int(len(df[df['Early_Departure_Minutes'] > 0]))
         }
 
+        colors = ['#4CAF50', '#FFC107', '#F44336']
+
         fig = go.Figure(data=[go.Pie(
             labels=list(stats.keys()),
             values=list(stats.values()),
             hole=.3,
-            marker_colors=['#4CAF50', '#FFC107', '#F44336']
+            marker_colors=colors
         )])
 
         fig.update_layout(

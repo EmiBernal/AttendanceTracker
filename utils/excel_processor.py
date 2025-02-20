@@ -19,16 +19,47 @@ class ExcelProcessor:
 
     def process_attendance_summary(self):
         df = pd.read_excel(self.excel_file, sheet_name="Summary")
-        return df.iloc[:, 0:14]  # Columns A-N
+        # Rename columns to avoid conflicts
+        columns = {
+            df.columns[0]: 'Employee_ID',
+            df.columns[1]: 'Name',
+            df.columns[2]: 'Summary_Department',
+            df.columns[3]: 'Required_Hours',
+            df.columns[4]: 'Actual_Hours',
+            df.columns[5]: 'Late_Minutes',
+        }
+        df = df.rename(columns=columns)
+        return df
 
     def process_shift_table(self):
         df = pd.read_excel(self.excel_file, sheet_name="Shifts")
-        return df.iloc[:, 0:34]  # Columns A-AH
+        # Rename columns to avoid conflicts
+        columns = {
+            df.columns[0]: 'Employee_ID',
+            df.columns[1]: 'Name',
+            df.columns[2]: 'Shift_Department'
+        }
+        df = df.rename(columns=columns)
+        return df
 
     def process_records_list(self):
         df = pd.read_excel(self.excel_file, sheet_name="Logs", skiprows=4)
+        # Rename columns to avoid conflicts
+        columns = {
+            df.columns[0]: 'Employee_ID',
+            df.columns[1]: 'Name',
+            df.columns[2]: 'Log_Department'
+        }
+        df = df.rename(columns=columns)
         return df
 
     def process_individual_reports(self):
         df = pd.read_excel(self.excel_file, sheet_name="Exceptional")
+        # Rename columns to avoid conflicts
+        columns = {
+            df.columns[0]: 'Employee_ID',
+            df.columns[1]: 'Name',
+            df.columns[2]: 'Report_Department'
+        }
+        df = df.rename(columns=columns)
         return df.iloc[:, 0:12]  # Columns A-L

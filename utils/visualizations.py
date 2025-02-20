@@ -6,22 +6,22 @@ import pandas as pd
 
 class Visualizer:
     def create_department_chart(self, df):
-        dept_stats = df.groupby('Department').agg({
-            'Required Hours': 'sum',
-            'Actual Hours': 'sum'
+        dept_stats = df.groupby('Summary_Department').agg({
+            'Required_Hours': 'sum',
+            'Actual_Hours': 'sum'
         }).reset_index()
 
         fig = go.Figure()
         fig.add_trace(go.Bar(
             name='Required Hours',
-            x=dept_stats['Department'],
-            y=dept_stats['Required Hours'],
+            x=dept_stats['Summary_Department'],
+            y=dept_stats['Required_Hours'],
             marker_color='#2196F3'
         ))
         fig.add_trace(go.Bar(
             name='Actual Hours',
-            x=dept_stats['Department'],
-            y=dept_stats['Actual Hours'],
+            x=dept_stats['Summary_Department'],
+            y=dept_stats['Actual_Hours'],
             marker_color='#4CAF50'
         ))
 
@@ -37,10 +37,10 @@ class Visualizer:
 
         for idx, row in df.iterrows():
             fig.add_trace(go.Scatter(
-                x=[row['Entry Time'], row['Exit Time']],
+                x=[row['Entry_Time'], row['Exit_Time']],
                 y=[idx, idx],
                 mode='lines+markers',
-                name=row['Employee'],
+                name=row['Name'],
                 line=dict(color='#2196F3', width=2),
                 marker=dict(size=8, symbol='circle')
             ))
@@ -56,9 +56,9 @@ class Visualizer:
 
     def create_attendance_stats(self, df):
         stats = {
-            'On Time': len(df[df['Late Minutes'] == 0]),
-            'Late': len(df[df['Late Minutes'] > 0]),
-            'Early Departure': len(df[df['Early Departure'] > 0])
+            'On Time': len(df[df['Late_Minutes'] == 0]),
+            'Late': len(df[df['Late_Minutes'] > 0]),
+            'Early Departure': len(df[df['Early_Minutes'] > 0])
         }
 
         fig = go.Figure(data=[go.Pie(
@@ -76,21 +76,21 @@ class Visualizer:
 
     def create_department_network(self, df):
         G = nx.Graph()
-        departments = df['Department'].unique()
-        
+        departments = df['Summary_Department'].unique()
+
         # Create nodes
         for dept in departments:
             G.add_node(dept)
-        
+
         # Create edges based on shared employees
         for i in range(len(departments)):
             for j in range(i+1, len(departments)):
-                shared = len(df[df['Department'].isin([departments[i], departments[j]])])
+                shared = len(df[df['Summary_Department'].isin([departments[i], departments[j]])])
                 if shared > 0:
                     G.add_edge(departments[i], departments[j], weight=shared)
 
         pos = nx.spring_layout(G)
-        
+
         edge_trace = go.Scatter(
             x=[], y=[],
             line=dict(width=0.5, color='#888'),
@@ -130,19 +130,18 @@ class Visualizer:
             f"""
             <div class="employee-card">
                 <h3>{employee_data['Name']}</h3>
-                <p>Department: {employee_data['Department']}</p>
+                <p>Department: {employee_data['Report_Department']}</p>
                 <div class="stats">
                     <div class="stat">
                         <span class="label">Hours</span>
-                        <span class="value">{employee_data['Actual Hours']}/{employee_data['Required Hours']}</span>
+                        <span class="value">{employee_data['Actual_Hours']}/{employee_data['Required_Hours']}</span>
                     </div>
                     <div class="stat">
                         <span class="label">Late</span>
-                        <span class="value">{employee_data['Late Minutes']} min</span>
+                        <span class="value">{employee_data['Late_Minutes']} min</span>
                     </div>
                 </div>
             </div>
             """,
             unsafe_allow_html=True
         )
-

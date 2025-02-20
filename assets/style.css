@@ -1,0 +1,75 @@
+/* Main layout */
+.stApp {
+    font-family: 'Inter', sans-serif;
+}
+
+/* File uploader */
+.stFileUploader {
+    border: 2px dashed #2196F3;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+/* Employee cards */
+.employee-card {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 16px;
+}
+
+.employee-card h3 {
+    margin: 0;
+    color: #262730;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.employee-card p {
+    color: #666;
+    font-size: 14px;
+    margin: 8px 0;
+}
+
+.stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.label {
+    font-size: 12px;
+    color: #666;
+}
+
+.value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #262730;
+}
+
+/* Charts */
+.js-plotly-plot {
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 12px;
+}
+
+/* Responsive layout */
+@media (max-width: 768px) {
+    .stats {
+        flex-direction: column;
+    }
+    
+    .stat {
+        margin-bottom: 8px;
+    }
+}

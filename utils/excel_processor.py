@@ -2,21 +2,6 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-class TimeRecord:
-    def __init__(self, times):
-        self.times = sorted(times)
-        self.entry = self.times[0] if times else None
-        self.exit = self.times[-1] if times else None
-        self.lunch_out = self.times[1] if len(times) >= 3 else None
-        self.lunch_in = self.times[2] if len(times) >= 3 else None
-
-    def get_lunch_duration(self):
-        if not (self.lunch_out and self.lunch_in):
-            return 0
-        lunch_out_minutes = self.lunch_out.hour * 60 + self.lunch_out.minute
-        lunch_in_minutes = self.lunch_in.hour * 60 + self.lunch_in.minute
-        return lunch_in_minutes - lunch_out_minutes
-
 class ExcelProcessor:
     def __init__(self, file):
         self.excel_file = pd.ExcelFile(file)
@@ -92,20 +77,10 @@ class ExcelProcessor:
         return df
 
     def process_logs(self):
-        """Procesa la hoja de Logs para analizar registros de entrada/salida"""
         print("Processing Logs sheet...")
         df = pd.read_excel(self.excel_file, sheet_name="Logs", skiprows=4)
 
-        # Definir las columnas que tendrá el DataFrame resultante
-        columns = [
-            'employee_name', 'date', 'first_record', 'last_record',
-            'record_count', 'missing_entry', 'missing_exit',
-            'missing_lunch', 'early_departure', 'extended_lunch',
-            'lunch_minutes'
-        ]
-
         records = []
-
         for i in range(0, len(df), 2):
             if i + 1 >= len(df):
                 break
@@ -116,10 +91,8 @@ class ExcelProcessor:
             employee_name = str(name_row.iloc[1]).strip()
             print(f"Processing employee: {employee_name}")
 
-            # Procesar cada día
             for day_start in range(2, len(df.columns), 4):
                 try:
-                    # Recopilar los tiempos del día
                     times = []
                     for j in range(4):
                         if day_start + j < len(time_row):
@@ -133,39 +106,45 @@ class ExcelProcessor:
                                     continue
 
                     if times:
-                        time_record = TimeRecord(times)
-
-                        # Calcular métricas del día
+                        # Calcular tiempo de almuerzo
                         extended_lunch = False
-                        lunch_minutes = 0
+                        total_lunch_minutes = 0
 
-                        if time_record.lunch_out and time_record.lunch_in:
-                            if (time_record.lunch_out >= self.LUNCH_START_TIME and 
-                                time_record.lunch_out <= self.LUNCH_END_TIME):
-                                lunch_minutes = time_record.get_lunch_duration()
+                        if len(times) >= 3:
+                            lunch_out = times[1]  # Segunda marca (salida almuerzo)
+                            lunch_in = times[2]   # Tercera marca (regreso almuerzo)
+
+                            if (lunch_out >= self.LUNCH_START_TIME and 
+                                lunch_out <= self.LUNCH_END_TIME):
+                                lunch_minutes = (
+                                    lunch_in.hour * 60 + lunch_in.minute
+                                ) - (
+                                    lunch_out.hour * 60 + lunch_out.minute
+                                )
+                                total_lunch_minutes = lunch_minutes
                                 extended_lunch = lunch_minutes > self.LUNCH_DURATION_LIMIT
 
                         record = {
                             'employee_name': employee_name,
                             'date': df.columns[day_start],
-                            'first_record': time_record.entry,
-                            'last_record': time_record.exit,
+                            'first_record': times[0] if times else None,
+                            'last_record': times[-1] if times else None,
                             'record_count': len(times),
                             'missing_entry': (
-                                time_record.entry >= self.LUNCH_START_TIME or
-                                time_record.entry >= self.LATE_EVENING
-                            ),
+                                times[0] >= self.LUNCH_START_TIME or
+                                times[0] >= self.LATE_EVENING
+                            ) if times else False,
                             'missing_exit': (
-                                time_record.exit <= self.LUNCH_END_TIME and 
+                                times[-1] <= self.LUNCH_END_TIME and 
                                 len(times) < 3
-                            ),
+                            ) if times else False,
                             'missing_lunch': len(times) <= 2,
                             'early_departure': (
-                                time_record.exit < self.WORK_END_TIME and
-                                not (time_record.exit <= self.LUNCH_END_TIME and len(times) < 3)
-                            ),
+                                times[-1] < self.WORK_END_TIME and
+                                not (times[-1] <= self.LUNCH_END_TIME and len(times) < 3)
+                            ) if times else False,
                             'extended_lunch': extended_lunch,
-                            'lunch_minutes': lunch_minutes
+                            'total_lunch_minutes': total_lunch_minutes  # Cambié el nombre de la columna
                         }
                         records.append(record)
 
@@ -173,12 +152,16 @@ class ExcelProcessor:
                     print(f"Error processing day for {employee_name}: {e}")
                     continue
 
-        # Crear DataFrame con los registros
         if not records:
             print("No records processed!")
-            return pd.DataFrame(columns=columns)
+            return pd.DataFrame(columns=[
+                'employee_name', 'date', 'first_record', 'last_record',
+                'record_count', 'missing_entry', 'missing_exit',
+                'missing_lunch', 'early_departure', 'extended_lunch',
+                'total_lunch_minutes'
+            ])
 
-        result_df = pd.DataFrame(records, columns=columns)
+        result_df = pd.DataFrame(records)
         print(f"Created DataFrame with {len(result_df)} records")
         print(f"DataFrame columns: {result_df.columns.tolist()}")
         return result_df
@@ -198,7 +181,7 @@ class ExcelProcessor:
 
         # Calcular estadísticas
         extended_lunch_days = len(employee_logs[employee_logs['extended_lunch']])
-        total_lunch_minutes = employee_logs[employee_logs['extended_lunch']]['lunch_minutes'].sum()
+        total_lunch_minutes = employee_logs[employee_logs['extended_lunch']]['total_lunch_minutes'].sum()
 
         stats = {
             'name': employee_name,

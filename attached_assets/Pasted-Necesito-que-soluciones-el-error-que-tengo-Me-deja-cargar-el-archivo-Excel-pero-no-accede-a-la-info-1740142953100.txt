@@ -1,0 +1,18 @@
+Necesito que soluciones el error que tengo: Me deja cargar el archivo Excel pero no accede a la información de el ya que no me muestra las horas trabajadas, las veces que llego tarde, las veces que se fue antes, nada de eso. TODO ESO esta cargado en el Excel que yo le deposito a la aplicación. Esto capaz te sirva, son los nombres de los encabezados en las filas 3 y 4: Reading Summary sheet...
+Original columns: [('No.', 'Unnamed: 0_level_1'), ('Name', 'Unnamed: 1_level_1'), ('Department', 'Unnamed: 2_level_1'), ('Work Hrs.', 'Required'), ('Work Hrs.', 'Actual'), ('Late', 'Times'), ('Late', ' Min.'), ('Early Leave', 'Times'), ('Early Leave', ' Min.'), ('Overtime', 'Regular'), ('Overtime', 'Special'), ('Attend (Required/Actual)', 'Unnamed: 11_level_1'), ('Business Trip', 'Unnamed: 12_level_1'), ('Absence', 'Unnamed: 13_level_1'), ('On Leave', 'Unnamed: 14_level_1'), ('Bonus', 'Note'), ('Bonus', 'OT'), ('Bonus', 'All owance'), ('Deduction', 'Late Early Leave'), ('Deduction', 'On Leave'), ('Deduction', 'Other\\nDeduction'), ('Actual Pay', 'Unnamed: 21_level_1'), ('Remark', 'Unnamed: 22_level_1')]
+Normalized columns: ['No._Unnamed_0_level_1', 'Name_Unnamed_1_level_1', 'Department_Unnamed_2_level_1', 'Work_Hrs._Required', 'Work_Hrs._Actual', 'Late_Times', 'Late__Min.', 'Early_Leave_Times', 'Early_Leave__Min.', 'Overtime_Regular', 'Overtime_Special', 'Attend_(Required/Actual)_Unnamed_11_level_1', 'Business_Trip_Unnamed_12_level_1', 'Absence_Unnamed_13_level_1', 'On_Leave_Unnamed_14_level_1', 'Bonus_Note', 'Bonus_OT', 'Bonus_All_owance', 'Deduction_Late_Early_Leave', 'Deduction_On_Leave', 'Deduction_Other\\nDeduction', 'Actual_Pay_Unnamed_21_level_1', 'Remark_Unnamed_22_level_1']
+Converting column: Required_Hours
+Converting column: Actual_Hours
+Converting column: Late_Minutes
+Skipping non-Series column: Late_Minutes
+Converting column: Early_Departure_Minutes
+Skipping non-Series column: Early_Departure_Minutes. 
+
+Una vez solucionado eso, quiero además que me apareza:
+Cantidad de dias que llego tarde
+Cantidad de dias que extendio mas de 20 min en almuerzo
+Cantidad de dias que no ficho ingreso - egreso - almuerzo
+Inasistencias
+Cantidad de veces que se retiro antes
+Cantidad de dias que ingreso mas tarde
+Cantidad de dias que se retiro durante el horario laboral

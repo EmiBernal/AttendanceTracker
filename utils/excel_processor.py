@@ -26,6 +26,8 @@ class ExcelProcessor:
     def process_attendance_summary(self):
         print("Reading Summary sheet...")
         df = pd.read_excel(self.excel_file, sheet_name="Summary", header=[2, 3])
+        print("Original columns:", df.columns.tolist())
+        print("Normalized columns:", ['_'.join(col).strip() for col in df.columns.values])
 
         # Mapear las columnas del Excel
         df.columns = [
@@ -47,24 +49,15 @@ class ExcelProcessor:
         ]
 
         # Convertir columnas numéricas
-        for col in df.columns:
-            if col in ['required_hours', 'actual_hours', 'late_minutes', 
-                      'early_departure_minutes', 'overtime_regular', 'overtime_special',
-                      'late_count', 'early_departure_count', 'absences']:
-                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
-
-        # Procesar el ratio de asistencia (formato "23/12")
-        if 'attendance_ratio' in df.columns:
-            def parse_attendance(value):
+        for col in ['required_hours', 'actual_hours', 'late_minutes', 
+                   'early_departure_minutes', 'overtime_regular', 'overtime_special',
+                   'late_count', 'early_departure_count', 'absences']:
+            if col in df.columns:
+                print(f"Converting column: {col}")
                 try:
-                    if isinstance(value, str) and '/' in value:
-                        actual, required = map(float, value.split('/'))
-                        return actual / required if required != 0 else 0
-                    return 0
-                except:
-                    return 0
-
-            df['attendance_ratio'] = df['attendance_ratio'].apply(parse_attendance)
+                    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+                except Exception as e:
+                    print(f"Skipping non-Series column: {col}. {str(e)}")
 
         return df
 
@@ -73,42 +66,40 @@ class ExcelProcessor:
         print("Processing Logs sheet...")
         df = pd.read_excel(self.excel_file, sheet_name="Logs", skiprows=4)
 
-        all_records = []
-        current_employee = None
-        current_day = None
-        current_times = []
+        records = []
+        for i in range(0, len(df), 2):
+            if i + 1 >= len(df):
+                break
 
-        for i in range(len(df)):
-            row = df.iloc[i]
+            # Obtener el nombre del empleado (está en la columna B)
+            employee_name = str(df.iloc[i].iloc[1]).strip()
+            print(f"Processing employee: {employee_name}")
 
-            # Las filas pares (0, 2, 4...) contienen nombres
-            if i % 2 == 0:
-                # El nombre está en la columna B (índice 1)
-                current_employee = str(row.iloc[1])  # Convertir a string
-                print(f"Processing employee: {current_employee}")
-                continue
+            # Obtener la fila de tiempos
+            time_row = df.iloc[i + 1]
 
-            # Las filas impares contienen los registros de tiempo
-            for col in range(2, len(df.columns)):  # Empezar desde la columna C
-                time_value = row.iloc[col]
+            # Procesar cada día (cada 4 columnas)
+            for j in range(2, len(df.columns), 4):
+                try:
+                    day_times = []
+                    # Recopilar los 4 registros posibles del día
+                    for k in range(4):
+                        if j + k < len(time_row):
+                            time_str = time_row.iloc[j + k]
+                            if pd.notna(time_str):
+                                try:
+                                    time = pd.to_datetime(time_str).time()
+                                    day_times.append(time)
+                                except:
+                                    continue
 
-                if pd.notna(time_value):
-                    try:
-                        time = pd.to_datetime(time_value).time()
-                        current_times.append(time)
-                    except:
-                        continue
-
-                # Cada 4 columnas representa un día completo
-                if (col - 1) % 4 == 0 or col == len(df.columns) - 1:
-                    if current_times:
+                    if day_times:  # Solo procesar si hay registros
                         record = {
-                            'employee_name': current_employee,
-                            'date': df.columns[col - len(current_times)].strftime('%Y-%m-%d') if isinstance(df.columns[col - len(current_times)], datetime) else None,
-                            'records': current_times,
-                            'first_record': current_times[0],
-                            'last_record': current_times[-1],
-                            'record_count': len(current_times)
+                            'employee_name': employee_name,
+                            'date': df.columns[j].strftime('%Y-%m-%d') if isinstance(df.columns[j], datetime) else None,
+                            'first_record': day_times[0],
+                            'last_record': day_times[-1],
+                            'record_count': len(day_times)
                         }
 
                         # Verificar si no fichó ingreso
@@ -132,13 +123,17 @@ class ExcelProcessor:
                             not record['missing_exit']
                         )
 
-                        all_records.append(record)
-                        current_times = []
+                        records.append(record)
+
+                except Exception as e:
+                    print(f"Error processing record for {employee_name} on column {j}: {str(e)}")
+                    continue
 
         # Crear DataFrame con los registros procesados
-        result_df = pd.DataFrame(all_records)
+        result_df = pd.DataFrame(records)
         print(f"Created DataFrame with columns: {result_df.columns.tolist()}")
         print(f"Total records processed: {len(result_df)}")
+        print(f"Unique employees: {result_df['employee_name'].unique().tolist()}")
         return result_df
 
     def process_exceptional_records(self):

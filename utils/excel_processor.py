@@ -144,7 +144,7 @@ class ExcelProcessor:
                                 not (times[-1] <= self.LUNCH_END_TIME and len(times) < 3)
                             ) if times else False,
                             'extended_lunch': extended_lunch,
-                            'total_lunch_minutes': total_lunch_minutes  # Cambié el nombre de la columna
+                            'total_lunch_minutes': total_lunch_minutes
                         }
                         records.append(record)
 
@@ -180,7 +180,6 @@ class ExcelProcessor:
         employee_logs = logs[logs['employee_name'] == employee_name]
 
         # Calcular estadísticas
-        extended_lunch_days = len(employee_logs[employee_logs['extended_lunch']])
         total_lunch_minutes = employee_logs[employee_logs['extended_lunch']]['total_lunch_minutes'].sum()
 
         stats = {
@@ -196,8 +195,8 @@ class ExcelProcessor:
             'missing_entry_days': len(employee_logs[employee_logs['missing_entry']]),
             'missing_exit_days': len(employee_logs[employee_logs['missing_exit']]),
             'missing_lunch_days': len(employee_logs[employee_logs['missing_lunch']]),
-            'extended_lunch_days': extended_lunch_days,
-            'total_lunch_minutes_exceeded': total_lunch_minutes,
+            'extended_lunch_days': len(employee_logs[employee_logs['extended_lunch']]),
+            'total_lunch_minutes': total_lunch_minutes,
             'attendance_ratio': employee_summary['attendance_ratio']
         }
 

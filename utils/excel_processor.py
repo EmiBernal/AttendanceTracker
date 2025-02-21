@@ -67,6 +67,21 @@ class ExcelProcessor:
                 except Exception as e:
                     print(f"Skipping non-Series column: {col}. {str(e)}")
 
+        # Procesar el ratio de asistencia (formato "23/12")
+        if 'attendance_ratio' in df.columns:
+            def convert_ratio(value):
+                try:
+                    if pd.isna(value) or value == '':
+                        return 0.0
+                    if isinstance(value, str) and '/' in value:
+                        total_days, worked_days = map(float, value.split('/'))
+                        return worked_days / total_days if total_days > 0 else 0.0
+                    return float(value)
+                except:
+                    return 0.0
+
+            df['attendance_ratio'] = df['attendance_ratio'].apply(convert_ratio)
+
         return df
 
     def process_logs(self):
@@ -174,7 +189,7 @@ class ExcelProcessor:
             'missing_entry_days': len(employee_logs[employee_logs['missing_entry']]),
             'missing_exit_days': len(employee_logs[employee_logs['missing_exit']]),
             'missing_lunch_days': len(employee_logs[employee_logs['missing_lunch']]),
-            'attendance_ratio': float(employee_summary.get('attendance_ratio', 0))
+            'attendance_ratio': employee_summary['attendance_ratio']  # Ya está convertido a decimal
         }
 
         return stats

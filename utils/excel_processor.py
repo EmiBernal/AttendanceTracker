@@ -47,14 +47,10 @@ class ExcelProcessor:
         ]
 
         # Convertir columnas numéricas
-        numeric_columns = [
-            'required_hours', 'actual_hours', 'late_minutes',
-            'early_departure_minutes', 'overtime_regular', 'overtime_special',
-            'late_count', 'early_departure_count', 'absences'
-        ]
-
-        for col in numeric_columns:
-            if col in df.columns:
+        for col in df.columns:
+            if col in ['required_hours', 'actual_hours', 'late_minutes', 
+                      'early_departure_minutes', 'overtime_regular', 'overtime_special',
+                      'late_count', 'early_departure_count', 'absences']:
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
         # Procesar el ratio de asistencia (formato "23/12")
@@ -78,68 +74,68 @@ class ExcelProcessor:
         df = pd.read_excel(self.excel_file, sheet_name="Logs", skiprows=4)
 
         all_records = []
+        current_employee = None
+        current_day = None
+        current_times = []
 
-        # Iterar sobre las filas de nombres (filas pares)
-        for i in range(0, len(df), 2):
-            if i + 1 >= len(df):
-                break
+        for i in range(len(df)):
+            row = df.iloc[i]
 
-            name_row = df.iloc[i]
-            time_row = df.iloc[i + 1]
+            # Las filas pares (0, 2, 4...) contienen nombres
+            if i % 2 == 0:
+                # El nombre está en la columna B (índice 1)
+                current_employee = str(row.iloc[1])  # Convertir a string
+                print(f"Processing employee: {current_employee}")
+                continue
 
-            # Obtener el nombre del empleado (columna B)
-            employee_name = name_row.iloc[1]
-            print(f"Processing employee: {employee_name}")
+            # Las filas impares contienen los registros de tiempo
+            for col in range(2, len(df.columns)):  # Empezar desde la columna C
+                time_value = row.iloc[col]
 
-            # Procesar cada día (columnas desde la C en adelante)
-            for col_idx in range(2, len(df.columns), 4):
-                day_date = df.columns[col_idx]
+                if pd.notna(time_value):
+                    try:
+                        time = pd.to_datetime(time_value).time()
+                        current_times.append(time)
+                    except:
+                        continue
 
-                # Obtener los registros del día
-                times = []
-                for t in range(4):  # Máximo 4 registros por día
-                    if col_idx + t < len(time_row):
-                        time_value = time_row.iloc[col_idx + t]
-                        if pd.notna(time_value):
-                            try:
-                                time_value = pd.to_datetime(time_value).time()
-                                times.append(time_value)
-                            except:
-                                continue
+                # Cada 4 columnas representa un día completo
+                if (col - 1) % 4 == 0 or col == len(df.columns) - 1:
+                    if current_times:
+                        record = {
+                            'employee_name': current_employee,
+                            'date': df.columns[col - len(current_times)].strftime('%Y-%m-%d') if isinstance(df.columns[col - len(current_times)], datetime) else None,
+                            'records': current_times,
+                            'first_record': current_times[0],
+                            'last_record': current_times[-1],
+                            'record_count': len(current_times)
+                        }
 
-                if times:  # Solo procesar si hay registros
-                    record = {
-                        'employee_name': str(employee_name),  # Asegurar que sea string
-                        'date': day_date.strftime('%Y-%m-%d') if isinstance(day_date, datetime) else None,
-                        'first_record': times[0],
-                        'last_record': times[-1],
-                        'record_count': len(times)
-                    }
+                        # Verificar si no fichó ingreso
+                        record['missing_entry'] = (
+                            record['first_record'] >= self.NOON_TIME or
+                            record['first_record'] >= self.LATE_EVENING
+                        )
 
-                    # Verificar si no fichó ingreso
-                    record['missing_entry'] = (
-                        record['first_record'] >= self.NOON_TIME or
-                        record['first_record'] >= self.LATE_EVENING
-                    )
+                        # Verificar si no fichó egreso
+                        record['missing_exit'] = (
+                            record['last_record'] <= self.NOON_TIME and 
+                            record['record_count'] < 3
+                        )
 
-                    # Verificar si no fichó egreso
-                    record['missing_exit'] = (
-                        record['last_record'] <= self.NOON_TIME and 
-                        record['record_count'] < 3
-                    )
+                        # Verificar si no fichó almuerzo
+                        record['missing_lunch'] = record['record_count'] <= 2
 
-                    # Verificar si no fichó almuerzo
-                    record['missing_lunch'] = record['record_count'] <= 2
+                        # Verificar si salió antes
+                        record['early_departure'] = (
+                            record['last_record'] < self.WORK_END_TIME and
+                            not record['missing_exit']
+                        )
 
-                    # Verificar si salió antes
-                    record['early_departure'] = (
-                        record['last_record'] < self.WORK_END_TIME and
-                        not record['missing_exit']
-                    )
+                        all_records.append(record)
+                        current_times = []
 
-                    all_records.append(record)
-
-        # Crear DataFrame y verificar columnas
+        # Crear DataFrame con los registros procesados
         result_df = pd.DataFrame(all_records)
         print(f"Created DataFrame with columns: {result_df.columns.tolist()}")
         print(f"Total records processed: {len(result_df)}")
@@ -202,7 +198,8 @@ class ExcelProcessor:
         logs = self.process_logs()
 
         print(f"Looking for employee: {employee_name}")
-        print(f"Available employees in logs: {logs['employee_name'].unique()}")
+        if len(logs) > 0:
+            print(f"Available employees in logs: {logs['employee_name'].unique()}")
 
         employee_summary = summary[summary['employee_name'] == employee_name].iloc[0]
         employee_logs = logs[logs['employee_name'] == employee_name]

@@ -4,7 +4,6 @@ from difflib import get_close_matches
 from datetime import datetime, timedelta
 
 class ExcelProcessor:
-
     def __init__(self, file):
         self.excel_file = pd.ExcelFile(file)
         self.validate_sheets()
@@ -19,93 +18,31 @@ class ExcelProcessor:
             raise ValueError(
                 f"Missing required sheets: {', '.join(missing_sheets)}")
 
-    def _clean_column_name(self, col_name):
-        """Clean column names by removing special characters and normalizing spaces"""
-        if isinstance(col_name, tuple):
-            # Join multi-level column names and clean
-            col_name = '_'.join(str(level).strip() for level in col_name if pd.notna(level))
-        return (str(col_name)
-                .strip()
-                .replace('\n', '_')
-                .replace(':', '')
-                .replace('.', '_')
-                .replace(' ', '_')
-                .replace('(', '')
-                .replace(')', '')
-                .replace('/', '_')
-                .lower())
-
-    def _normalize_columns(self, df):
-        """Normalize column names handling multi-level headers"""
-        if isinstance(df.columns, pd.MultiIndex):
-            # Create a dictionary to map original column names to cleaned ones
-            column_mapping = {}
-            for col in df.columns:
-                cleaned_name = self._clean_column_name(col)
-                column_mapping[col] = cleaned_name
-
-            # Rename columns using the mapping
-            df.columns = [column_mapping[col] for col in df.columns]
-        else:
-            df.columns = [self._clean_column_name(col) for col in df.columns]
-
-        return df
-
-    def _find_column_match(self, expected_name, available_columns):
-        """Find the closest matching column name"""
-        matches = get_close_matches(expected_name,
-                                    available_columns,
-                                    n=1,
-                                    cutoff=0.6)
-        return matches[0] if matches else None
-
-    def _validate_columns(self, df, required_columns, sheet_name):
-        """Validate that all required columns are present in the DataFrame"""
-        missing_columns = []
-        column_mapping = {}
-
-        for col in required_columns:
-            if col not in df.columns:
-                match = self._find_column_match(col, df.columns)
-                if match:
-                    column_mapping[match] = col
-                else:
-                    missing_columns.append(col)
-
-        if missing_columns:
-            print(f"Available columns in {sheet_name}:", df.columns.tolist())
-            raise ValueError(
-                f"Missing required columns in {sheet_name}: {', '.join(missing_columns)}"
-            )
-
-        if column_mapping:
-            df = df.rename(columns=column_mapping)
-
-        return df
-
     def process_attendance_summary(self):
         print("Reading Summary sheet...")
+        # Leer el archivo Excel con encabezados en las filas 3 y 4
         df = pd.read_excel(self.excel_file, sheet_name="Summary", header=[2, 3])
 
-        # Mapear directamente las columnas del Excel
-        column_mapping = {
-            ('No.', 'Unnamed: 0_level_1'): 'employee_id',
-            ('Name', 'Unnamed: 1_level_1'): 'employee_name',
-            ('Department', 'Unnamed: 2_level_1'): 'department',
-            ('Work Hrs.', 'Required'): 'required_hours',
-            ('Work Hrs.', 'Actual'): 'actual_hours',
-            ('Late', 'Times'): 'late_count',
-            ('Late', ' Min.'): 'late_minutes',
-            ('Early Leave', 'Times'): 'early_departure_count',
-            ('Early Leave', ' Min.'): 'early_departure_minutes',
-            ('Overtime', 'Regular'): 'overtime_regular',
-            ('Overtime', 'Special'): 'overtime_special',
-            ('Attend (Required/Actual)', 'Unnamed: 11_level_1'): 'attendance_ratio',
-            ('Absence', 'Unnamed: 13_level_1'): 'absences'
-        }
+        print("Original columns:", df.columns.tolist())
 
-        # Renombrar columnas
-        df = df.rename(columns=column_mapping)
+        # Mapear las columnas correctamente según el formato del archivo
+        df.columns = [
+            'employee_id' if 'No.' in str(col) else
+            'employee_name' if 'Name' in str(col) else
+            'department' if 'Department' in str(col) else
+            'required_hours' if ('Work Hrs.' in str(col) and 'Required' in str(col)) else
+            'actual_hours' if ('Work Hrs.' in str(col) and 'Actual' in str(col)) else
+            'late_count' if ('Late' in str(col) and 'Times' in str(col)) else
+            'late_minutes' if ('Late' in str(col) and 'Min.' in str(col)) else
+            'early_departure_count' if ('Early Leave' in str(col) and 'Times' in str(col)) else
+            'early_departure_minutes' if ('Early Leave' in str(col) and 'Min.' in str(col)) else
+            'overtime_regular' if ('Overtime' in str(col) and 'Regular' in str(col)) else
+            'overtime_special' if ('Overtime' in str(col) and 'Special' in str(col)) else
+            'attendance_ratio' if 'Attend' in str(col) else
+            'absences' if 'Absence' in str(col) else
+            col
+            for col in df.columns
+        ]
 
         # Convertir columnas numéricas
         numeric_columns = [
@@ -118,52 +55,26 @@ class ExcelProcessor:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
-        return df
-
-    def process_shift_table(self):
-        print("Reading Shifts sheet...")
-        df = pd.read_excel(self.excel_file, sheet_name="Shifts",
-                           header=[2, 3])  # Leer desde fila 3 y 4
-        print("Original columns:", df.columns.tolist())
-
-        df = self._normalize_columns(df)
-        print("Normalized columns:", df.columns.tolist())
-
-        # Mapeo de nombres correctos
-        column_mapping = {
-            'no_unnamed_0_level_1': 'employee_id',
-            'name_unnamed_1_level_1': 'employee_name',
-            'department_unnamed_2_level_1': 'department'
-        }
-
-        df = df.rename(columns=column_mapping)
-
-        required_columns = ['employee_id', 'employee_name', 'department']
-        df = self._validate_columns(df, required_columns, "Shifts")
-
-        # Renombrar las columnas de los días
-        for i in range(3, len(df.columns)):
-            df = df.rename(columns={df.columns[i]: f'Day_{i-2}'})
-
+        print("Processed columns:", df.columns.tolist())
         return df
 
     def process_exceptional_records(self):
         """Procesa los registros excepcionales para calcular pausas de almuerzo prolongadas"""
         df = pd.read_excel(self.excel_file, sheet_name="Exceptional", header=[2, 3])
 
-        # Mapear las columnas del Excel
-        column_mapping = {
-            ('No.', 'Unnamed: 0_level_1'): 'employee_id',
-            ('Name', 'Unnamed: 1_level_1'): 'employee_name',
-            ('Department', 'Unnamed: 2_level_1'): 'department',
-            ('Date', 'Unnamed: 3_level_1'): 'date',
-            ('AM', 'In'): 'am_in',
-            ('AM', 'Out'): 'am_out',
-            ('PM', 'In'): 'pm_in',
-            ('PM', 'Out'): 'pm_out'
-        }
-
-        df = df.rename(columns=column_mapping)
+        # Mapear las columnas
+        df.columns = [
+            'employee_id' if 'No.' in str(col) else
+            'employee_name' if 'Name' in str(col) else
+            'department' if 'Department' in str(col) else
+            'date' if 'Date' in str(col) else
+            'am_in' if ('AM' in str(col) and 'In' in str(col)) else
+            'am_out' if ('AM' in str(col) and 'Out' in str(col)) else
+            'pm_in' if ('PM' in str(col) and 'In' in str(col)) else
+            'pm_out' if ('PM' in str(col) and 'Out' in str(col)) else
+            col
+            for col in df.columns
+        ]
 
         # Convertir columnas de tiempo a datetime
         time_columns = ['am_in', 'am_out', 'pm_in', 'pm_out']
@@ -179,7 +90,6 @@ class ExcelProcessor:
         for idx, row in df.iterrows():
             if pd.notna(row['am_out']) and pd.notna(row['pm_in']):
                 am_out_time = row['am_out'].time()
-                pm_in_time = row['pm_in'].time()
 
                 # Verificar si la salida está entre 12:00 y 16:00
                 if (datetime.strptime('12:00', '%H:%M').time() <= am_out_time <=
@@ -193,7 +103,6 @@ class ExcelProcessor:
                         df.at[idx, 'lunch_minutes_exceeded'] = lunch_duration - 20
 
         return df
-
 
     def get_employee_stats(self, employee_name):
         """Obtiene estadísticas completas para un empleado"""

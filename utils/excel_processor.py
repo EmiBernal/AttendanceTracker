@@ -69,8 +69,54 @@ class ExcelProcessor:
 
             df['attendance_ratio'] = df['attendance_ratio'].apply(parse_attendance)
 
-        print("Processed columns:", df.columns.tolist())
         return df
+
+    def process_logs(self):
+        """Procesa la hoja de Logs para analizar registros de entrada/salida y almuerzos"""
+        df = pd.read_excel(self.excel_file, sheet_name="Logs", skiprows=4)
+
+        records = []
+        for i in range(0, len(df), 2):
+            if i + 1 >= len(df):
+                break
+
+            employee_name = df.iloc[i].iloc[1]  # Nombre está en la columna B
+            schedule_row = df.iloc[i + 1]
+
+            # Procesar cada conjunto de 4 columnas (entrada, salida, entrada, salida)
+            for j in range(2, len(schedule_row), 4):
+                try:
+                    record = {
+                        'employee_name': employee_name,
+                        'date': df.columns[j].strftime('%Y-%m-%d') if isinstance(df.columns[j], datetime) else None,
+                        'initial_entry': pd.to_datetime(schedule_row.iloc[j], errors='coerce'),
+                        'midday_exit': pd.to_datetime(schedule_row.iloc[j + 1], errors='coerce') if j + 1 < len(schedule_row) else None,
+                        'midday_entry': pd.to_datetime(schedule_row.iloc[j + 2], errors='coerce') if j + 2 < len(schedule_row) else None,
+                        'final_exit': pd.to_datetime(schedule_row.iloc[j + 3], errors='coerce') if j + 3 < len(schedule_row) else None
+                    }
+
+                    # Verificar registros faltantes
+                    record['missing_entry'] = pd.isna(record['initial_entry'])
+                    record['missing_exit'] = pd.isna(record['final_exit'])
+                    record['missing_lunch'] = pd.isna(record['midday_exit']) or pd.isna(record['midday_entry'])
+
+                    # Calcular duración del almuerzo
+                    if pd.notna(record['midday_exit']) and pd.notna(record['midday_entry']):
+                        lunch_duration = (record['midday_entry'] - record['midday_exit']).total_seconds() / 60
+                        record['lunch_duration'] = lunch_duration
+                        record['extended_lunch'] = lunch_duration > self.LUNCH_DURATION_LIMIT
+                        record['lunch_minutes_exceeded'] = max(0, lunch_duration - self.LUNCH_DURATION_LIMIT)
+                    else:
+                        record['lunch_duration'] = None
+                        record['extended_lunch'] = False
+                        record['lunch_minutes_exceeded'] = 0
+
+                    records.append(record)
+                except Exception as e:
+                    print(f"Error processing record for {employee_name}: {str(e)}")
+                    continue
+
+        return pd.DataFrame(records)
 
     def process_exceptional_records(self):
         """Procesa los registros excepcionales para calcular pausas de almuerzo prolongadas"""
@@ -126,10 +172,17 @@ class ExcelProcessor:
     def get_employee_stats(self, employee_name):
         """Obtiene estadísticas completas para un empleado"""
         summary = self.process_attendance_summary()
-        exceptional = self.process_exceptional_records()
+        logs = self.process_logs()
 
         employee_summary = summary[summary['employee_name'] == employee_name].iloc[0]
-        employee_exceptional = exceptional[exceptional['employee_name'] == employee_name]
+        employee_logs = logs[logs['employee_name'] == employee_name]
+
+        # Calcular estadísticas de registros faltantes y almuerzos
+        missing_entry_days = len(employee_logs[employee_logs['missing_entry']])
+        missing_exit_days = len(employee_logs[employee_logs['missing_exit']])
+        missing_lunch_days = len(employee_logs[employee_logs['missing_lunch']])
+        extended_lunch_days = len(employee_logs[employee_logs['extended_lunch']])
+        total_lunch_minutes_exceeded = employee_logs['lunch_minutes_exceeded'].sum()
 
         stats = {
             'name': employee_name,
@@ -141,8 +194,11 @@ class ExcelProcessor:
             'early_departures': int(employee_summary['early_departure_count']),
             'early_minutes': float(employee_summary['early_departure_minutes']),
             'absences': int(employee_summary['absences']),
-            'extended_lunch_days': len(employee_exceptional[employee_exceptional['extended_lunch']]),
-            'total_lunch_minutes_exceeded': employee_exceptional['lunch_minutes_exceeded'].sum(),
+            'missing_entry_days': missing_entry_days,
+            'missing_exit_days': missing_exit_days,
+            'missing_lunch_days': missing_lunch_days,
+            'extended_lunch_days': extended_lunch_days,
+            'total_lunch_minutes_exceeded': total_lunch_minutes_exceeded,
             'attendance_ratio': float(employee_summary['attendance_ratio'])
         }
 

@@ -4,7 +4,7 @@ from utils.excel_processor import ExcelProcessor
 
 # Page configuration
 st.set_page_config(
-    page_title="Attendance Visualizer",
+    page_title="Visualizador de Asistencia",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -56,7 +56,7 @@ def create_employee_dashboard(processor, employee_name):
     st.markdown(f"""
         <div class="stat-group">
             <h2>{stats['name']}</h2>
-            <p style="color: #6C757D;">Department: {stats['department']}</p>
+            <p style="color: #6C757D;">Departamento: {stats['department']}</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -66,7 +66,7 @@ def create_employee_dashboard(processor, employee_name):
     with col1:
         st.markdown("""
             <div class="stat-group">
-                <h3>📊 Work Hours Overview</h3>
+                <h3>📊 Resumen de Horas</h3>
         """, unsafe_allow_html=True)
 
         hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100) if stats['required_hours'] > 0 else 0
@@ -74,7 +74,7 @@ def create_employee_dashboard(processor, employee_name):
 
         st.markdown(f"""
             <div class="stat-card">
-                <div class="metric-label">Hours Worked</div>
+                <div class="metric-label">Horas Trabajadas</div>
                 <div class="metric-value {hours_status}">
                     {stats['actual_hours']:.1f}/{stats['required_hours']:.1f}
                 </div>
@@ -86,7 +86,7 @@ def create_employee_dashboard(processor, employee_name):
     with col2:
         st.markdown("""
             <div class="stat-group">
-                <h3>📋 Attendance Summary</h3>
+                <h3>📋 Resumen de Asistencia</h3>
         """, unsafe_allow_html=True)
 
         attendance_ratio = float(stats['attendance_ratio']) * 100
@@ -94,7 +94,7 @@ def create_employee_dashboard(processor, employee_name):
 
         st.markdown(f"""
             <div class="stat-card">
-                <div class="metric-label">Attendance Rate</div>
+                <div class="metric-label">Tasa de Asistencia</div>
                 <div class="metric-value {attendance_status}">{attendance_ratio:.1f}%</div>
             </div>
         """, unsafe_allow_html=True)
@@ -103,7 +103,7 @@ def create_employee_dashboard(processor, employee_name):
     # Detailed Statistics
     st.markdown("""
         <div class="stat-group">
-            <h3>📈 Detailed Statistics</h3>
+            <h3>📈 Estadísticas Detalladas</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
     """, unsafe_allow_html=True)
 
@@ -113,10 +113,13 @@ def create_employee_dashboard(processor, employee_name):
 
     # List of metrics to display
     metrics = [
-        ('Late Days', stats['late_days'], f"{stats['late_minutes']:.0f} minutes total"),
-        ('Early Departures', stats['early_departures'], f"{stats['early_minutes']:.0f} minutes total"),
-        ('Extended Lunch Breaks', stats['extended_lunch_days'], f"{stats['total_lunch_minutes_exceeded']:.0f} minutes total"),
-        ('Absences', stats['absences'], "Total days")
+        ('Días con Llegada Tarde', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total"),
+        ('Días con Salida Anticipada', stats['early_departures'], f"{stats['early_minutes']:.0f} minutos en total"),
+        ('Días con Almuerzo Extendido', stats['extended_lunch_days'], f"{stats['total_lunch_minutes_exceeded']:.0f} minutos excedidos"),
+        ('Días sin Registro de Entrada', stats['missing_entry_days'], "Entradas no registradas"),
+        ('Días sin Registro de Salida', stats['missing_exit_days'], "Salidas no registradas"),
+        ('Días sin Registro de Almuerzo', stats['missing_lunch_days'], "Almuerzos no registrados"),
+        ('Inasistencias', stats['absences'], "Días totales")
     ]
 
     for label, value, subtitle in metrics:
@@ -132,15 +135,15 @@ def create_employee_dashboard(processor, employee_name):
     st.markdown("</div></div>", unsafe_allow_html=True)
 
 def main():
-    st.title("📊 Interactive Attendance Visualizer")
+    st.title("📊 Visualizador de Asistencia")
 
     # File uploader in sidebar
     with st.sidebar:
-        st.subheader("📂 Data Source")
+        st.subheader("📂 Fuente de Datos")
         uploaded_file = st.file_uploader(
-            "Upload Excel File",
+            "Sube el archivo Excel",
             type=['xlsx', 'xls'],
-            help="Upload the attendance Excel file with required sheets"
+            help="Sube el archivo Excel de asistencia con las hojas necesarias"
         )
 
     if uploaded_file:
@@ -150,18 +153,18 @@ def main():
 
             # Employee selector in sidebar
             with st.sidebar:
-                st.subheader("👤 Employee Selection")
+                st.subheader("👤 Selección de Empleado")
                 selected_employee = st.selectbox(
-                    "Select an employee to view their attendance details",
+                    "Selecciona un empleado para ver sus detalles",
                     attendance_summary['employee_name'].unique(),
-                    format_func=lambda x: x  # Display full name
+                    format_func=lambda x: x  # Mostrar el nombre completo
                 )
 
             # Create dashboard for selected employee
             create_employee_dashboard(processor, selected_employee)
 
         except Exception as e:
-            st.error(f"Error processing file: {str(e)}")
+            st.error(f"Error procesando el archivo: {str(e)}")
             st.exception(e)
 
 if __name__ == "__main__":

@@ -9,8 +9,8 @@ class ExcelProcessor:
         self.WORK_START_TIME = datetime.strptime('7:50', '%H:%M').time()
         self.WORK_END_TIME = datetime.strptime('17:10', '%H:%M').time()
         self.LUNCH_START_TIME = datetime.strptime('12:00', '%H:%M').time()
-        self.LUNCH_END_TIME = datetime.strptime('13:00', '%H:%M').time()
-        self.LUNCH_DURATION_LIMIT = 60  # minutos
+        self.LUNCH_END_TIME = datetime.strptime('16:00', '%H:%M').time()
+        self.LUNCH_DURATION_LIMIT = 20  # minutos
         self.LATE_EVENING = datetime.strptime('17:00', '%H:%M').time()
 
     def validate_sheets(self):
@@ -53,13 +53,9 @@ class ExcelProcessor:
         df = df.rename(columns=rename_dict)
 
         # Convertir columnas numéricas
-        numeric_columns = [
-            'required_hours', 'actual_hours', 'late_minutes',
-            'early_departure_minutes', 'overtime_regular', 'overtime_special',
-            'late_count', 'early_departure_count', 'absences'
-        ]
-
-        for col in numeric_columns:
+        for col in ['required_hours', 'actual_hours', 'late_minutes', 
+                   'early_departure_minutes', 'overtime_regular', 'overtime_special',
+                   'late_count', 'early_departure_count', 'absences']:
             if col in df.columns:
                 print(f"Converting column: {col}")
                 try:
@@ -105,53 +101,60 @@ class ExcelProcessor:
             for day_start in range(2, len(df.columns), 4):
                 try:
                     # Recopilar los registros del día
-                    day_times = []
+                    times = []
                     for j in range(4):  # 4 registros por día
                         if day_start + j < len(time_row):
                             time_str = str(time_row.iloc[day_start + j]).strip()
                             if pd.notna(time_str) and time_str != 'nan':
                                 try:
                                     time_obj = datetime.strptime(time_str, '%H:%M').time()
-                                    day_times.append(time_obj)
+                                    times.append(time_obj)
                                 except ValueError as e:
                                     print(f"Error parsing time {time_str}: {e}")
                                     continue
 
-                    if day_times:  # Solo procesar si hay registros
-                        # Calcular duración del almuerzo si hay registros suficientes
-                        lunch_minutes = 0
+                    if times:
+                        # Calcular tiempo de almuerzo y verificar si es extendido
                         extended_lunch = False
-                        if len(day_times) >= 3:
-                            lunch_start = day_times[1]  # Segunda marca (salida almuerzo)
-                            lunch_end = day_times[2]    # Tercera marca (regreso almuerzo)
+                        lunch_duration = 0
 
-                            # Convertir a minutos para calcular la duración
-                            lunch_minutes = (lunch_end.hour * 60 + lunch_end.minute) - (lunch_start.hour * 60 + lunch_start.minute)
-                            extended_lunch = lunch_minutes > self.LUNCH_DURATION_LIMIT
+                        if len(times) >= 3:
+                            lunch_out = times[1]  # Segunda marca (salida almuerzo)
+                            lunch_in = times[2]   # Tercera marca (regreso almuerzo)
+
+                            # Verificar si la salida está en el rango de almuerzo (12:00-16:00)
+                            if (lunch_out >= self.LUNCH_START_TIME and 
+                                lunch_out <= self.LUNCH_END_TIME):
+                                # Calcular duración del almuerzo en minutos
+                                lunch_duration = (
+                                    lunch_in.hour * 60 + lunch_in.minute
+                                ) - (
+                                    lunch_out.hour * 60 + lunch_out.minute
+                                )
+                                extended_lunch = lunch_duration > self.LUNCH_DURATION_LIMIT
 
                         record = {
                             'employee_name': employee_name,
                             'date': df.columns[day_start],
-                            'first_record': day_times[0],
-                            'last_record': day_times[-1],
-                            'record_count': len(day_times),
+                            'first_record': times[0],
+                            'last_record': times[-1],
+                            'record_count': len(times),
                             'missing_entry': (
-                                day_times[0] >= self.LUNCH_START_TIME or
-                                day_times[0] >= self.LATE_EVENING
+                                times[0] >= self.LUNCH_START_TIME or
+                                times[0] >= self.LATE_EVENING
                             ),
                             'missing_exit': (
-                                day_times[-1] <= self.LUNCH_END_TIME and 
-                                len(day_times) < 3
+                                times[-1] <= self.LUNCH_END_TIME and 
+                                len(times) < 3
                             ),
-                            'missing_lunch': len(day_times) <= 2,
+                            'missing_lunch': len(times) <= 2,
                             'early_departure': (
-                                day_times[-1] < self.WORK_END_TIME and
-                                not (day_times[-1] <= self.LUNCH_END_TIME and len(day_times) < 3)
+                                times[-1] < self.WORK_END_TIME and
+                                not (times[-1] <= self.LUNCH_END_TIME and len(times) < 3)
                             ),
                             'extended_lunch': extended_lunch,
-                            'lunch_minutes': lunch_minutes
+                            'lunch_duration': lunch_duration
                         }
-
                         records.append(record)
 
                 except Exception as e:
@@ -159,16 +162,16 @@ class ExcelProcessor:
                     continue
 
         # Crear DataFrame con los registros
-        result_df = pd.DataFrame(records)
-
-        if len(result_df) == 0:
+        if not records:
             print("No records processed!")
             return pd.DataFrame(columns=[
                 'employee_name', 'date', 'first_record', 'last_record',
                 'record_count', 'missing_entry', 'missing_exit',
-                'missing_lunch', 'early_departure', 'extended_lunch', 'lunch_minutes'
+                'missing_lunch', 'early_departure', 'extended_lunch',
+                'lunch_duration'
             ])
 
+        result_df = pd.DataFrame(records)
         print(f"Created DataFrame with {len(result_df)} records")
         print(f"DataFrame columns: {result_df.columns.tolist()}")
         return result_df
@@ -192,7 +195,7 @@ class ExcelProcessor:
 
         # Calcular estadísticas
         extended_lunch_logs = employee_logs[employee_logs['extended_lunch']]
-        total_lunch_minutes = extended_lunch_logs['lunch_minutes'].sum()
+        total_lunch_minutes = extended_lunch_logs['lunch_duration'].sum()
 
         stats = {
             'name': employee_name,
@@ -252,7 +255,7 @@ class ExcelProcessor:
                 if entry_time > self.WORK_START_TIME:
                     df.at[idx, 'is_late'] = True
                     df.at[idx, 'late_minutes'] = (entry_time.hour * 60 + entry_time.minute) - \
-                                               (self.WORK_START_TIME.hour * 60 + self.WORK_START_TIME.minute)
+                                                  (self.WORK_START_TIME.hour * 60 + self.WORK_START_TIME.minute)
 
             # Verificar almuerzos extendidos
             if pd.notna(row['am_out']) and pd.notna(row['pm_in']):

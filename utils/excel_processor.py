@@ -7,6 +7,8 @@ class ExcelProcessor:
     def __init__(self, file):
         self.excel_file = pd.ExcelFile(file)
         self.validate_sheets()
+        self.WORK_START_TIME = datetime.strptime('7:50', '%H:%M').time()
+        self.LUNCH_DURATION_LIMIT = 20  # minutos
 
     def validate_sheets(self):
         required_sheets = ["Summary", "Shifts", "Logs", "Exceptional"]
@@ -20,7 +22,6 @@ class ExcelProcessor:
 
     def process_attendance_summary(self):
         print("Reading Summary sheet...")
-        # Leer el archivo Excel con encabezados en las filas 3 y 4
         df = pd.read_excel(self.excel_file, sheet_name="Summary", header=[2, 3])
 
         print("Original columns:", df.columns.tolist())
@@ -55,6 +56,19 @@ class ExcelProcessor:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
+        # Procesar el ratio de asistencia (formato "23/12")
+        if 'attendance_ratio' in df.columns:
+            def parse_attendance(value):
+                try:
+                    if isinstance(value, str) and '/' in value:
+                        actual, required = map(float, value.split('/'))
+                        return actual / required if required != 0 else 0
+                    return 0
+                except:
+                    return 0
+
+            df['attendance_ratio'] = df['attendance_ratio'].apply(parse_attendance)
+
         print("Processed columns:", df.columns.tolist())
         return df
 
@@ -82,25 +96,30 @@ class ExcelProcessor:
             if col in df.columns:
                 df[col] = pd.to_datetime(df[col], format='%H:%M:%S', errors='coerce')
 
-        # Calcular pausas de almuerzo prolongadas
+        # Calcular llegadas tarde y pausas de almuerzo prolongadas
+        df['is_late'] = False
+        df['late_minutes'] = 0
         df['lunch_duration'] = None
         df['extended_lunch'] = False
         df['lunch_minutes_exceeded'] = 0
 
         for idx, row in df.iterrows():
+            # Verificar llegadas tarde
+            if pd.notna(row['am_in']):
+                entry_time = row['am_in'].time()
+                if entry_time > self.WORK_START_TIME:
+                    df.at[idx, 'is_late'] = True
+                    df.at[idx, 'late_minutes'] = (entry_time.hour * 60 + entry_time.minute) - \
+                                               (self.WORK_START_TIME.hour * 60 + self.WORK_START_TIME.minute)
+
+            # Verificar almuerzos extendidos
             if pd.notna(row['am_out']) and pd.notna(row['pm_in']):
-                am_out_time = row['am_out'].time()
+                lunch_duration = (row['pm_in'] - row['am_out']).total_seconds() / 60
+                df.at[idx, 'lunch_duration'] = lunch_duration
 
-                # Verificar si la salida está entre 12:00 y 16:00
-                if (datetime.strptime('12:00', '%H:%M').time() <= am_out_time <=
-                    datetime.strptime('16:00', '%H:%M').time()):
-
-                    lunch_duration = (row['pm_in'] - row['am_out']).total_seconds() / 60
-                    df.at[idx, 'lunch_duration'] = lunch_duration
-
-                    if lunch_duration > 20:
-                        df.at[idx, 'extended_lunch'] = True
-                        df.at[idx, 'lunch_minutes_exceeded'] = lunch_duration - 20
+                if lunch_duration > self.LUNCH_DURATION_LIMIT:
+                    df.at[idx, 'extended_lunch'] = True
+                    df.at[idx, 'lunch_minutes_exceeded'] = lunch_duration - self.LUNCH_DURATION_LIMIT
 
         return df
 
@@ -124,7 +143,7 @@ class ExcelProcessor:
             'absences': int(employee_summary['absences']),
             'extended_lunch_days': len(employee_exceptional[employee_exceptional['extended_lunch']]),
             'total_lunch_minutes_exceeded': employee_exceptional['lunch_minutes_exceeded'].sum(),
-            'attendance_ratio': float(employee_summary['attendance_ratio']) if pd.notna(employee_summary['attendance_ratio']) else 0
+            'attendance_ratio': float(employee_summary['attendance_ratio'])
         }
 
         return stats

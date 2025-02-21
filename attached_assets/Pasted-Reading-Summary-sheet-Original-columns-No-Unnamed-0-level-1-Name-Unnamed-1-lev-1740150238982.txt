@@ -1,0 +1,186 @@
+Reading Summary sheet...
+Original columns: [('No.', 'Unnamed: 0_level_1'), ('Name', 'Unnamed: 1_level_1'), ('Department', 'Unnamed: 2_level_1'), ('Work Hrs.', 'Required'), ('Work Hrs.', 'Actual'), ('Late', 'Times'), ('Late', ' Min.'), ('Early Leave', 'Times'), ('Early Leave', ' Min.'), ('Overtime', 'Regular'), ('Overtime', 'Special'), ('Attend (Required/Actual)', 'Unnamed: 11_level_1'), ('Business Trip', 'Unnamed: 12_level_1'), ('Absence', 'Unnamed: 13_level_1'), ('On Leave', 'Unnamed: 14_level_1'), ('Bonus', 'Note'), ('Bonus', 'OT'), ('Bonus', 'All owance'), ('Deduction', 'Late Early Leave'), ('Deduction', 'On Leave'), ('Deduction', 'Other\\nDeduction'), ('Actual Pay', 'Unnamed: 21_level_1'), ('Remark', 'Unnamed: 22_level_1')]
+Normalized columns: ['No._Unnamed: 0_level_1', 'Name_Unnamed: 1_level_1', 'Department_Unnamed: 2_level_1', 'Work Hrs._Required', 'Work Hrs._Actual', 'Late_Times', 'Late_ Min.', 'Early Leave_Times', 'Early Leave_ Min.', 'Overtime_Regular', 'Overtime_Special', 'Attend (Required/Actual)_Unnamed: 11_level_1', 'Business Trip_Unnamed: 12_level_1', 'Absence_Unnamed: 13_level_1', 'On Leave_Unnamed: 14_level_1', 'Bonus_Note', 'Bonus_OT', 'Bonus_All owance', 'Deduction_Late Early Leave', 'Deduction_On Leave', 'Deduction_Other\\nDeduction', 'Actual Pay_Unnamed: 21_level_1', 'Remark_Unnamed: 22_level_1']
+Converting column: required_hours
+Converting column: actual_hours
+Converting column: late_minutes
+Converting column: early_departure_minutes
+Converting column: overtime_regular
+Converting column: overtime_special
+Converting column: late_count
+Converting column: early_departure_count
+Converting column: absences
+Reading Summary sheet...
+Original columns: [('No.', 'Unnamed: 0_level_1'), ('Name', 'Unnamed: 1_level_1'), ('Department', 'Unnamed: 2_level_1'), ('Work Hrs.', 'Required'), ('Work Hrs.', 'Actual'), ('Late', 'Times'), ('Late', ' Min.'), ('Early Leave', 'Times'), ('Early Leave', ' Min.'), ('Overtime', 'Regular'), ('Overtime', 'Special'), ('Attend (Required/Actual)', 'Unnamed: 11_level_1'), ('Business Trip', 'Unnamed: 12_level_1'), ('Absence', 'Unnamed: 13_level_1'), ('On Leave', 'Unnamed: 14_level_1'), ('Bonus', 'Note'), ('Bonus', 'OT'), ('Bonus', 'All owance'), ('Deduction', 'Late Early Leave'), ('Deduction', 'On Leave'), ('Deduction', 'Other\\nDeduction'), ('Actual Pay', 'Unnamed: 21_level_1'), ('Remark', 'Unnamed: 22_level_1')]
+Normalized columns: ['No._Unnamed: 0_level_1', 'Name_Unnamed: 1_level_1', 'Department_Unnamed: 2_level_1', 'Work Hrs._Required', 'Work Hrs._Actual', 'Late_Times', 'Late_ Min.', 'Early Leave_Times', 'Early Leave_ Min.', 'Overtime_Regular', 'Overtime_Special', 'Attend (Required/Actual)_Unnamed: 11_level_1', 'Business Trip_Unnamed: 12_level_1', 'Absence_Unnamed: 13_level_1', 'On Leave_Unnamed: 14_level_1', 'Bonus_Note', 'Bonus_OT', 'Bonus_All owance', 'Deduction_Late Early Leave', 'Deduction_On Leave', 'Deduction_Other\\nDeduction', 'Actual Pay_Unnamed: 21_level_1', 'Remark_Unnamed: 22_level_1']
+Converting column: required_hours
+Converting column: actual_hours
+Converting column: late_minutes
+Converting column: early_departure_minutes
+Converting column: overtime_regular
+Converting column: overtime_special
+Converting column: late_count
+Converting column: early_departure_count
+Converting column: absences
+Processing Logs sheet...
+Processing employee: 07:48
+17:11
+Processing employee: 07:49
+Processing employee: 07:56
+17:11
+Processing employee: 07:48
+17:11
+Processing employee: 07:50
+17:11
+Processing employee: 07:48
+13:01
+Processing employee: 07:49
+17:10
+Processing employee: 07:49
+17:11
+Processing employee: 07:48
+17:11
+Processing employee: 08:52
+13:44
+Processing employee: 07:49
+17:10
+Processing employee: 07:50
+17:10
+Processing employee: 07:48
+17:10
+Processing employee: 07:49
+17:10
+Processing employee: 07:51
+17:10
+Processing employee: 07:48
+17:11
+Processing employee: 07:50
+12:04
+Processing employee: 07:49
+17:10
+Created DataFrame with columns: []
+Total records processed: 0
+Reading Summary sheet...
+Original columns: [('No.', 'Unnamed: 0_level_1'), ('Name', 'Unnamed: 1_level_1'), ('Department', 'Unnamed: 2_level_1'), ('Work Hrs.', 'Required'), ('Work Hrs.', 'Actual'), ('Late', 'Times'), ('Late', ' Min.'), ('Early Leave', 'Times'), ('Early Leave', ' Min.'), ('Overtime', 'Regular'), ('Overtime', 'Special'), ('Attend (Required/Actual)', 'Unnamed: 11_level_1'), ('Business Trip', 'Unnamed: 12_level_1'), ('Absence', 'Unnamed: 13_level_1'), ('On Leave', 'Unnamed: 14_level_1'), ('Bonus', 'Note'), ('Bonus', 'OT'), ('Bonus', 'All owance'), ('Deduction', 'Late Early Leave'), ('Deduction', 'On Leave'), ('Deduction', 'Other\\nDeduction'), ('Actual Pay', 'Unnamed: 21_level_1'), ('Remark', 'Unnamed: 22_level_1')]
+Normalized columns: ['No._Unnamed: 0_level_1', 'Name_Unnamed: 1_level_1', 'Department_Unnamed: 2_level_1', 'Work Hrs._Required', 'Work Hrs._Actual', 'Late_Times', 'Late_ Min.', 'Early Leave_Times', 'Early Leave_ Min.', 'Overtime_Regular', 'Overtime_Special', 'Attend (Required/Actual)_Unnamed: 11_level_1', 'Business Trip_Unnamed: 12_level_1', 'Absence_Unnamed: 13_level_1', 'On Leave_Unnamed: 14_level_1', 'Bonus_Note', 'Bonus_OT', 'Bonus_All owance', 'Deduction_Late Early Leave', 'Deduction_On Leave', 'Deduction_Other\\nDeduction', 'Actual Pay_Unnamed: 21_level_1', 'Remark_Unnamed: 22_level_1']
+Converting column: required_hours
+Converting column: actual_hours
+Converting column: late_minutes
+Converting column: early_departure_minutes
+Converting column: overtime_regular
+Converting column: overtime_special
+Converting column: late_count
+Converting column: early_departure_count
+Converting column: absences
+Reading Summary sheet...
+Original columns: [('No.', 'Unnamed: 0_level_1'), ('Name', 'Unnamed: 1_level_1'), ('Department', 'Unnamed: 2_level_1'), ('Work Hrs.', 'Required'), ('Work Hrs.', 'Actual'), ('Late', 'Times'), ('Late', ' Min.'), ('Early Leave', 'Times'), ('Early Leave', ' Min.'), ('Overtime', 'Regular'), ('Overtime', 'Special'), ('Attend (Required/Actual)', 'Unnamed: 11_level_1'), ('Business Trip', 'Unnamed: 12_level_1'), ('Absence', 'Unnamed: 13_level_1'), ('On Leave', 'Unnamed: 14_level_1'), ('Bonus', 'Note'), ('Bonus', 'OT'), ('Bonus', 'All owance'), ('Deduction', 'Late Early Leave'), ('Deduction', 'On Leave'), ('Deduction', 'Other\\nDeduction'), ('Actual Pay', 'Unnamed: 21_level_1'), ('Remark', 'Unnamed: 22_level_1')]
+Normalized columns: ['No._Unnamed: 0_level_1', 'Name_Unnamed: 1_level_1', 'Department_Unnamed: 2_level_1', 'Work Hrs._Required', 'Work Hrs._Actual', 'Late_Times', 'Late_ Min.', 'Early Leave_Times', 'Early Leave_ Min.', 'Overtime_Regular', 'Overtime_Special', 'Attend (Required/Actual)_Unnamed: 11_level_1', 'Business Trip_Unnamed: 12_level_1', 'Absence_Unnamed: 13_level_1', 'On Leave_Unnamed: 14_level_1', 'Bonus_Note', 'Bonus_OT', 'Bonus_All owance', 'Deduction_Late Early Leave', 'Deduction_On Leave', 'Deduction_Other\\nDeduction', 'Actual Pay_Unnamed: 21_level_1', 'Remark_Unnamed: 22_level_1']
+Converting column: required_hours
+Converting column: actual_hours
+Converting column: late_minutes
+Converting column: early_departure_minutes
+Converting column: overtime_regular
+Converting column: overtime_special
+Converting column: late_count
+Converting column: early_departure_count
+Converting column: absences
+Processing Logs sheet...
+Processing employee: 07:48
+17:11
+Processing employee: 07:49
+Processing employee: 07:56
+17:11
+Processing employee: 07:48
+17:11
+Processing employee: 07:50
+17:11
+Processing employee: 07:48
+13:01
+Processing employee: 07:49
+17:10
+Processing employee: 07:49
+17:11
+Processing employee: 07:48
+17:11
+Processing employee: 08:52
+13:44
+Processing employee: 07:49
+17:10
+Processing employee: 07:50
+17:10
+Processing employee: 07:48
+17:10
+Processing employee: 07:49
+17:10
+Processing employee: 07:51
+17:10
+Processing employee: 07:48
+17:11
+Processing employee: 07:50
+12:04
+Processing employee: 07:49
+17:10
+Created DataFrame with columns: []
+Total records processed: 0
+Reading Summary sheet...
+Original columns: [('No.', 'Unnamed: 0_level_1'), ('Name', 'Unnamed: 1_level_1'), ('Department', 'Unnamed: 2_level_1'), ('Work Hrs.', 'Required'), ('Work Hrs.', 'Actual'), ('Late', 'Times'), ('Late', ' Min.'), ('Early Leave', 'Times'), ('Early Leave', ' Min.'), ('Overtime', 'Regular'), ('Overtime', 'Special'), ('Attend (Required/Actual)', 'Unnamed: 11_level_1'), ('Business Trip', 'Unnamed: 12_level_1'), ('Absence', 'Unnamed: 13_level_1'), ('On Leave', 'Unnamed: 14_level_1'), ('Bonus', 'Note'), ('Bonus', 'OT'), ('Bonus', 'All owance'), ('Deduction', 'Late Early Leave'), ('Deduction', 'On Leave'), ('Deduction', 'Other\\nDeduction'), ('Actual Pay', 'Unnamed: 21_level_1'), ('Remark', 'Unnamed: 22_level_1')]
+Normalized columns: ['No._Unnamed: 0_level_1', 'Name_Unnamed: 1_level_1', 'Department_Unnamed: 2_level_1', 'Work Hrs._Required', 'Work Hrs._Actual', 'Late_Times', 'Late_ Min.', 'Early Leave_Times', 'Early Leave_ Min.', 'Overtime_Regular', 'Overtime_Special', 'Attend (Required/Actual)_Unnamed: 11_level_1', 'Business Trip_Unnamed: 12_level_1', 'Absence_Unnamed: 13_level_1', 'On Leave_Unnamed: 14_level_1', 'Bonus_Note', 'Bonus_OT', 'Bonus_All owance', 'Deduction_Late Early Leave', 'Deduction_On Leave', 'Deduction_Other\\nDeduction', 'Actual Pay_Unnamed: 21_level_1', 'Remark_Unnamed: 22_level_1']
+Converting column: required_hours
+Converting column: actual_hours
+Converting column: late_minutes
+Converting column: early_departure_minutes
+Converting column: overtime_regular
+Converting column: overtime_special
+Converting column: late_count
+Converting column: early_departure_count
+Converting column: absences
+Reading Summary sheet...
+Original columns: [('No.', 'Unnamed: 0_level_1'), ('Name', 'Unnamed: 1_level_1'), ('Department', 'Unnamed: 2_level_1'), ('Work Hrs.', 'Required'), ('Work Hrs.', 'Actual'), ('Late', 'Times'), ('Late', ' Min.'), ('Early Leave', 'Times'), ('Early Leave', ' Min.'), ('Overtime', 'Regular'), ('Overtime', 'Special'), ('Attend (Required/Actual)', 'Unnamed: 11_level_1'), ('Business Trip', 'Unnamed: 12_level_1'), ('Absence', 'Unnamed: 13_level_1'), ('On Leave', 'Unnamed: 14_level_1'), ('Bonus', 'Note'), ('Bonus', 'OT'), ('Bonus', 'All owance'), ('Deduction', 'Late Early Leave'), ('Deduction', 'On Leave'), ('Deduction', 'Other\\nDeduction'), ('Actual Pay', 'Unnamed: 21_level_1'), ('Remark', 'Unnamed: 22_level_1')]
+Normalized columns: ['No._Unnamed: 0_level_1', 'Name_Unnamed: 1_level_1', 'Department_Unnamed: 2_level_1', 'Work Hrs._Required', 'Work Hrs._Actual', 'Late_Times', 'Late_ Min.', 'Early Leave_Times', 'Early Leave_ Min.', 'Overtime_Regular', 'Overtime_Special', 'Attend (Required/Actual)_Unnamed: 11_level_1', 'Business Trip_Unnamed: 12_level_1', 'Absence_Unnamed: 13_level_1', 'On Leave_Unnamed: 14_level_1', 'Bonus_Note', 'Bonus_OT', 'Bonus_All owance', 'Deduction_Late Early Leave', 'Deduction_On Leave', 'Deduction_Other\\nDeduction', 'Actual Pay_Unnamed: 21_level_1', 'Remark_Unnamed: 22_level_1']
+Converting column: required_hours
+Converting column: actual_hours
+Converting column: late_minutes
+Converting column: early_departure_minutes
+Converting column: overtime_regular
+Converting column: overtime_special
+Converting column: late_count
+Converting column: early_departure_count
+Converting column: absences
+Processing Logs sheet...
+Processing employee: 07:48
+17:11
+Processing employee: 07:49
+Processing employee: 07:56
+17:11
+Processing employee: 07:48
+17:11
+Processing employee: 07:50
+17:11
+Processing employee: 07:48
+13:01
+Processing employee: 07:49
+17:10
+Processing employee: 07:49
+17:11
+Processing employee: 07:48
+17:11
+Processing employee: 08:52
+13:44
+Processing employee: 07:49
+17:10
+Processing employee: 07:50
+17:10
+Processing employee: 07:48
+17:10
+Processing employee: 07:49
+17:10
+Processing employee: 07:51
+17:10
+Processing employee: 07:48
+17:11
+Processing employee: 07:50
+12:04
+Processing employee: 07:49
+17:10
+Created DataFrame with columns: []
+Total records processed: 0

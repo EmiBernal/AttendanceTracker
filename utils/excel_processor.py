@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from difflib import get_close_matches
 from datetime import datetime, timedelta
 
 class ExcelProcessor:
@@ -25,33 +24,42 @@ class ExcelProcessor:
 
     def process_attendance_summary(self):
         print("Reading Summary sheet...")
+        # Leer el Excel con encabezados multinivel
         df = pd.read_excel(self.excel_file, sheet_name="Summary", header=[2, 3])
         print("Original columns:", df.columns.tolist())
-        print("Normalized columns:", ['_'.join(col).strip() for col in df.columns.values])
 
-        # Mapear las columnas del Excel
-        df.columns = [
-            'employee_id' if 'No.' in str(col) else
-            'employee_name' if 'Name' in str(col) else
-            'department' if 'Department' in str(col) else
-            'required_hours' if ('Work Hrs.' in str(col) and 'Required' in str(col)) else
-            'actual_hours' if ('Work Hrs.' in str(col) and 'Actual' in str(col)) else
-            'late_count' if ('Late' in str(col) and 'Times' in str(col)) else
-            'late_minutes' if ('Late' in str(col) and 'Min.' in str(col)) else
-            'early_departure_count' if ('Early Leave' in str(col) and 'Times' in str(col)) else
-            'early_departure_minutes' if ('Early Leave' in str(col) and 'Min.' in str(col)) else
-            'overtime_regular' if ('Overtime' in str(col) and 'Regular' in str(col)) else
-            'overtime_special' if ('Overtime' in str(col) and 'Special' in str(col)) else
-            'attendance_ratio' if 'Attend' in str(col) else
-            'absences' if 'Absence' in str(col) else
-            col
-            for col in df.columns
-        ]
+        # Normalizar los nombres de las columnas
+        normalized_columns = ['_'.join(col).strip() for col in df.columns.values]
+        print("Normalized columns:", normalized_columns)
+        df.columns = normalized_columns
+
+        # Renombrar las columnas según el mapeo
+        rename_dict = {
+            'No._Unnamed: 0_level_1': 'employee_id',
+            'Name_Unnamed: 1_level_1': 'employee_name',
+            'Department_Unnamed: 2_level_1': 'department',
+            'Work Hrs._Required': 'required_hours',
+            'Work Hrs._Actual': 'actual_hours',
+            'Late_Times': 'late_count',
+            'Late_ Min.': 'late_minutes',
+            'Early Leave_Times': 'early_departure_count',
+            'Early Leave_ Min.': 'early_departure_minutes',
+            'Overtime_Regular': 'overtime_regular',
+            'Overtime_Special': 'overtime_special',
+            'Attend (Required/Actual)_Unnamed: 11_level_1': 'attendance_ratio',
+            'Absence_Unnamed: 13_level_1': 'absences'
+        }
+
+        df = df.rename(columns=rename_dict)
 
         # Convertir columnas numéricas
-        for col in ['required_hours', 'actual_hours', 'late_minutes', 
-                   'early_departure_minutes', 'overtime_regular', 'overtime_special',
-                   'late_count', 'early_departure_count', 'absences']:
+        numeric_columns = [
+            'required_hours', 'actual_hours', 'late_minutes',
+            'early_departure_minutes', 'overtime_regular', 'overtime_special',
+            'late_count', 'early_departure_count', 'absences'
+        ]
+
+        for col in numeric_columns:
             if col in df.columns:
                 print(f"Converting column: {col}")
                 try:
@@ -71,70 +79,105 @@ class ExcelProcessor:
             if i + 1 >= len(df):
                 break
 
-            # Obtener el nombre del empleado (está en la columna B)
-            employee_name = str(df.iloc[i].iloc[1]).strip()
-            print(f"Processing employee: {employee_name}")
-
-            # Obtener la fila de tiempos
+            name_row = df.iloc[i]
             time_row = df.iloc[i + 1]
 
-            # Procesar cada día (cada 4 columnas)
-            for j in range(2, len(df.columns), 4):
+            # El nombre está en la segunda columna (índice 1)
+            employee_name = str(name_row.iloc[1]).strip()
+            print(f"Processing employee: {employee_name}")
+
+            # Procesar cada día (cada 4 columnas desde la columna C)
+            for day_start in range(2, len(df.columns), 4):
                 try:
-                    day_times = []
-                    # Recopilar los 4 registros posibles del día
-                    for k in range(4):
-                        if j + k < len(time_row):
-                            time_str = time_row.iloc[j + k]
-                            if pd.notna(time_str):
+                    # Recopilar los registros del día
+                    day_records = []
+                    for j in range(4):  # 4 registros por día
+                        if day_start + j < len(time_row):
+                            time_str = str(time_row.iloc[day_start + j]).strip()
+                            if pd.notna(time_str) and time_str != 'nan':
                                 try:
-                                    time = pd.to_datetime(time_str).time()
-                                    day_times.append(time)
-                                except:
+                                    time_obj = datetime.strptime(time_str, '%H:%M').time()
+                                    day_records.append(time_obj)
+                                except ValueError as e:
+                                    print(f"Error parsing time {time_str}: {e}")
                                     continue
 
-                    if day_times:  # Solo procesar si hay registros
-                        record = {
+                    if day_records:  # Solo procesar si hay registros
+                        records.append({
                             'employee_name': employee_name,
-                            'date': df.columns[j].strftime('%Y-%m-%d') if isinstance(df.columns[j], datetime) else None,
-                            'first_record': day_times[0],
-                            'last_record': day_times[-1],
-                            'record_count': len(day_times)
-                        }
-
-                        # Verificar si no fichó ingreso
-                        record['missing_entry'] = (
-                            record['first_record'] >= self.NOON_TIME or
-                            record['first_record'] >= self.LATE_EVENING
-                        )
-
-                        # Verificar si no fichó egreso
-                        record['missing_exit'] = (
-                            record['last_record'] <= self.NOON_TIME and 
-                            record['record_count'] < 3
-                        )
-
-                        # Verificar si no fichó almuerzo
-                        record['missing_lunch'] = record['record_count'] <= 2
-
-                        # Verificar si salió antes
-                        record['early_departure'] = (
-                            record['last_record'] < self.WORK_END_TIME and
-                            not record['missing_exit']
-                        )
-
-                        records.append(record)
+                            'date': df.columns[day_start],
+                            'first_record': day_records[0],
+                            'last_record': day_records[-1],
+                            'record_count': len(day_records),
+                            'missing_entry': (
+                                day_records[0] >= self.NOON_TIME or
+                                day_records[0] >= self.LATE_EVENING
+                            ),
+                            'missing_exit': (
+                                day_records[-1] <= self.NOON_TIME and 
+                                len(day_records) < 3
+                            ),
+                            'missing_lunch': len(day_records) <= 2,
+                            'early_departure': (
+                                day_records[-1] < self.WORK_END_TIME and
+                                not (day_records[-1] <= self.NOON_TIME and len(day_records) < 3)
+                            )
+                        })
 
                 except Exception as e:
-                    print(f"Error processing record for {employee_name} on column {j}: {str(e)}")
+                    print(f"Error processing day for {employee_name}: {e}")
                     continue
 
-        # Crear DataFrame con los registros procesados
+        # Crear DataFrame con los registros
         result_df = pd.DataFrame(records)
-        print(f"Created DataFrame with columns: {result_df.columns.tolist()}")
-        print(f"Total records processed: {len(result_df)}")
-        print(f"Unique employees: {result_df['employee_name'].unique().tolist()}")
+
+        if len(result_df) == 0:
+            print("No records processed!")
+            return pd.DataFrame(columns=[
+                'employee_name', 'date', 'first_record', 'last_record',
+                'record_count', 'missing_entry', 'missing_exit',
+                'missing_lunch', 'early_departure'
+            ])
+
+        print(f"Created DataFrame with {len(result_df)} records")
+        print(f"DataFrame columns: {result_df.columns.tolist()}")
         return result_df
+
+    def get_employee_stats(self, employee_name):
+        """Obtiene estadísticas completas para un empleado"""
+        # Procesar datos
+        summary = self.process_attendance_summary()
+        print("Summary processed successfully")
+
+        # Verificar si el empleado existe en el resumen
+        if employee_name not in summary['employee_name'].values:
+            raise ValueError(f"Employee {employee_name} not found in summary data")
+
+        logs = self.process_logs()
+        print("Logs processed successfully")
+
+        # Obtener datos del empleado
+        employee_summary = summary[summary['employee_name'] == employee_name].iloc[0]
+        employee_logs = logs[logs['employee_name'] == employee_name]
+
+        # Calcular estadísticas
+        stats = {
+            'name': employee_name,
+            'department': employee_summary['department'],
+            'required_hours': float(employee_summary['required_hours']),
+            'actual_hours': float(employee_summary['actual_hours']),
+            'late_days': int(employee_summary['late_count']),
+            'late_minutes': float(employee_summary['late_minutes']),
+            'early_departures': len(employee_logs[employee_logs['early_departure']]),
+            'early_minutes': float(employee_summary['early_departure_minutes']),
+            'absences': int(employee_summary['absences']),
+            'missing_entry_days': len(employee_logs[employee_logs['missing_entry']]),
+            'missing_exit_days': len(employee_logs[employee_logs['missing_exit']]),
+            'missing_lunch_days': len(employee_logs[employee_logs['missing_lunch']]),
+            'attendance_ratio': float(employee_summary.get('attendance_ratio', 0))
+        }
+
+        return stats
 
     def process_exceptional_records(self):
         """Procesa los registros excepcionales para calcular pausas de almuerzo prolongadas"""
@@ -186,41 +229,3 @@ class ExcelProcessor:
                     df.at[idx, 'lunch_minutes_exceeded'] = lunch_duration - self.LUNCH_DURATION_LIMIT
 
         return df
-
-    def get_employee_stats(self, employee_name):
-        """Obtiene estadísticas completas para un empleado"""
-        summary = self.process_attendance_summary()
-        logs = self.process_logs()
-
-        print(f"Looking for employee: {employee_name}")
-        if len(logs) > 0:
-            print(f"Available employees in logs: {logs['employee_name'].unique()}")
-
-        employee_summary = summary[summary['employee_name'] == employee_name].iloc[0]
-        employee_logs = logs[logs['employee_name'] == employee_name]
-
-        print(f"Found {len(employee_logs)} records for employee")
-
-        # Calcular estadísticas
-        missing_entry_days = len(employee_logs[employee_logs['missing_entry']])
-        missing_exit_days = len(employee_logs[employee_logs['missing_exit']])
-        missing_lunch_days = len(employee_logs[employee_logs['missing_lunch']])
-        early_departure_days = len(employee_logs[employee_logs['early_departure']])
-
-        stats = {
-            'name': employee_name,
-            'department': employee_summary['department'],
-            'required_hours': float(employee_summary['required_hours']),
-            'actual_hours': float(employee_summary['actual_hours']),
-            'late_days': int(employee_summary['late_count']),
-            'late_minutes': float(employee_summary['late_minutes']),
-            'early_departures': early_departure_days,
-            'early_minutes': float(employee_summary['early_departure_minutes']),
-            'absences': int(employee_summary['absences']),
-            'missing_entry_days': missing_entry_days,
-            'missing_exit_days': missing_exit_days,
-            'missing_lunch_days': missing_lunch_days,
-            'attendance_ratio': float(employee_summary['attendance_ratio'])
-        }
-
-        return stats

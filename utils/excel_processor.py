@@ -30,13 +30,9 @@ class ExcelProcessor:
 
     def validate_sheets(self):
         required_sheets = ["Summary", "Shifts", "Logs", "Exceptional"]
-        missing_sheets = [
-            sheet for sheet in required_sheets
-            if sheet not in self.excel_file.sheet_names
-        ]
+        missing_sheets = [sheet for sheet in required_sheets if sheet not in self.excel_file.sheet_names]
         if missing_sheets:
-            raise ValueError(
-                f"Missing required sheets: {', '.join(missing_sheets)}")
+            raise ValueError(f"Missing required sheets: {', '.join(missing_sheets)}")
 
     def process_attendance_summary(self):
         print("Reading Summary sheet...")
@@ -99,6 +95,14 @@ class ExcelProcessor:
         """Procesa la hoja de Logs para analizar registros de entrada/salida"""
         print("Processing Logs sheet...")
         df = pd.read_excel(self.excel_file, sheet_name="Logs", skiprows=4)
+
+        # Definir las columnas que tendrá el DataFrame resultante
+        columns = [
+            'employee_name', 'date', 'first_record', 'last_record',
+            'record_count', 'missing_entry', 'missing_exit',
+            'missing_lunch', 'early_departure', 'extended_lunch',
+            'lunch_minutes'
+        ]
 
         records = []
 
@@ -169,12 +173,14 @@ class ExcelProcessor:
                     print(f"Error processing day for {employee_name}: {e}")
                     continue
 
+        # Crear DataFrame con los registros
         if not records:
-            return pd.DataFrame()
+            print("No records processed!")
+            return pd.DataFrame(columns=columns)
 
-        result_df = pd.DataFrame(records)
+        result_df = pd.DataFrame(records, columns=columns)
         print(f"Created DataFrame with {len(result_df)} records")
-        print(f"Columns: {result_df.columns.tolist()}")
+        print(f"DataFrame columns: {result_df.columns.tolist()}")
         return result_df
 
     def get_employee_stats(self, employee_name):
@@ -201,7 +207,7 @@ class ExcelProcessor:
             'actual_hours': float(employee_summary['actual_hours']),
             'late_days': int(employee_summary['late_count']),
             'late_minutes': float(employee_summary['late_minutes']),
-            'early_departures': len(employee_logs[employee_logs['early_departure']]),
+            'early_departures': int(employee_summary['early_departure_count']),
             'early_minutes': float(employee_summary['early_departure_minutes']),
             'absences': int(employee_summary['absences']),
             'missing_entry_days': len(employee_logs[employee_logs['missing_entry']]),

@@ -83,91 +83,40 @@ class ExcelProcessor:
 
         return df
 
-    def _convert_numeric_columns(self, df, numeric_columns):
-        """Helper method to convert columns to numeric type"""
-        for col in numeric_columns:
-            if col in df.columns:  # Verificamos si la columna existe
-                try:
-                    print(f"Converting column: {col}")
-                    # Verificamos si es una serie antes de convertir
-                    if isinstance(df[col], pd.Series):
-                        # Si el tipo es 'object' (cadenas), intentamos convertir a numérico
-                        df[col] = pd.to_numeric(
-                            df[col], errors='coerce'
-                        )  # Convertimos a numérico, invalidos serán NaN
-                        df[col] = df[col].fillna(0).astype(
-                            float
-                        )  # Rellenamos NaN con 0 y convertimos a float
-                    else:
-                        print(f"Skipping non-Series column: {col}")
-                except Exception as e:
-                    print(f"Error processing column {col}: {e}")
-            else:
-                print(f"Column {col} is missing.")
-        return df
-
     def process_attendance_summary(self):
         print("Reading Summary sheet...")
-        # Read the Excel file with multi-level headers in rows 3 and 4
         df = pd.read_excel(self.excel_file, sheet_name="Summary", header=[2, 3])
 
-        # Print original columns for debugging
-        print("Original columns:", df.columns.tolist())
-
-        # Normalize columns
-        df = self._normalize_columns(df)
-        print("Normalized columns:", df.columns.tolist())
-
-        # Define expected column mappings
+        # Mapear directamente las columnas del Excel
         column_mapping = {
-            'no_unnamed_0_level_1': 'employee_id',
-            'name_unnamed_1_level_1': 'employee_name',
-            'department_unnamed_2_level_1': 'department',
-            'work_hrs_required': 'required_hours',
-            'work_hrs_actual': 'actual_hours',
-            'late_times': 'late_count',
-            'late_min': 'late_minutes',
-            'early_leave_times': 'early_departure_count',
-            'early_leave_min': 'early_departure_minutes',
-            'overtime_regular': 'overtime_regular',
-            'overtime_special': 'overtime_special',
-            'attend_required_actual_unnamed_11_level_1': 'attendance_ratio',
-            'absence_unnamed_13_level_1': 'absences',
-            'on_leave_unnamed_14_level_1': 'on_leave'
+            ('No.', 'Unnamed: 0_level_1'): 'employee_id',
+            ('Name', 'Unnamed: 1_level_1'): 'employee_name',
+            ('Department', 'Unnamed: 2_level_1'): 'department',
+            ('Work Hrs.', 'Required'): 'required_hours',
+            ('Work Hrs.', 'Actual'): 'actual_hours',
+            ('Late', 'Times'): 'late_count',
+            ('Late', ' Min.'): 'late_minutes',
+            ('Early Leave', 'Times'): 'early_departure_count',
+            ('Early Leave', ' Min.'): 'early_departure_minutes',
+            ('Overtime', 'Regular'): 'overtime_regular',
+            ('Overtime', 'Special'): 'overtime_special',
+            ('Attend (Required/Actual)', 'Unnamed: 11_level_1'): 'attendance_ratio',
+            ('Absence', 'Unnamed: 13_level_1'): 'absences'
         }
 
-        # Rename columns that exist in the DataFrame
-        existing_columns = {}
-        for old_col, new_col in column_mapping.items():
-            matching_cols = [col for col in df.columns if old_col in col]
-            if matching_cols:
-                existing_columns[matching_cols[0]] = new_col
+        # Renombrar columnas
+        df = df.rename(columns=column_mapping)
 
-        df = df.rename(columns=existing_columns)
-
-        # Convert numeric columns
+        # Convertir columnas numéricas
         numeric_columns = [
             'required_hours', 'actual_hours', 'late_minutes',
             'early_departure_minutes', 'overtime_regular', 'overtime_special',
-            'late_count', 'early_departure_count', 'absences', 'on_leave'
+            'late_count', 'early_departure_count', 'absences'
         ]
 
         for col in numeric_columns:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
-
-        # Process attendance ratio
-        if 'attendance_ratio' in df.columns:
-            def parse_ratio(val):
-                if isinstance(val, str) and '/' in val:
-                    try:
-                        num, den = map(float, val.split('/'))
-                        return num/den if den != 0 else 0
-                    except:
-                        return 0
-                return 0
-
-            df['attendance_ratio'] = df['attendance_ratio'].apply(parse_ratio)
 
         return df
 
@@ -198,108 +147,75 @@ class ExcelProcessor:
 
         return df
 
-    def process_records_list(self):
-        """Process the attendance logs"""
-        df = pd.read_excel(self.excel_file, sheet_name="Logs", skiprows=4)
+    def process_exceptional_records(self):
+        """Procesa los registros excepcionales para calcular pausas de almuerzo prolongadas"""
+        df = pd.read_excel(self.excel_file, sheet_name="Exceptional", header=[2, 3])
 
-        records = []
-        for i in range(0, len(df), 2):
-            if i + 1 >= len(df):
-                break
-
-            employee_name = df.iloc[i].iloc[1]  # Name is in column B
-            schedule_row = df.iloc[i + 1]
-
-            # Process each set of 4 columns (entry, exit, entry, exit)
-            for j in range(2, len(schedule_row), 4):
-                try:
-                    record = {
-                        'employee_name': employee_name,
-                        'date': df.columns[j].strftime('%Y-%m-%d') if isinstance(df.columns[j], datetime) else None,
-                        'initial_entry': pd.to_datetime(schedule_row.iloc[j], errors='coerce'),
-                        'midday_exit': pd.to_datetime(schedule_row.iloc[j + 1], errors='coerce') if j + 1 < len(schedule_row) else None,
-                        'midday_entry': pd.to_datetime(schedule_row.iloc[j + 2], errors='coerce') if j + 2 < len(schedule_row) else None,
-                        'final_exit': pd.to_datetime(schedule_row.iloc[j + 3], errors='coerce') if j + 3 < len(schedule_row) else None
-                    }
-
-                    # Calculate lunch duration
-                    if pd.notna(record['midday_exit']) and pd.notna(record['midday_entry']):
-                        lunch_duration = (record['midday_entry'] - record['midday_exit']).total_seconds() / 60
-                        record['lunch_duration'] = lunch_duration
-                        record['extended_lunch'] = lunch_duration > 20 if not pd.isna(lunch_duration) else False
-                    else:
-                        record['lunch_duration'] = None
-                        record['extended_lunch'] = False
-
-                    # Check for missing records
-                    record['missing_records'] = (
-                        pd.isna(record['initial_entry']) or
-                        pd.isna(record['midday_exit']) or
-                        pd.isna(record['midday_entry']) or
-                        pd.isna(record['final_exit'])
-                    )
-
-                    records.append(record)
-                except Exception as e:
-                    print(f"Error processing record for {employee_name}: {str(e)}")
-                    continue
-
-        return pd.DataFrame(records)
-
-    def process_individual_reports(self):
-        print("Reading Exceptional sheet...")
-        df = pd.read_excel(self.excel_file,
-                           sheet_name="Exceptional",
-                           header=[2, 3])  # Leer encabezados desde fila 3 y 4
-        print("Original columns:", df.columns.tolist())
-
-        df = self._normalize_columns(df)
-        print("Normalized columns:", df.columns.tolist())
-
-        # Mapeo de nombres correctos
+        # Mapear las columnas del Excel
         column_mapping = {
-            'no_unnamed_0_level_1': 'employee_id',
-            'name_unnamed_1_level_1': 'employee_name',
-            'department_unnamed_2_level_1': 'department',
-            'date_unnamed_3_level_1': 'date',
-            'late_in_mm_unnamed_8_level_1': 'late_in_minutes',
-            'early_leave_mm_unnamed_9_level_1': 'early_leave_minutes',
-            'total_mm_unnamed_10_level_1': 'total_minutes',
-            'remark_unnamed_11_level_1': 'remark'
+            ('No.', 'Unnamed: 0_level_1'): 'employee_id',
+            ('Name', 'Unnamed: 1_level_1'): 'employee_name',
+            ('Department', 'Unnamed: 2_level_1'): 'department',
+            ('Date', 'Unnamed: 3_level_1'): 'date',
+            ('AM', 'In'): 'am_in',
+            ('AM', 'Out'): 'am_out',
+            ('PM', 'In'): 'pm_in',
+            ('PM', 'Out'): 'pm_out'
         }
 
         df = df.rename(columns=column_mapping)
 
-        required_columns = [
-            'employee_id', 'employee_name', 'department', 'date', 'am_in',
-            'am_out', 'pm_in', 'pm_out', 'late_in_minutes',
-            'early_leave_minutes', 'total_minutes', 'remark'
-        ]
-        df = self._validate_columns(df, required_columns, "Exceptional")
+        # Convertir columnas de tiempo a datetime
+        time_columns = ['am_in', 'am_out', 'pm_in', 'pm_out']
+        for col in time_columns:
+            if col in df.columns:
+                df[col] = pd.to_datetime(df[col], format='%H:%M:%S', errors='coerce')
+
+        # Calcular pausas de almuerzo prolongadas
+        df['lunch_duration'] = None
+        df['extended_lunch'] = False
+        df['lunch_minutes_exceeded'] = 0
+
+        for idx, row in df.iterrows():
+            if pd.notna(row['am_out']) and pd.notna(row['pm_in']):
+                am_out_time = row['am_out'].time()
+                pm_in_time = row['pm_in'].time()
+
+                # Verificar si la salida está entre 12:00 y 16:00
+                if (datetime.strptime('12:00', '%H:%M').time() <= am_out_time <=
+                    datetime.strptime('16:00', '%H:%M').time()):
+
+                    lunch_duration = (row['pm_in'] - row['am_out']).total_seconds() / 60
+                    df.at[idx, 'lunch_duration'] = lunch_duration
+
+                    if lunch_duration > 20:
+                        df.at[idx, 'extended_lunch'] = True
+                        df.at[idx, 'lunch_minutes_exceeded'] = lunch_duration - 20
 
         return df
 
+
     def get_employee_stats(self, employee_name):
-        """Get comprehensive statistics for an employee"""
+        """Obtiene estadísticas completas para un empleado"""
         summary = self.process_attendance_summary()
-        records = self.process_records_list()
+        exceptional = self.process_exceptional_records()
 
         employee_summary = summary[summary['employee_name'] == employee_name].iloc[0]
-        employee_records = records[records['employee_name'] == employee_name]
+        employee_exceptional = exceptional[exceptional['employee_name'] == employee_name]
 
         stats = {
             'name': employee_name,
             'department': employee_summary['department'],
-            'required_hours': float(employee_summary.get('required_hours', 0)),
-            'actual_hours': float(employee_summary.get('actual_hours', 0)),
-            'late_days': int(employee_summary.get('late_count', 0)),
-            'late_minutes': float(employee_summary.get('late_minutes', 0)),
-            'early_departures': int(employee_summary.get('early_departure_count', 0)),
-            'early_minutes': float(employee_summary.get('early_departure_minutes', 0)),
-            'absences': int(employee_summary.get('absences', 0)),
-            'extended_lunch_days': len(employee_records[employee_records['extended_lunch']]) if not employee_records.empty else 0,
-            'missing_record_days': len(employee_records[employee_records['missing_records']]) if not employee_records.empty else 0,
-            'attendance_ratio': float(employee_summary.get('attendance_ratio', 0))
+            'required_hours': float(employee_summary['required_hours']),
+            'actual_hours': float(employee_summary['actual_hours']),
+            'late_days': int(employee_summary['late_count']),
+            'late_minutes': float(employee_summary['late_minutes']),
+            'early_departures': int(employee_summary['early_departure_count']),
+            'early_minutes': float(employee_summary['early_departure_minutes']),
+            'absences': int(employee_summary['absences']),
+            'extended_lunch_days': len(employee_exceptional[employee_exceptional['extended_lunch']]),
+            'total_lunch_minutes_exceeded': employee_exceptional['lunch_minutes_exceeded'].sum(),
+            'attendance_ratio': float(employee_summary['attendance_ratio']) if pd.notna(employee_summary['attendance_ratio']) else 0
         }
 
         return stats

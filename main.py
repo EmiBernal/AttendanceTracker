@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from utils.excel_processor import ExcelProcessor
-from utils.visualizations import Visualizer
 
 # Page configuration
 st.set_page_config(
@@ -11,20 +10,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for theme toggle and layout
+# Custom CSS for layout
 st.markdown("""
 <style>
-    .theme-toggle {
-        position: fixed;
-        top: 0.5rem;
-        right: 1rem;
-        z-index: 1000;
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        padding: 0.5rem;
-        font-size: 1.5rem;
-    }
     .stat-group {
         background-color: rgba(33, 150, 243, 0.1);
         border-radius: 10px;
@@ -32,11 +20,12 @@ st.markdown("""
         margin: 10px 0;
     }
     .stat-card {
-        background-color: #2D2D2D;
+        background-color: #F8F9FA;
         border-radius: 8px;
         padding: 12px;
         margin: 5px;
         text-align: center;
+        border: 1px solid #E9ECEF;
     }
     .metric-value {
         font-size: 24px;
@@ -45,36 +34,19 @@ st.markdown("""
     }
     .metric-label {
         font-size: 14px;
-        color: #888;
+        color: #6C757D;
     }
     .warning {
         color: #FFC107;
     }
     .danger {
-        color: #F44336;
+        color: #DC3545;
     }
     .success {
-        color: #4CAF50;
+        color: #28A745;
     }
 </style>
 """, unsafe_allow_html=True)
-
-# Theme toggle in header
-theme = st.session_state.get('theme', 'Light')
-col_spacer, col_toggle = st.columns([6, 1])
-with col_toggle:
-    if st.button('🌞' if theme == 'Dark' else '🌙', key='theme_toggle'):
-        theme = 'Light' if theme == 'Dark' else 'Dark'
-        st.session_state.theme = theme
-
-def safe_float_convert(value, default=0):
-    """Convierte de manera segura a float, manejando NaN y valores no válidos."""
-    if pd.isna(value) or value is None:
-        return default
-    try:
-        return round(float(value), 1)
-    except (ValueError, TypeError):
-        return default
 
 def create_employee_dashboard(processor, employee_name):
     """Create a detailed dashboard for a single employee"""
@@ -84,7 +56,7 @@ def create_employee_dashboard(processor, employee_name):
     st.markdown(f"""
         <div class="stat-group">
             <h2>{stats['name']}</h2>
-            <p style="color: #888;">Department: {stats['department']}</p>
+            <p style="color: #6C757D;">Department: {stats['department']}</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -143,8 +115,7 @@ def create_employee_dashboard(processor, employee_name):
     metrics = [
         ('Late Days', stats['late_days'], f"{stats['late_minutes']:.0f} minutes total"),
         ('Early Departures', stats['early_departures'], f"{stats['early_minutes']:.0f} minutes total"),
-        ('Extended Lunch Breaks', stats['extended_lunch_days'], "Over 20 minutes"),
-        ('Missing Records', stats['missing_record_days'], "Incomplete entries"),
+        ('Extended Lunch Breaks', stats['extended_lunch_days'], f"{stats['total_lunch_minutes_exceeded']:.0f} minutes total"),
         ('Absences', stats['absences'], "Total days")
     ]
 

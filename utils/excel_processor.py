@@ -8,8 +8,9 @@ class ExcelProcessor:
         self.validate_sheets()
         self.WORK_START_TIME = datetime.strptime('7:50', '%H:%M').time()
         self.WORK_END_TIME = datetime.strptime('17:10', '%H:%M').time()
-        self.LUNCH_DURATION_LIMIT = 20  # minutos
-        self.NOON_TIME = datetime.strptime('12:00', '%H:%M').time()
+        self.LUNCH_START_TIME = datetime.strptime('12:00', '%H:%M').time()
+        self.LUNCH_END_TIME = datetime.strptime('13:00', '%H:%M').time()
+        self.LUNCH_DURATION_LIMIT = 60  # minutos
         self.LATE_EVENING = datetime.strptime('17:00', '%H:%M').time()
 
     def validate_sheets(self):
@@ -24,7 +25,6 @@ class ExcelProcessor:
 
     def process_attendance_summary(self):
         print("Reading Summary sheet...")
-        # Leer el Excel con encabezados multinivel
         df = pd.read_excel(self.excel_file, sheet_name="Summary", header=[2, 3])
         print("Original columns:", df.columns.tolist())
 
@@ -105,39 +105,54 @@ class ExcelProcessor:
             for day_start in range(2, len(df.columns), 4):
                 try:
                     # Recopilar los registros del día
-                    day_records = []
+                    day_times = []
                     for j in range(4):  # 4 registros por día
                         if day_start + j < len(time_row):
                             time_str = str(time_row.iloc[day_start + j]).strip()
                             if pd.notna(time_str) and time_str != 'nan':
                                 try:
                                     time_obj = datetime.strptime(time_str, '%H:%M').time()
-                                    day_records.append(time_obj)
+                                    day_times.append(time_obj)
                                 except ValueError as e:
                                     print(f"Error parsing time {time_str}: {e}")
                                     continue
 
-                    if day_records:  # Solo procesar si hay registros
-                        records.append({
+                    if day_times:  # Solo procesar si hay registros
+                        # Calcular duración del almuerzo si hay registros suficientes
+                        lunch_minutes = 0
+                        extended_lunch = False
+                        if len(day_times) >= 3:
+                            lunch_start = day_times[1]  # Segunda marca (salida almuerzo)
+                            lunch_end = day_times[2]    # Tercera marca (regreso almuerzo)
+
+                            # Convertir a minutos para calcular la duración
+                            lunch_minutes = (lunch_end.hour * 60 + lunch_end.minute) - (lunch_start.hour * 60 + lunch_start.minute)
+                            extended_lunch = lunch_minutes > self.LUNCH_DURATION_LIMIT
+
+                        record = {
                             'employee_name': employee_name,
                             'date': df.columns[day_start],
-                            'first_record': day_records[0],
-                            'last_record': day_records[-1],
-                            'record_count': len(day_records),
+                            'first_record': day_times[0],
+                            'last_record': day_times[-1],
+                            'record_count': len(day_times),
                             'missing_entry': (
-                                day_records[0] >= self.NOON_TIME or
-                                day_records[0] >= self.LATE_EVENING
+                                day_times[0] >= self.LUNCH_START_TIME or
+                                day_times[0] >= self.LATE_EVENING
                             ),
                             'missing_exit': (
-                                day_records[-1] <= self.NOON_TIME and 
-                                len(day_records) < 3
+                                day_times[-1] <= self.LUNCH_END_TIME and 
+                                len(day_times) < 3
                             ),
-                            'missing_lunch': len(day_records) <= 2,
+                            'missing_lunch': len(day_times) <= 2,
                             'early_departure': (
-                                day_records[-1] < self.WORK_END_TIME and
-                                not (day_records[-1] <= self.NOON_TIME and len(day_records) < 3)
-                            )
-                        })
+                                day_times[-1] < self.WORK_END_TIME and
+                                not (day_times[-1] <= self.LUNCH_END_TIME and len(day_times) < 3)
+                            ),
+                            'extended_lunch': extended_lunch,
+                            'lunch_minutes': lunch_minutes
+                        }
+
+                        records.append(record)
 
                 except Exception as e:
                     print(f"Error processing day for {employee_name}: {e}")
@@ -151,7 +166,7 @@ class ExcelProcessor:
             return pd.DataFrame(columns=[
                 'employee_name', 'date', 'first_record', 'last_record',
                 'record_count', 'missing_entry', 'missing_exit',
-                'missing_lunch', 'early_departure'
+                'missing_lunch', 'early_departure', 'extended_lunch', 'lunch_minutes'
             ])
 
         print(f"Created DataFrame with {len(result_df)} records")
@@ -176,6 +191,9 @@ class ExcelProcessor:
         employee_logs = logs[logs['employee_name'] == employee_name]
 
         # Calcular estadísticas
+        extended_lunch_logs = employee_logs[employee_logs['extended_lunch']]
+        total_lunch_minutes = extended_lunch_logs['lunch_minutes'].sum()
+
         stats = {
             'name': employee_name,
             'department': employee_summary['department'],
@@ -189,6 +207,8 @@ class ExcelProcessor:
             'missing_entry_days': len(employee_logs[employee_logs['missing_entry']]),
             'missing_exit_days': len(employee_logs[employee_logs['missing_exit']]),
             'missing_lunch_days': len(employee_logs[employee_logs['missing_lunch']]),
+            'extended_lunch_days': len(extended_lunch_logs),
+            'total_lunch_minutes_exceeded': total_lunch_minutes,
             'attendance_ratio': employee_summary['attendance_ratio']  # Ya está convertido a decimal
         }
 

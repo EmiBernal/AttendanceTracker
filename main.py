@@ -49,7 +49,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def create_employee_dashboard(processor, employee_name):
-    """Create a detailed dashboard for a single employee"""
+    """Crea un panel detallado para un solo empleado"""
     stats = processor.get_employee_stats(employee_name)
 
     # Header with employee info
@@ -66,7 +66,7 @@ def create_employee_dashboard(processor, employee_name):
     with col1:
         st.markdown("""
             <div class="stat-group">
-                <h3>📊 Resumen de Horas</h3>
+                <h3>📊 Resumen de Horas de Trabajo</h3>
         """, unsafe_allow_html=True)
 
         hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100) if stats['required_hours'] > 0 else 0
@@ -113,11 +113,9 @@ def create_employee_dashboard(processor, employee_name):
 
     # List of metrics to display
     metrics = [
-        ('Días con Llegada Tarde', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total"),
-        ('Días con Salida Anticipada', stats['early_departures'], f"{stats['early_minutes']:.0f} minutos en total"),
-        ('Días sin Registro de Entrada', stats['missing_entry_days'], "Entradas no registradas"),
-        ('Días sin Registro de Salida', stats['missing_exit_days'], "Salidas no registradas"),
-        ('Días sin Registro de Almuerzo', stats['missing_lunch_days'], "Almuerzos no registrados"),
+        ('Cantidad de dias que llego tarde', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total"),
+        ('Cantidad de dias que salio antes', stats['early_departures'], f"{stats['early_minutes']:.0f} minutos en total"),
+        ('Dias que extendio el ', stats['extended_lunch_days'], f"{stats['total_lunch_minutes_exceeded']:.0f} minutos en total"),
         ('Inasistencias', stats['absences'], "Días totales")
     ]
 
@@ -134,7 +132,7 @@ def create_employee_dashboard(processor, employee_name):
     st.markdown("</div></div>", unsafe_allow_html=True)
 
 def main():
-    st.title("📊 Visualizador de Asistencia")
+    st.title("📊 Visualizador Interactivo de Asistencia")
 
     # File uploader in sidebar
     with st.sidebar:
@@ -154,7 +152,7 @@ def main():
             with st.sidebar:
                 st.subheader("👤 Selección de Empleado")
                 selected_employee = st.selectbox(
-                    "Selecciona un empleado para ver sus detalles",
+                    "Selecciona un empleado para ver sus detalles de asistencia",
                     attendance_summary['employee_name'].unique(),
                     format_func=lambda x: x  # Mostrar el nombre completo
                 )

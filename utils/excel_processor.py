@@ -74,76 +74,76 @@ class ExcelProcessor:
 
     def process_logs(self):
         """Procesa la hoja de Logs para analizar registros de entrada/salida"""
+        print("Processing Logs sheet...")
         df = pd.read_excel(self.excel_file, sheet_name="Logs", skiprows=4)
 
         all_records = []
-        current_employee = None
 
-        for i in range(0, len(df)):
-            row = df.iloc[i]
+        # Iterar sobre las filas de nombres (filas pares)
+        for i in range(0, len(df), 2):
+            if i + 1 >= len(df):
+                break
 
-            # Si es una fila de nombre (las filas impares contienen nombres)
-            if i % 2 == 0:
-                current_employee = row.iloc[1]  # El nombre está en la columna B
-                continue
+            name_row = df.iloc[i]
+            time_row = df.iloc[i + 1]
 
-            # Si es una fila de horarios (las filas pares contienen horarios)
-            if current_employee is not None:
-                # Procesar cada día (cada 4 columnas representan un día)
-                for j in range(2, len(row), 4):
-                    try:
-                        # Recopilar todos los registros del día
-                        day_records = []
-                        for k in range(4):  # Máximo 4 registros por día
-                            if j + k < len(row):
-                                time_str = row.iloc[j + k]
-                                if pd.notna(time_str):
-                                    try:
-                                        time = pd.to_datetime(time_str).time()
-                                        day_records.append(time)
-                                    except:
-                                        continue
+            # Obtener el nombre del empleado (columna B)
+            employee_name = name_row.iloc[1]
+            print(f"Processing employee: {employee_name}")
 
-                        if day_records:  # Solo procesar si hay registros
-                            record = {
-                                'employee_name': current_employee,
-                                'date': df.columns[j].strftime('%Y-%m-%d') if isinstance(df.columns[j], datetime) else None,
-                                'first_record': day_records[0] if day_records else None,
-                                'last_record': day_records[-1] if day_records else None,
-                                'record_count': len(day_records)
-                            }
+            # Procesar cada día (columnas desde la C en adelante)
+            for col_idx in range(2, len(df.columns), 4):
+                day_date = df.columns[col_idx]
 
-                            # Verificar si no fichó ingreso
-                            record['missing_entry'] = (
-                                record['first_record'] is None or
-                                record['first_record'] >= self.NOON_TIME or
-                                record['first_record'] >= self.LATE_EVENING
-                            )
+                # Obtener los registros del día
+                times = []
+                for t in range(4):  # Máximo 4 registros por día
+                    if col_idx + t < len(time_row):
+                        time_value = time_row.iloc[col_idx + t]
+                        if pd.notna(time_value):
+                            try:
+                                time_value = pd.to_datetime(time_value).time()
+                                times.append(time_value)
+                            except:
+                                continue
 
-                            # Verificar si no fichó egreso
-                            record['missing_exit'] = (
-                                record['last_record'] is None or
-                                (record['last_record'] <= self.NOON_TIME and record['record_count'] < 3)
-                            )
+                if times:  # Solo procesar si hay registros
+                    record = {
+                        'employee_name': str(employee_name),  # Asegurar que sea string
+                        'date': day_date.strftime('%Y-%m-%d') if isinstance(day_date, datetime) else None,
+                        'first_record': times[0],
+                        'last_record': times[-1],
+                        'record_count': len(times)
+                    }
 
-                            # Verificar si no fichó almuerzo
-                            record['missing_lunch'] = record['record_count'] <= 2
+                    # Verificar si no fichó ingreso
+                    record['missing_entry'] = (
+                        record['first_record'] >= self.NOON_TIME or
+                        record['first_record'] >= self.LATE_EVENING
+                    )
 
-                            # Verificar si salió antes
-                            record['early_departure'] = (
-                                record['last_record'] is not None and
-                                record['last_record'] < self.WORK_END_TIME and
-                                not record['missing_exit']
-                            )
+                    # Verificar si no fichó egreso
+                    record['missing_exit'] = (
+                        record['last_record'] <= self.NOON_TIME and 
+                        record['record_count'] < 3
+                    )
 
-                            all_records.append(record)
+                    # Verificar si no fichó almuerzo
+                    record['missing_lunch'] = record['record_count'] <= 2
 
-                    except Exception as e:
-                        print(f"Error processing record for {current_employee}: {str(e)}")
-                        continue
+                    # Verificar si salió antes
+                    record['early_departure'] = (
+                        record['last_record'] < self.WORK_END_TIME and
+                        not record['missing_exit']
+                    )
 
-        # Crear DataFrame con los registros procesados
-        return pd.DataFrame(all_records)
+                    all_records.append(record)
+
+        # Crear DataFrame y verificar columnas
+        result_df = pd.DataFrame(all_records)
+        print(f"Created DataFrame with columns: {result_df.columns.tolist()}")
+        print(f"Total records processed: {len(result_df)}")
+        return result_df
 
     def process_exceptional_records(self):
         """Procesa los registros excepcionales para calcular pausas de almuerzo prolongadas"""
@@ -201,8 +201,13 @@ class ExcelProcessor:
         summary = self.process_attendance_summary()
         logs = self.process_logs()
 
+        print(f"Looking for employee: {employee_name}")
+        print(f"Available employees in logs: {logs['employee_name'].unique()}")
+
         employee_summary = summary[summary['employee_name'] == employee_name].iloc[0]
         employee_logs = logs[logs['employee_name'] == employee_name]
+
+        print(f"Found {len(employee_logs)} records for employee")
 
         # Calcular estadísticas
         missing_entry_days = len(employee_logs[employee_logs['missing_entry']])

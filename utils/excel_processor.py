@@ -7,105 +7,91 @@ class ExcelProcessor:
         self.excel_file = pd.ExcelFile(file)
         self.WORK_START_TIME = datetime.strptime('7:50', '%H:%M').time()
         self.WORK_END_TIME = datetime.strptime('17:10', '%H:%M').time()
-        self.validate_sheets()
-
-    def validate_sheets(self):
-        """Validar que exista la hoja Exceptional"""
-        if 'Exceptional' not in self.excel_file.sheet_names:
-            raise ValueError("Missing required sheet: Exceptional")
 
     def process_attendance_summary(self):
-        """Procesa los datos de asistencia desde todas las hojas"""
+        """Procesa los datos de asistencia desde las hojas después de 'Exceptional'"""
         all_records = []
 
         # Procesar todas las hojas después de Exceptional
-        exceptional_index = self.excel_file.sheet_names.index('Exceptional')
-        attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+        try:
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+        except ValueError:
+            print("Warning: Sheet 'Exceptional' not found, processing all sheets")
+            attendance_sheets = self.excel_file.sheet_names
 
         for sheet in attendance_sheets:
             try:
-                df = pd.read_excel(self.excel_file, sheet_name=sheet)
+                df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+                print(f"Processing sheet: {sheet}")
 
-                # Definir los grupos de empleados y sus columnas correspondientes
+                # Definir los grupos de empleados
                 employee_groups = [
                     # Primer empleado
                     {
-                        'dept_cols': (2, 'B'),  # Fila 3, Columnas B-H
-                        'name_cols': (2, 'J'),  # Fila 3, Columnas J-N
-                        'stats_row': 6,         # Fila 7 para estadísticas
-                        'stats_cols': {
-                            'absences': 'A',
-                            'late_count': 'I',
-                            'late_minutes': ['J', 'K'],
-                            'early_count': ['L', 'M'],
-                            'early_minutes': 'N'
-                        }
+                        'nombre': (2, 'J'),  # Fila 3, Columna J
+                        'departamento': (2, 'B'),  # Fila 3, Columna B
+                        'ausencias': (6, 'A'),  # Fila 7, Columna A
+                        'llegadas_tarde': (6, 'I'),  # Fila 7, Columna I
+                        'minutos_tarde': [(6, 'J'), (6, 'K')],  # Fila 7, Columnas J,K
+                        'salidas_temprano': [(6, 'L'), (6, 'M')],  # Fila 7, Columnas L,M
+                        'minutos_temprano': (6, 'N')  # Fila 7, Columna N
                     },
                     # Segundo empleado
                     {
-                        'dept_cols': (2, 'Q'),  # Fila 3, Columnas Q-W
-                        'name_cols': (2, 'Y'),  # Fila 3, Columnas Y-AC
-                        'stats_row': 6,         # Fila 7 para estadísticas
-                        'stats_cols': {
-                            'absences': 'P',
-                            'late_count': 'X',
-                            'late_minutes': ['Y', 'Z'],
-                            'early_count': ['AA', 'AB'],
-                            'early_minutes': 'AC'
-                        }
+                        'nombre': (2, 'Y'),  # Fila 3, Columna Y
+                        'departamento': (2, 'Q'),  # Fila 3, Columna Q
+                        'ausencias': (6, 'P'),
+                        'llegadas_tarde': (6, 'X'),
+                        'minutos_tarde': [(6, 'Y'), (6, 'Z')],
+                        'salidas_temprano': [(6, 'AA'), (6, 'AB')],
+                        'minutos_temprano': (6, 'AC')
                     },
                     # Tercer empleado
                     {
-                        'dept_cols': (2, 'AF'),  # Fila 3, Columnas AF-AL
-                        'name_cols': (2, 'AN'),  # Fila 3, Columnas AN-AR
-                        'stats_row': 6,          # Fila 7 para estadísticas
-                        'stats_cols': {
-                            'absences': 'AE',
-                            'late_count': 'AM',
-                            'late_minutes': ['AN', 'AO'],
-                            'early_count': ['AP', 'AQ'],
-                            'early_minutes': 'AR'
-                        }
+                        'nombre': (2, 'AN'),  # Fila 3, Columna AN
+                        'departamento': (2, 'AF'),  # Fila 3, Columna AF
+                        'ausencias': (6, 'AE'),
+                        'llegadas_tarde': (6, 'AM'),
+                        'minutos_tarde': [(6, 'AN'), (6, 'AO')],
+                        'salidas_temprano': [(6, 'AP'), (6, 'AQ')],
+                        'minutos_temprano': (6, 'AR')
                     }
                 ]
 
-                # Procesar cada grupo de empleado
                 for group in employee_groups:
                     try:
-                        # Extraer nombre y departamento
-                        name = str(df.iloc[group['name_cols'][0], df.columns.get_loc(group['name_cols'][1])]).strip()
-                        dept = str(df.iloc[group['dept_cols'][0], df.columns.get_loc(group['dept_cols'][1])]).strip()
+                        # Obtener nombre y departamento
+                        name = str(df.iloc[group['nombre'][0], df.columns.get_loc(group['nombre'][1])]).strip()
+                        dept = str(df.iloc[group['departamento'][0], df.columns.get_loc(group['departamento'][1])]).strip()
 
-                        if pd.isna(name) or name == '' or name == 'nan' or name.lower() == 'name':
+                        if pd.isna(name) or name == '' or name == 'nan':
                             continue
 
-                        print(f"Processing employee: {name}, department: {dept}")
+                        print(f"Found employee: {name} in department: {dept}")
 
                         # Obtener estadísticas
-                        stats_row = group['stats_row']
-                        cols = group['stats_cols']
+                        absences = float(df.iloc[group['ausencias'][0], df.columns.get_loc(group['ausencias'][1])]) if pd.notna(df.iloc[group['ausencias'][0], df.columns.get_loc(group['ausencias'][1])]) else 0
+                        late_count = float(df.iloc[group['llegadas_tarde'][0], df.columns.get_loc(group['llegadas_tarde'][1])]) if pd.notna(df.iloc[group['llegadas_tarde'][0], df.columns.get_loc(group['llegadas_tarde'][1])]) else 0
 
-                        # Extraer valores básicos
-                        absences = float(df.iloc[stats_row, df.columns.get_loc(cols['absences'])]) if pd.notna(df.iloc[stats_row, df.columns.get_loc(cols['absences'])]) else 0
-                        late_count = float(df.iloc[stats_row, df.columns.get_loc(cols['late_count'])]) if pd.notna(df.iloc[stats_row, df.columns.get_loc(cols['late_count'])]) else 0
-
-                        # Calcular minutos de tardanza
+                        # Sumar minutos de tardanza
                         late_minutes = sum(
-                            float(df.iloc[stats_row, df.columns.get_loc(col)]) 
-                            if pd.notna(df.iloc[stats_row, df.columns.get_loc(col)]) else 0 
-                            for col in cols['late_minutes']
+                            float(df.iloc[pos[0], df.columns.get_loc(pos[1])]) 
+                            if pd.notna(df.iloc[pos[0], df.columns.get_loc(pos[1])]) else 0 
+                            for pos in group['minutos_tarde']
                         )
 
-                        # Calcular salidas tempranas
+                        # Sumar veces que se fue temprano
                         early_count = sum(
-                            float(df.iloc[stats_row, df.columns.get_loc(col)]) 
-                            if pd.notna(df.iloc[stats_row, df.columns.get_loc(col)]) else 0 
-                            for col in cols['early_count']
+                            float(df.iloc[pos[0], df.columns.get_loc(pos[1])]) 
+                            if pd.notna(df.iloc[pos[0], df.columns.get_loc(pos[1])]) else 0 
+                            for pos in group['salidas_temprano']
                         )
 
-                        early_minutes = float(df.iloc[stats_row, df.columns.get_loc(cols['early_minutes'])]) if pd.notna(df.iloc[stats_row, df.columns.get_loc(cols['early_minutes'])]) else 0
+                        # Obtener minutos de salida temprana
+                        early_minutes = float(df.iloc[group['minutos_temprano'][0], df.columns.get_loc(group['minutos_temprano'][1])]) if pd.notna(df.iloc[group['minutos_temprano'][0], df.columns.get_loc(group['minutos_temprano'][1])]) else 0
 
-                        # Calcular horas trabajadas
+                        # Calcular horas totales
                         required_hours = 160  # 8 horas * 20 días
                         actual_hours = required_hours - (absences * 8) - (late_minutes / 60) - (early_minutes / 60)
 
@@ -126,7 +112,7 @@ class ExcelProcessor:
                         print(f"Added record for {name}")
 
                     except Exception as e:
-                        print(f"Error processing employee in sheet {sheet}: {str(e)}")
+                        print(f"Error processing employee in group: {str(e)}")
                         continue
 
             except Exception as e:

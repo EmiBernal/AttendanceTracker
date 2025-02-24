@@ -24,7 +24,6 @@ class ExcelProcessor:
             lunch_overtime_days = 0
             total_lunch_minutes = 0
 
-            # Definir las posiciones de los empleados
             employee_positions = [
                 {
                     'name_col': 'J',        # Primera persona
@@ -51,7 +50,6 @@ class ExcelProcessor:
                     print(f"\nProcesando hoja: {sheet}")
                     df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
 
-                    # Convertir letras de columnas a índices
                     for position in employee_positions:
                         try:
                             name_col_idx = self.get_column_index(position['name_col'])
@@ -59,7 +57,6 @@ class ExcelProcessor:
                             lunch_return_idx = self.get_column_index(position['lunch_return'])
                             day_col_idx = self.get_column_index(position['day_col'])
 
-                            # Verificar nombre en fila 3 (índice 2)
                             name_cell = df.iloc[2, name_col_idx]
                             if pd.isna(name_cell):
                                 continue
@@ -68,7 +65,6 @@ class ExcelProcessor:
                             if employee_cell == employee_name:
                                 print(f"Empleado encontrado en hoja {sheet}, columna {position['name_col']}")
 
-                                # Revisar filas 12-42
                                 for row in range(11, 42):
                                     try:
                                         day_value = df.iloc[row, day_col_idx]
@@ -112,6 +108,94 @@ class ExcelProcessor:
             print(f"Total días con exceso de tiempo de almuerzo: {lunch_overtime_days}")
             print(f"Total minutos excedidos: {total_lunch_minutes:.0f}")
             return lunch_overtime_days, total_lunch_minutes
+
+        except Exception as e:
+            print(f"Error general: {str(e)}")
+            return 0, 0
+
+    def count_late_days(self, employee_name):
+        """Cuenta los días que el empleado llegó tarde (después de 7:50)"""
+        try:
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            late_days = 0
+            total_late_minutes = 0
+
+            for sheet in attendance_sheets:
+                try:
+                    print(f"\nProcesando hoja: {sheet}")
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+
+                    employee_positions = [
+                        {
+                            'name_col': 'J',        # Primera persona
+                            'entry_col': 'B',       # Entrada
+                            'day_col': 'A'          # Columna de días
+                        },
+                        {
+                            'name_col': 'Y',        # Segunda persona
+                            'entry_col': 'Q',       # Entrada
+                            'day_col': 'P'          # Columna de días
+                        },
+                        {
+                            'name_col': 'AN',       # Tercera persona
+                            'entry_col': 'AF',      # Entrada
+                            'day_col': 'AE'         # Columna de días
+                        }
+                    ]
+
+                    for position in employee_positions:
+                        try:
+                            name_col_idx = self.get_column_index(position['name_col'])
+                            entry_col_idx = self.get_column_index(position['entry_col'])
+                            day_col_idx = self.get_column_index(position['day_col'])
+
+                            name_cell = df.iloc[2, name_col_idx]
+                            if pd.isna(name_cell):
+                                continue
+
+                            employee_cell = str(name_cell).strip()
+                            if employee_cell == employee_name:
+                                print(f"Empleado encontrado en hoja {sheet}, columna {position['name_col']}")
+
+                                for row in range(11, 42):
+                                    try:
+                                        day_value = df.iloc[row, day_col_idx]
+                                        if pd.isna(day_value):
+                                            break
+
+                                        day_str = str(day_value).strip().lower()
+                                        if day_str == '' or day_str == 'nan':
+                                            break
+
+                                        if day_str != 'absence':
+                                            entry_time = df.iloc[row, entry_col_idx]
+                                            if not pd.isna(entry_time):
+                                                try:
+                                                    entry_time = pd.to_datetime(entry_time).time()
+                                                    if entry_time > self.WORK_START_TIME:
+                                                        late_days += 1
+                                                        late_minutes = (
+                                                            datetime.combine(datetime.min, entry_time) -
+                                                            datetime.combine(datetime.min, self.WORK_START_TIME)
+                                                        ).total_seconds() / 60
+                                                        total_late_minutes += late_minutes
+                                                        print(f"Llegada tarde en fila {row+1}: {late_minutes:.0f} minutos")
+
+                                                except Exception as e:
+                                                    print(f"Error procesando hora de entrada en fila {row+1}: {str(e)}")
+                                    except Exception as e:
+                                        print(f"Error en fila {row+1}: {str(e)}")
+
+                        except Exception as e:
+                            print(f"Error procesando posición en hoja {sheet}: {str(e)}")
+
+                except Exception as e:
+                    print(f"Error procesando hoja {sheet}: {str(e)}")
+
+            print(f"Total días de llegada tarde: {late_days}")
+            print(f"Total minutos de tardanza: {total_late_minutes:.0f}")
+            return late_days, total_late_minutes
 
         except Exception as e:
             print(f"Error general: {str(e)}")
@@ -191,13 +275,16 @@ class ExcelProcessor:
         # Calcular días con exceso de tiempo de almuerzo
         lunch_overtime_days, total_lunch_minutes = self.count_lunch_overtime_days(employee_name)
 
+        # Calcular días de llegada tarde
+        late_days, late_minutes = self.count_late_days(employee_name)
+
         stats = {
             'name': employee_name,
             'department': str(employee_summary['department']),
             'required_hours': float(employee_summary['required_hours']),
             'actual_hours': float(employee_summary['actual_hours']),
-            'late_days': int(employee_summary['late_count']),
-            'late_minutes': float(employee_summary['late_minutes']),
+            'late_days': late_days,
+            'late_minutes': late_minutes,
             'early_departures': int(employee_summary['early_departure_count']),
             'early_minutes': float(employee_summary['early_departure_minutes']),
             'absences': int(employee_summary['absences']),

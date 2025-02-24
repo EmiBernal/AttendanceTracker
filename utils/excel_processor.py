@@ -11,36 +11,30 @@ class ExcelProcessor:
     def process_attendance_summary(self):
         """Procesa los datos de asistencia desde la hoja Summary"""
         try:
-            # Leer la hoja Summary y mostrar su contenido
             print("Leyendo hoja Summary...")
             summary_df = pd.read_excel(self.excel_file, sheet_name="Summary")
             print("\nContenido de las primeras filas de Summary:")
             print(summary_df.head())
             print("\nColumnas en Summary:", summary_df.columns.tolist())
 
-            # Procesar las filas 5 a 23 de la hoja summary
             empleados_df = summary_df.iloc[4:23, [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 13]]
             print("\nDatos procesados de empleados:")
             print(empleados_df.head())
 
-            # Renombrar las columnas
             empleados_df.columns = [
                 'employee_id', 'employee_name', 'department', 'required_hours',
                 'actual_hours', 'late_count', 'late_minutes', 'early_departure_count',
                 'early_departure_minutes', 'attendance_ratio', 'absences'
             ]
 
-            # Limpiar los datos
             empleados_df = empleados_df.dropna(subset=['employee_name'])
             empleados_df = empleados_df.fillna(0)
 
-            # Convertir columnas numéricas
             numeric_cols = ['required_hours', 'actual_hours', 'late_count', 'late_minutes',
                           'early_departure_count', 'early_departure_minutes', 'absences']
             for col in numeric_cols:
                 empleados_df[col] = pd.to_numeric(empleados_df[col], errors='coerce').fillna(0)
 
-            # Procesar el ratio de asistencia
             def convert_ratio(value):
                 try:
                     if isinstance(value, str) and '/' in value:
@@ -51,19 +45,73 @@ class ExcelProcessor:
                     return 0.0
 
             empleados_df['attendance_ratio'] = empleados_df['attendance_ratio'].apply(convert_ratio)
-
-            print("\nDataFrame final procesado:")
-            print(empleados_df.head())
             return empleados_df
 
         except Exception as e:
             print(f"Error procesando el archivo: {str(e)}")
-            # Retornar DataFrame vacío con las columnas esperadas
             return pd.DataFrame(columns=[
                 'employee_id', 'employee_name', 'department', 'required_hours',
                 'actual_hours', 'late_count', 'late_minutes', 'early_departure_count',
                 'early_departure_minutes', 'attendance_ratio', 'absences'
             ])
+
+    def count_missing_entry_days(self, employee_name):
+        """Cuenta los días sin registro de entrada para un empleado"""
+        try:
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            missing_entry_days = 0
+
+            for sheet in attendance_sheets:
+                df = pd.read_excel(self.excel_file, sheet_name=sheet)
+
+                # Verificar en qué posición está el empleado
+                name_positions = [
+                    ('J', 'N'),  # Primera persona
+                    ('Y', 'AC'), # Segunda persona
+                    ('AN', 'AR') # Tercera persona
+                ]
+                entry_columns = ['B', 'Q', 'AF']  # Columnas de entrada correspondientes
+                day_columns = ['A', 'P', 'AE']    # Columnas de días correspondientes
+
+                for idx, (name_start, name_end) in enumerate(name_positions):
+                    try:
+                        employee_cell = str(df.iloc[2, df.columns.get_loc(name_start)]).strip()
+                        if employee_cell == employee_name:
+                            # Encontramos al empleado, procesar sus registros
+                            entry_col = entry_columns[idx]
+                            day_col = day_columns[idx]
+
+                            # Revisar desde la fila 12 hasta encontrar una fila vacía o llegar a 42
+                            for row in range(11, 42):  # Empezamos en 11 (índice 0-based para fila 12)
+                                try:
+                                    day_value = str(df.iloc[row, df.columns.get_loc(day_col)]).strip()
+                                    if pd.isna(day_value) or day_value == '' or day_value == 'nan':
+                                        break  # Fin del mes
+
+                                    # Verificar si es un día laboral y no es ausencia
+                                    if day_value.lower() != 'absence':
+                                        try:
+                                            day_date = datetime.strptime(str(day_value), '%Y-%m-%d')
+                                            if day_date.weekday() < 5:  # 0-4 son días de semana
+                                                entry_value = str(df.iloc[row, df.columns.get_loc(entry_col)]).strip()
+                                                if pd.isna(entry_value) or entry_value == '' or entry_value == 'nan':
+                                                    missing_entry_days += 1
+                                        except:
+                                            # Si no se puede convertir la fecha, asumimos que es día laboral
+                                            entry_value = str(df.iloc[row, df.columns.get_loc(entry_col)]).strip()
+                                            if pd.isna(entry_value) or entry_value == '' or entry_value == 'nan':
+                                                missing_entry_days += 1
+                                except:
+                                    continue
+                    except:
+                        continue
+
+            return missing_entry_days
+
+        except Exception as e:
+            print(f"Error contando días sin registro: {str(e)}")
+            return 0
 
     def get_employee_stats(self, employee_name):
         """Obtiene estadísticas para un empleado específico"""
@@ -85,6 +133,9 @@ class ExcelProcessor:
 
         employee_summary = employee_data.iloc[0]
 
+        # Contar días sin registro de entrada
+        missing_entry_days = self.count_missing_entry_days(employee_name)
+
         stats = {
             'name': employee_name,
             'department': str(employee_summary['department']),
@@ -95,9 +146,9 @@ class ExcelProcessor:
             'early_departures': int(employee_summary['early_departure_count']),
             'early_minutes': float(employee_summary['early_departure_minutes']),
             'absences': int(employee_summary['absences']),
-            'missing_entry_days': 0,  # Placeholder para implementación futura
-            'missing_exit_days': 0,   # Placeholder para implementación futura
-            'missing_lunch_days': 0,  # Placeholder para implementación futura
+            'missing_entry_days': missing_entry_days,
+            'missing_exit_days': 0,   # Se implementará después
+            'missing_lunch_days': 0,  # Se implementará después
             'attendance_ratio': float(employee_summary['attendance_ratio'])
         }
 

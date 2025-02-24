@@ -10,18 +10,18 @@ class ExcelProcessor:
         self.WORK_END_TIME = datetime.strptime('17:10', '%H:%M').time()
 
     def validate_sheets(self):
+        """Validar que existan las hojas necesarias"""
         required_sheets = ["Summary", "Shifts", "Logs", "Exceptional"]
         missing_sheets = [sheet for sheet in required_sheets if sheet not in self.excel_file.sheet_names]
         if missing_sheets:
             raise ValueError(f"Missing required sheets: {', '.join(missing_sheets)}")
 
     def process_attendance_summary(self):
-        print("Reading Summary sheet...")
+        """Procesa la hoja de resumen de asistencia"""
         df = pd.read_excel(self.excel_file, sheet_name="Summary", header=[2, 3])
-        print("Original columns:", df.columns.tolist())
 
+        # Normalizar nombres de columnas
         normalized_columns = ['_'.join(col).strip() for col in df.columns.values]
-        print("Normalized columns:", normalized_columns)
         df.columns = normalized_columns
 
         rename_dict = {
@@ -42,16 +42,16 @@ class ExcelProcessor:
 
         df = df.rename(columns=rename_dict)
 
-        for col in ['required_hours', 'actual_hours', 'late_minutes', 
-                   'early_departure_minutes', 'overtime_regular', 'overtime_special',
-                   'late_count', 'early_departure_count', 'absences']:
-            if col in df.columns:
-                print(f"Converting column: {col}")
-                try:
-                    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
-                except Exception as e:
-                    print(f"Skipping non-Series column: {col}. {str(e)}")
+        # Convertir columnas numéricas
+        numeric_columns = ['required_hours', 'actual_hours', 'late_minutes', 
+                         'early_departure_minutes', 'overtime_regular', 'overtime_special',
+                         'late_count', 'early_departure_count', 'absences']
 
+        for col in numeric_columns:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+
+        # Procesar ratio de asistencia
         if 'attendance_ratio' in df.columns:
             def convert_ratio(value):
                 try:
@@ -69,10 +69,12 @@ class ExcelProcessor:
         return df
 
     def process_logs(self):
+        """Procesa los registros de asistencia"""
         print("Processing Logs sheet...")
         df = pd.read_excel(self.excel_file, sheet_name="Logs", skiprows=4)
 
         records = []
+        # Procesar de a 2 filas (nombre y tiempos)
         for i in range(0, len(df), 2):
             if i + 1 >= len(df):
                 break
@@ -83,10 +85,11 @@ class ExcelProcessor:
             employee_name = str(name_row.iloc[1]).strip()
             print(f"Processing employee: {employee_name}")
 
+            # Procesar cada día (4 columnas por día)
             for day_start in range(2, len(df.columns), 4):
                 try:
                     times = []
-                    for j in range(4):
+                    for j in range(4):  # Leer las 4 marcas de tiempo
                         if day_start + j < len(time_row):
                             time_str = str(time_row.iloc[day_start + j]).strip()
                             if pd.notna(time_str) and time_str != 'nan':
@@ -123,7 +126,6 @@ class ExcelProcessor:
 
         result_df = pd.DataFrame(records)
         print(f"Created DataFrame with {len(result_df)} records")
-        print(f"DataFrame columns: {result_df.columns.tolist()}")
         return result_df
 
     def get_employee_stats(self, employee_name):

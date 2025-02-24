@@ -1,0 +1,82 @@
+Para la hora de ingreso, egreso, horario para comer y horario de regreso luego de comer usa las hojas de Excel que están luego de "Exception", las cuales son unas "tarjetas" que indican la información de la persona. Por hoja hay información de 3 personas:
+
+Información detallada en cada columna:
+
+---  
+
+**(Primera persona)**  
+**Fila 3, Columna B-H**: Departamento  
+**Fila 3, Columna J-N**: Nombre  
+**Fila 4, Columna B-H**: Fechas que trabajará  
+**Fila 4, Columna J-N**: Número de identificación  
+**Fila 7, Columna A**: Ausencias  
+**Fila 7, Columna I**: Veces que llegó tarde  
+**Fila 7, Columna J,K**: Veces que llegó tarde (total minutos)  
+**Fila 7, Columna L,M**: Veces que se fue temprano  
+**Fila 7, Columna N**: Veces que se fue temprano (total minutos)  
+
+---  
+
+**(Segunda persona)**  
+**Fila 3, Columna Q-W**: Departamento  
+**Fila 3, Columna Y-AC**: Nombre  
+**Fila 4, Columna Q-W**: Fechas que trabajará  
+**Fila 4, Columna Y-AC**: Número de identificación  
+**Fila 7, Columna P**: Ausencias  
+**Fila 7, Columna X**: Veces que llegó tarde  
+**Fila 7, Columna Y,Z**: Veces que llegó tarde (total minutos)  
+**Fila 7, Columna AA,AB**: Veces que se fue temprano  
+**Fila 7, Columna AC**: Veces que se fue temprano (total minutos)  
+
+---  
+
+**(Tercera persona)**  
+**Fila 3, Columna AF-AL**: Departamento  
+**Fila 3, Columna AN-AR**: Nombre  
+**Fila 4, Columna AF-AL**: Fechas que trabajará  
+**Fila 4, Columna AN-AR**: Número de identificación  
+**Fila 7, Columna AE**: Ausencias  
+**Fila 7, Columna AM**: Veces que llegó tarde  
+**Fila 7, Columna AN,AO**: Veces que llegó tarde (total minutos)  
+**Fila 7, Columna AP,AQ**: Veces que se fue temprano  
+**Fila 7, Columna AR**: Veces que se fue temprano (total minutos)  
+
+---  
+
+
+Desde la fila 12 comienza la lista de asistencia de cada uno de los trabajadores:
+En la fila 42 termina (si es mes que tiene 31 dias)
+
+Información detallada: 
+
+---  
+
+**(Primera persona)**  
+**Fila 12-42, Columna A**: Dias 
+**Fila 12-42, Columna B**: Horario de entrada del trabajador (AM) 
+**Fila 12-42, Columna D**: Horario de salida (AM) (En este horario se retira para comer(si es que después vuelve) sino es pq se fue temprano)
+**Fila 12-42, Columna G**: Horario de regreso (PM) (En este horario vuelve de comer, se puede calcular cuanto tardo en comer)
+**Fila 12-42, Columna I**: Horario de salida del trabajador (PM) 
+---  
+
+**(Segunda persona)**  
+**Fila 12-42, Columna P**: Dias 
+**Fila 12-42, Columna Q**: Horario de entrada del trabajador (AM) 
+**Fila 12-42, Columna S**: Horario de salida (AM) (En este horario se retira para comer(si es que después vuelve) sino es pq se fue temprano)
+**Fila 12-42, Columna V**: Horario de regreso (PM) (En este horario vuelve de comer, se puede calcular cuanto tardo en comer)
+**Fila 12-42, Columna X**: Horario de salida del trabajador (PM) 
+---  
+
+**(Tercera persona)**  
+**Fila 12-42, Columna AE**: Dias 
+**Fila 12-42, Columna AF**: Horario de entrada del trabajador (AM) 
+**Fila 12-42, Columna AH**: Horario de salida (AM) (En este horario se retira para comer(si es que después vuelve) sino es pq se fue temprano)
+**Fila 12-42, Columna AK**: Horario de regreso (PM) (En este horario vuelve de comer, se puede calcular cuanto tardo en comer)
+**Fila 12-42, Columna AM**: Horario de salida del trabajador (PM)   
+---  
+
+Algunos días puede decir ausencia (por lo que no trabajo)
+
+Acomoda el programa para que pueda leer estos datos, luego de la hoja "Exceptional" las siguientes hojas tienen este formato. De aca puedes sacar la info, mas que nada para calcular los minutos que tardo para comer el personal.
+
+

@@ -121,72 +121,91 @@ class ExcelProcessor:
             missing_exit_days = 0
 
             for sheet in attendance_sheets:
-                df = pd.read_excel(self.excel_file, sheet_name=sheet)
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet)
+                    print(f"\nProcesando hoja: {sheet}")
 
-                # Definir las columnas para cada posición de empleado
-                employee_positions = [
-                    {
-                        'name_col': 'J',        # Primera persona
-                        'exit_col': 'I',        # Columna de salida
-                        'day_col': 'A'          # Columna de días
-                    },
-                    {
-                        'name_col': 'Y',        # Segunda persona
-                        'exit_col': 'X',        # Columna de salida
-                        'day_col': 'P'          # Columna de días
-                    },
-                    {
-                        'name_col': 'AN',       # Tercera persona
-                        'exit_col': 'AM',       # Columna de salida
-                        'day_col': 'AE'         # Columna de días
-                    }
-                ]
+                    # Definir las columnas para cada posición de empleado
+                    employee_positions = [
+                        {
+                            'name_col': 'J',        # Primera persona
+                            'exit_col': 'I',        # Columna de salida
+                            'day_col': 'A'          # Columna de días
+                        },
+                        {
+                            'name_col': 'Y',        # Segunda persona
+                            'exit_col': 'X',        # Columna de salida
+                            'day_col': 'P'          # Columna de días
+                        },
+                        {
+                            'name_col': 'AN',       # Tercera persona
+                            'exit_col': 'AM',       # Columna de salida
+                            'day_col': 'AE'         # Columna de días
+                        }
+                    ]
 
-                # Buscar al empleado en cada posición posible
-                for position in employee_positions:
-                    try:
-                        # Verificar si el nombre coincide en la fila 3 (índice 2)
-                        employee_cell = str(df.iloc[2, df.columns.get_loc(position['name_col'])]).strip()
+                    # Buscar al empleado en cada posición posible
+                    for position in employee_positions:
+                        try:
+                            # Verificar si el nombre coincide en la fila 3
+                            name_cell = df.iloc[2, df.columns.get_loc(position['name_col'])]
+                            if pd.isna(name_cell):
+                                continue
 
-                        if employee_cell == employee_name:
-                            # Procesar los días desde la fila 12 hasta 42
-                            for row in range(11, 42):  # índices 0-based para filas 12-42
-                                try:
-                                    # Verificar el valor en la columna de días
-                                    day_value = str(df.iloc[row, df.columns.get_loc(position['day_col'])]).strip()
+                            employee_cell = str(name_cell).strip()
+                            print(f"Comparando '{employee_cell}' con '{employee_name}'")
 
-                                    # Si no hay valor en la columna de días, llegamos al final del mes
-                                    if pd.isna(day_value) or day_value == '' or day_value == 'nan':
-                                        break
+                            if employee_cell == employee_name:
+                                print(f"Empleado encontrado en columna {position['name_col']}")
 
-                                    # Si no es una ausencia, verificar si es día laboral
-                                    if day_value.lower() != 'absence':
-                                        try:
-                                            # Intentar convertir el valor a fecha
-                                            day_date = datetime.strptime(str(day_value), '%Y-%m-%d')
+                                # Procesar los días desde la fila 12 hasta 42
+                                for row in range(11, 42):  # índices 0-based para filas 12-42
+                                    try:
+                                        # Verificar el valor en la columna de días
+                                        day_value = df.iloc[row, df.columns.get_loc(position['day_col'])]
 
-                                            # Si es día laboral (lunes a viernes)
-                                            if day_date.weekday() < 5:
-                                                # Verificar si hay registro de salida
-                                                exit_value = str(df.iloc[row, df.columns.get_loc(position['exit_col'])]).strip()
+                                        # Si no hay valor en la columna de días, llegamos al final del mes
+                                        if pd.isna(day_value):
+                                            break
 
-                                                # Si no hay registro de salida, incrementar el contador
-                                                if pd.isna(exit_value) or exit_value == '' or exit_value == 'nan':
+                                        day_str = str(day_value).strip().lower()
+                                        if day_str == '' or day_str == 'nan':
+                                            break
+
+                                        # Si no es una ausencia, verificar si es día laboral
+                                        if day_str != 'absence':
+                                            try:
+                                                # Intentar convertir el valor a fecha
+                                                day_date = datetime.strptime(str(day_value), '%Y-%m-%d')
+
+                                                # Si es día laboral (lunes a viernes)
+                                                if day_date.weekday() < 5:
+                                                    # Verificar si hay registro de salida
+                                                    exit_value = df.iloc[row, df.columns.get_loc(position['exit_col'])]
+
+                                                    # Si está vacío o es NaN
+                                                    if pd.isna(exit_value) or str(exit_value).strip() == '':
+                                                        missing_exit_days += 1
+                                                        print(f"Día sin registro de salida encontrado en {sheet}, fila {row+1}, columna {position['exit_col']}")
+                                            except Exception as e:
+                                                print(f"Error procesando fecha en fila {row+1}: {str(e)}")
+                                                # Si no podemos procesar la fecha, asumimos que es día laboral
+                                                exit_value = df.iloc[row, df.columns.get_loc(position['exit_col'])]
+                                                if pd.isna(exit_value) or str(exit_value).strip() == '':
                                                     missing_exit_days += 1
-                                                    print(f"Día sin registro de salida encontrado para {employee_name} en {day_value}")
-                                        except:
-                                            # Si no se puede convertir la fecha, verificar directamente el registro de salida
-                                            exit_value = str(df.iloc[row, df.columns.get_loc(position['exit_col'])]).strip()
-                                            if pd.isna(exit_value) or exit_value == '' or exit_value == 'nan':
-                                                missing_exit_days += 1
-                                                print(f"Día sin registro de salida encontrado para {employee_name}")
-                                except Exception as e:
-                                    print(f"Error procesando fila {row}: {str(e)}")
-                                    continue
-                    except Exception as e:
-                        print(f"Error verificando posición: {str(e)}")
-                        continue
+                                                    print(f"Día sin registro de salida encontrado en {sheet}, fila {row+1}, columna {position['exit_col']}")
+                                    except Exception as e:
+                                        print(f"Error procesando fila {row+1}: {str(e)}")
+                                        continue
+                        except Exception as e:
+                            print(f"Error verificando posición: {str(e)}")
+                            continue
 
+                except Exception as e:
+                    print(f"Error procesando hoja {sheet}: {str(e)}")
+                    continue
+
+            print(f"Total días sin registro de salida: {missing_exit_days}")
             return missing_exit_days
 
         except Exception as e:

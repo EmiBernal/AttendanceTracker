@@ -113,6 +113,64 @@ class ExcelProcessor:
             print(f"Error contando días sin registro: {str(e)}")
             return 0
 
+    def count_missing_exit_days(self, employee_name):
+        """Cuenta los días sin registro de salida para un empleado"""
+        try:
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            missing_exit_days = 0
+
+            for sheet in attendance_sheets:
+                df = pd.read_excel(self.excel_file, sheet_name=sheet)
+
+                # Verificar en qué posición está el empleado
+                name_positions = [
+                    ('J', 'N'),  # Primera persona
+                    ('Y', 'AC'), # Segunda persona
+                    ('AN', 'AR') # Tercera persona
+                ]
+                exit_columns = ['I', 'X', 'AM']  # Columnas de salida correspondientes
+                day_columns = ['A', 'P', 'AE']    # Columnas de días correspondientes
+
+                for idx, (name_start, name_end) in enumerate(name_positions):
+                    try:
+                        employee_cell = str(df.iloc[2, df.columns.get_loc(name_start)]).strip()
+                        if employee_cell == employee_name:
+                            # Encontramos al empleado, procesar sus registros
+                            exit_col = exit_columns[idx]
+                            day_col = day_columns[idx]
+
+                            # Revisar desde la fila 12 hasta encontrar una fila vacía o llegar a 42
+                            for row in range(11, 42):  # Empezamos en 11 (índice 0-based para fila 12)
+                                try:
+                                    day_value = str(df.iloc[row, df.columns.get_loc(day_col)]).strip()
+                                    if pd.isna(day_value) or day_value == '' or day_value == 'nan':
+                                        break  # Fin del mes
+
+                                    # Verificar si es un día laboral y no es ausencia
+                                    if day_value.lower() != 'absence':
+                                        try:
+                                            day_date = datetime.strptime(str(day_value), '%Y-%m-%d')
+                                            if day_date.weekday() < 5:  # 0-4 son días de semana
+                                                exit_value = str(df.iloc[row, df.columns.get_loc(exit_col)]).strip()
+                                                if pd.isna(exit_value) or exit_value == '' or exit_value == 'nan':
+                                                    missing_exit_days += 1
+                                        except:
+                                            # Si no se puede convertir la fecha, asumimos que es día laboral
+                                            exit_value = str(df.iloc[row, df.columns.get_loc(exit_col)]).strip()
+                                            if pd.isna(exit_value) or exit_value == '' or exit_value == 'nan':
+                                                missing_exit_days += 1
+                                except:
+                                    continue
+                    except:
+                        continue
+
+            return missing_exit_days
+
+        except Exception as e:
+            print(f"Error contando días sin registro de salida: {str(e)}")
+            return 0
+
     def get_employee_stats(self, employee_name):
         """Obtiene estadísticas para un empleado específico"""
         summary = self.process_attendance_summary()
@@ -133,8 +191,9 @@ class ExcelProcessor:
 
         employee_summary = employee_data.iloc[0]
 
-        # Contar días sin registro de entrada
+        # Contar días sin registro de entrada y salida
         missing_entry_days = self.count_missing_entry_days(employee_name)
+        missing_exit_days = self.count_missing_exit_days(employee_name)
 
         stats = {
             'name': employee_name,
@@ -147,7 +206,7 @@ class ExcelProcessor:
             'early_minutes': float(employee_summary['early_departure_minutes']),
             'absences': int(employee_summary['absences']),
             'missing_entry_days': missing_entry_days,
-            'missing_exit_days': 0,   # Se implementará después
+            'missing_exit_days': missing_exit_days,
             'missing_lunch_days': 0,  # Se implementará después
             'attendance_ratio': float(employee_summary['attendance_ratio'])
         }

@@ -29,10 +29,10 @@ class ExcelProcessor:
                 # Definir los grupos de empleados y sus columnas correspondientes
                 employee_groups = [
                     {
-                        'dept_range': (2, 'B:H'),
-                        'name_range': (2, 'J:N'),
+                        'name_cell': (2, 'J'),
+                        'dept_cell': (2, 'B'),
                         'stats_row': 6,
-                        'cols': {
+                        'stats_cols': {
                             'absences': 'A',
                             'late_count': 'I',
                             'late_minutes': ['J', 'K'],
@@ -41,10 +41,10 @@ class ExcelProcessor:
                         }
                     },
                     {
-                        'dept_range': (2, 'Q:W'),
-                        'name_range': (2, 'Y:AC'),
+                        'name_cell': (2, 'Y'),
+                        'dept_cell': (2, 'Q'),
                         'stats_row': 6,
-                        'cols': {
+                        'stats_cols': {
                             'absences': 'P',
                             'late_count': 'X',
                             'late_minutes': ['Y', 'Z'],
@@ -53,10 +53,10 @@ class ExcelProcessor:
                         }
                     },
                     {
-                        'dept_range': (2, 'AF:AL'),
-                        'name_range': (2, 'AN:AR'),
+                        'name_cell': (2, 'AN'),
+                        'dept_cell': (2, 'AF'),
                         'stats_row': 6,
-                        'cols': {
+                        'stats_cols': {
                             'absences': 'AE',
                             'late_count': 'AM',
                             'late_minutes': ['AN', 'AO'],
@@ -70,37 +70,34 @@ class ExcelProcessor:
                 for group in employee_groups:
                     try:
                         # Extraer nombre y departamento
-                        dept_col = group['dept_range'][1].split(':')[0]
-                        name_col = group['name_range'][1].split(':')[0]
+                        name = str(df.iloc[group['name_cell'][0], df.columns.get_loc(group['name_cell'][1])]).strip()
+                        dept = str(df.iloc[group['dept_cell'][0], df.columns.get_loc(group['dept_cell'][1])]).strip()
 
-                        department = str(df.iloc[group['dept_range'][0], df.columns.get_loc(dept_col)]).strip()
-                        name = str(df.iloc[group['name_range'][0], df.columns.get_loc(name_col)]).strip()
-
-                        if pd.isna(name) or name == '':
+                        if pd.isna(name) or name == '' or name == 'nan':
                             continue
 
-                        # Extraer estadísticas
+                        # Obtener estadísticas
                         stats_row = group['stats_row']
-                        cols = group['cols']
+                        cols = group['stats_cols']
 
+                        # Extraer valores básicos
                         absences = float(df.iloc[stats_row, df.columns.get_loc(cols['absences'])]) if pd.notna(df.iloc[stats_row, df.columns.get_loc(cols['absences'])]) else 0
                         late_count = float(df.iloc[stats_row, df.columns.get_loc(cols['late_count'])]) if pd.notna(df.iloc[stats_row, df.columns.get_loc(cols['late_count'])]) else 0
 
-                        # Sumar minutos de tardanza
+                        # Calcular minutos de tardanza
                         late_minutes = sum(
                             float(df.iloc[stats_row, df.columns.get_loc(col)]) 
                             if pd.notna(df.iloc[stats_row, df.columns.get_loc(col)]) else 0 
                             for col in cols['late_minutes']
                         )
 
-                        # Sumar conteo de salidas tempranas
+                        # Calcular salidas tempranas
                         early_count = sum(
                             float(df.iloc[stats_row, df.columns.get_loc(col)]) 
                             if pd.notna(df.iloc[stats_row, df.columns.get_loc(col)]) else 0 
                             for col in cols['early_count']
                         )
 
-                        # Obtener minutos de salida temprana
                         early_minutes = float(df.iloc[stats_row, df.columns.get_loc(cols['early_minutes'])]) if pd.notna(df.iloc[stats_row, df.columns.get_loc(cols['early_minutes'])]) else 0
 
                         # Calcular horas trabajadas
@@ -109,7 +106,7 @@ class ExcelProcessor:
 
                         record = {
                             'employee_name': name,
-                            'department': department,
+                            'department': dept,
                             'required_hours': required_hours,
                             'actual_hours': actual_hours,
                             'late_count': late_count,
@@ -130,16 +127,39 @@ class ExcelProcessor:
                 print(f"Error processing sheet {sheet}: {str(e)}")
                 continue
 
+        if not all_records:
+            print("No records processed!")
+            # Return empty DataFrame with expected columns
+            return pd.DataFrame(columns=[
+                'employee_name', 'department', 'required_hours', 'actual_hours',
+                'late_count', 'late_minutes', 'early_departure_count',
+                'early_departure_minutes', 'absences', 'attendance_ratio'
+            ])
+
         return pd.DataFrame(all_records)
 
     def get_employee_stats(self, employee_name):
         """Obtiene estadísticas para un empleado específico"""
         summary = self.process_attendance_summary()
-        employee_summary = summary[summary['employee_name'] == employee_name].iloc[0]
+        print(f"Columns in summary: {summary.columns.tolist()}")
+        print(f"Number of records: {len(summary)}")
+
+        if len(summary) == 0:
+            raise ValueError("No employee records found in the Excel file")
+
+        if 'employee_name' not in summary.columns:
+            raise ValueError("Column 'employee_name' not found in processed data")
+
+        employee_data = summary[summary['employee_name'] == employee_name]
+
+        if len(employee_data) == 0:
+            raise ValueError(f"Employee '{employee_name}' not found in records")
+
+        employee_summary = employee_data.iloc[0]
 
         stats = {
             'name': employee_name,
-            'department': employee_summary['department'],
+            'department': str(employee_summary['department']),
             'required_hours': float(employee_summary['required_hours']),
             'actual_hours': float(employee_summary['actual_hours']),
             'late_days': int(employee_summary['late_count']),
@@ -147,9 +167,9 @@ class ExcelProcessor:
             'early_departures': int(employee_summary['early_departure_count']),
             'early_minutes': float(employee_summary['early_departure_minutes']),
             'absences': int(employee_summary['absences']),
-            'missing_entry_days': 0,  # Placeholder for future implementation
-            'missing_exit_days': 0,   # Placeholder for future implementation
-            'missing_lunch_days': 0,  # Placeholder for future implementation
+            'missing_entry_days': 0,  # Placeholder para implementación futura
+            'missing_exit_days': 0,   # Placeholder para implementación futura
+            'missing_lunch_days': 0,  # Placeholder para implementación futura
             'attendance_ratio': float(employee_summary['attendance_ratio'])
         }
 

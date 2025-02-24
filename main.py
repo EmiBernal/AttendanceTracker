@@ -47,8 +47,118 @@ st.markdown("""
     .auth-required {
         border-left: 4px solid #FFC107;
     }
+    /* Floating Menu Styles */
+    .floating-menu {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1000;
+    }
+
+    .menu-button {
+        width: 60px;
+        height: 60px;
+        background-color: #2196F3;
+        border-radius: 50%;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s, background-color 0.3s;
+    }
+
+    .menu-button:hover {
+        transform: scale(1.1);
+        background-color: #1976D2;
+    }
+
+    .menu-items {
+        position: absolute;
+        bottom: 70px;
+        right: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        transition: transform 0.3s, opacity 0.3s;
+        transform: translateY(20px);
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .menu-items.active {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    .menu-item {
+        width: 50px;
+        height: 50px;
+        background-color: white;
+        border-radius: 50%;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .menu-item:hover {
+        transform: scale(1.1);
+        background-color: #F5F5F5;
+    }
+
+    .tooltip {
+        position: absolute;
+        right: 70px;
+        background-color: #333;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        opacity: 0;
+        transition: opacity 0.2s;
+        pointer-events: none;
+        white-space: nowrap;
+    }
+
+    .menu-item:hover .tooltip {
+        opacity: 1;
+    }
 </style>
 """, unsafe_allow_html=True)
+
+st.markdown("""
+<div class="floating-menu">
+    <div class="menu-items" id="menuItems">
+        <div class="menu-item" onclick="window.location.reload()">
+            <span class="tooltip">Actualizar datos</span>
+            🔄
+        </div>
+        <div class="menu-item" onclick="document.querySelector('#exportData').click()">
+            <span class="tooltip">Exportar datos</span>
+            📊
+        </div>
+        <div class="menu-item" onclick="document.querySelector('#uploadFile').click()">
+            <span class="tooltip">Cargar archivo</span>
+            📁
+        </div>
+    </div>
+    <div class="menu-button" onclick="toggleMenu()">
+        +
+    </div>
+</div>
+
+<script>
+    function toggleMenu() {
+        const menuItems = document.getElementById('menuItems');
+        menuItems.classList.toggle('active');
+    }
+</script>
+""", unsafe_allow_html=True)
+
 
 def create_missing_records_section(stats):
     """Crea una sección expandible para mostrar los días sin registros"""

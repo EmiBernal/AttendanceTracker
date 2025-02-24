@@ -50,6 +50,31 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+def create_missing_records_section(stats):
+    """Crea una sección expandible para mostrar los días sin registros"""
+    with st.expander("📋 Días sin Registros", expanded=False):
+        st.markdown("""
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+        """, unsafe_allow_html=True)
+
+        missing_records = [
+            ('Sin Registro de Entrada', stats['missing_entry_days'], "Total días"),
+            ('Sin Registro de Salida', stats['missing_exit_days'], "Total días"),
+            ('Sin Registro de Almuerzo', stats['missing_lunch_days'], "Total días")
+        ]
+
+        for label, value, subtitle in missing_records:
+            status = 'success' if value == 0 else 'warning' if value <= 3 else 'danger'
+            st.markdown(f"""
+                <div class="stat-card">
+                    <div class="metric-label">{label}</div>
+                    <div class="metric-value {status}">{value}</div>
+                    <div class="metric-label">{subtitle}</div>
+                </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
 def create_employee_dashboard(processor, employee_name):
     """Create a detailed dashboard for a single employee"""
     stats = processor.get_employee_stats(employee_name)
@@ -113,7 +138,6 @@ def create_employee_dashboard(processor, employee_name):
         ('Inasistencias', stats['absences'], "Días totales"),
         ('Días con Llegada Tarde', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total"),
         ('Días con Exceso en Almuerzo', stats['lunch_overtime_days'], f"{stats['total_lunch_minutes']:.0f} minutos en total"),
-        ('Días sin Registro de Entrada/Salida/Almuerzo', stats.get('missing_records', 0), "Total días"),
     ]
 
     for label, value, subtitle in regular_metrics:
@@ -127,6 +151,9 @@ def create_employee_dashboard(processor, employee_name):
         """, unsafe_allow_html=True)
 
     st.markdown("</div></div>", unsafe_allow_html=True)
+
+    # Sección expandible para días sin registros
+    create_missing_records_section(stats)
 
     # Metrics Requiring Authorization
     st.markdown("""

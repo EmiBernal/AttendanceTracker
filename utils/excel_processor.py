@@ -29,19 +29,25 @@ class ExcelProcessor:
                     'name_col': 'J',        # Primera persona
                     'lunch_out': 'D',       # Salida almuerzo
                     'lunch_return': 'G',    # Regreso almuerzo
-                    'day_col': 'A'          # Columna de días
+                    'day_col': 'A',          # Columna de días
+                    'entry_col': 'B',       # Entrada
+                    'exit_col': 'I'         # Salida
                 },
                 {
                     'name_col': 'Y',        # Segunda persona
                     'lunch_out': 'S',       # Salida almuerzo
                     'lunch_return': 'V',    # Regreso almuerzo
-                    'day_col': 'P'          # Columna de días
+                    'day_col': 'P',          # Columna de días
+                    'entry_col': 'Q',       # Entrada
+                    'exit_col': 'X'         # Salida
                 },
                 {
                     'name_col': 'AN',       # Tercera persona
                     'lunch_out': 'AH',      # Salida almuerzo
                     'lunch_return': 'AK',   # Regreso almuerzo
-                    'day_col': 'AE'         # Columna de días
+                    'day_col': 'AE',         # Columna de días
+                    'entry_col': 'AF',      # Entrada
+                    'exit_col': 'AM'        # Salida
                 }
             ]
 
@@ -52,12 +58,8 @@ class ExcelProcessor:
 
                     for position in employee_positions:
                         try:
-                            name_col_idx = self.get_column_index(position['name_col'])
-                            lunch_out_idx = self.get_column_index(position['lunch_out'])
-                            lunch_return_idx = self.get_column_index(position['lunch_return'])
-                            day_col_idx = self.get_column_index(position['day_col'])
-
-                            name_cell = df.iloc[2, name_col_idx]
+                            cols = {key: self.get_column_index(value) for key, value in position.items()}
+                            name_cell = df.iloc[2, cols['name_col']]
                             if pd.isna(name_cell):
                                 continue
 
@@ -67,7 +69,7 @@ class ExcelProcessor:
 
                                 for row in range(11, 42):
                                     try:
-                                        day_value = df.iloc[row, day_col_idx]
+                                        day_value = df.iloc[row, cols['day_col']]
                                         if pd.isna(day_value):
                                             break
 
@@ -76,8 +78,8 @@ class ExcelProcessor:
                                             break
 
                                         if day_str != 'absence':
-                                            lunch_out = df.iloc[row, lunch_out_idx]
-                                            lunch_return = df.iloc[row, lunch_return_idx]
+                                            lunch_out = df.iloc[row, cols['lunch_out']]
+                                            lunch_return = df.iloc[row, cols['lunch_return']]
 
                                             if not pd.isna(lunch_out) and not pd.isna(lunch_return):
                                                 try:
@@ -98,7 +100,6 @@ class ExcelProcessor:
                                                     print(f"Error procesando horarios en fila {row+1}: {str(e)}")
                                     except Exception as e:
                                         print(f"Error en fila {row+1}: {str(e)}")
-
                         except Exception as e:
                             print(f"Error procesando posición en hoja {sheet}: {str(e)}")
 
@@ -130,27 +131,27 @@ class ExcelProcessor:
                         {
                             'name_col': 'J',        # Primera persona
                             'entry_col': 'B',       # Entrada
-                            'day_col': 'A'          # Columna de días
+                            'day_col': 'A',          # Columna de días
+                            'exit_col': 'I'         # Salida
                         },
                         {
                             'name_col': 'Y',        # Segunda persona
                             'entry_col': 'Q',       # Entrada
-                            'day_col': 'P'          # Columna de días
+                            'day_col': 'P',          # Columna de días
+                            'exit_col': 'X'         # Salida
                         },
                         {
                             'name_col': 'AN',       # Tercera persona
                             'entry_col': 'AF',      # Entrada
-                            'day_col': 'AE'         # Columna de días
+                            'day_col': 'AE',         # Columna de días
+                            'exit_col': 'AM'        # Salida
                         }
                     ]
 
                     for position in employee_positions:
                         try:
-                            name_col_idx = self.get_column_index(position['name_col'])
-                            entry_col_idx = self.get_column_index(position['entry_col'])
-                            day_col_idx = self.get_column_index(position['day_col'])
-
-                            name_cell = df.iloc[2, name_col_idx]
+                            cols = {key: self.get_column_index(value) for key, value in position.items()}
+                            name_cell = df.iloc[2, cols['name_col']]
                             if pd.isna(name_cell):
                                 continue
 
@@ -160,7 +161,7 @@ class ExcelProcessor:
 
                                 for row in range(11, 42):
                                     try:
-                                        day_value = df.iloc[row, day_col_idx]
+                                        day_value = df.iloc[row, cols['day_col']]
                                         if pd.isna(day_value):
                                             break
 
@@ -170,7 +171,7 @@ class ExcelProcessor:
 
                                         # Solo procesar si no es ausencia y hay un valor en la entrada
                                         if day_str != 'absence':
-                                            entry_time = df.iloc[row, entry_col_idx]
+                                            entry_time = df.iloc[row, cols['entry_col']]
                                             if not pd.isna(entry_time) and str(entry_time).strip() != '':
                                                 try:
                                                     # Convertir a datetime asegurándose de manejar diferentes formatos
@@ -200,7 +201,6 @@ class ExcelProcessor:
                                                     print(f"Error procesando hora de entrada en fila {row+1}: {str(e)}")
                                     except Exception as e:
                                         print(f"Error en fila {row+1}: {str(e)}")
-
                         except Exception as e:
                             print(f"Error procesando posición en hoja {sheet}: {str(e)}")
 
@@ -280,6 +280,112 @@ class ExcelProcessor:
                 'early_departure_minutes', 'attendance_ratio', 'absences'
             ])
 
+    def count_missing_records(self, employee_name):
+        """Cuenta los días sin registros de entrada, salida y almuerzo"""
+        try:
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            missing_entry = 0
+            missing_exit = 0
+            missing_lunch = 0
+
+            for sheet in attendance_sheets:
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+
+                    employee_positions = [
+                        {
+                            'name_col': 'J',        # Primera persona
+                            'entry_col': 'B',       # Entrada
+                            'exit_col': 'I',        # Salida
+                            'lunch_out': 'D',       # Salida almuerzo
+                            'lunch_return': 'G',    # Regreso almuerzo
+                            'day_col': 'A'          # Días
+                        },
+                        {
+                            'name_col': 'Y',        # Segunda persona
+                            'entry_col': 'Q',       # Entrada
+                            'exit_col': 'X',        # Salida
+                            'lunch_out': 'S',       # Salida almuerzo
+                            'lunch_return': 'V',    # Regreso almuerzo
+                            'day_col': 'P'          # Días
+                        },
+                        {
+                            'name_col': 'AN',       # Tercera persona
+                            'entry_col': 'AF',      # Entrada
+                            'exit_col': 'AM',       # Salida
+                            'lunch_out': 'AH',      # Salida almuerzo
+                            'lunch_return': 'AK',   # Regreso almuerzo
+                            'day_col': 'AE'         # Días
+                        }
+                    ]
+
+                    for position in employee_positions:
+                        try:
+                            # Convertir letras de columnas a índices
+                            cols = {key: self.get_column_index(value)
+                                   for key, value in position.items()}
+
+                            name_cell = df.iloc[2, cols['name_col']]
+                            if pd.isna(name_cell):
+                                continue
+
+                            employee_cell = str(name_cell).strip()
+                            if employee_cell == employee_name:
+                                print(f"Verificando registros en hoja {sheet}")
+
+                                for row in range(11, 42):
+                                    try:
+                                        day_value = df.iloc[row, cols['day_col']]
+                                        if pd.isna(day_value):
+                                            break
+
+                                        day_str = str(day_value).strip().lower()
+                                        if day_str == '' or day_str == 'nan':
+                                            break
+
+                                        # Solo verificar días no marcados como ausencia
+                                        if day_str != 'absence':
+                                            try:
+                                                # Verificar si es día laboral
+                                                day_date = datetime.strptime(str(day_value), '%Y-%m-%d')
+                                                if day_date.weekday() < 5:  # Lunes a Viernes
+                                                    # Verificar entrada
+                                                    entry = df.iloc[row, cols['entry_col']]
+                                                    if pd.isna(entry) or str(entry).strip() == '':
+                                                        missing_entry += 1
+                                                        print(f"Falta registro de entrada en fila {row+1}")
+
+                                                    # Verificar salida
+                                                    exit_val = df.iloc[row, cols['exit_col']]
+                                                    if pd.isna(exit_val) or str(exit_val).strip() == '':
+                                                        missing_exit += 1
+                                                        print(f"Falta registro de salida en fila {row+1}")
+
+                                                    # Verificar almuerzo
+                                                    lunch_out = df.iloc[row, cols['lunch_out']]
+                                                    lunch_return = df.iloc[row, cols['lunch_return']]
+                                                    if (pd.isna(lunch_out) or str(lunch_out).strip() == '' or
+                                                            pd.isna(lunch_return) or str(lunch_return).strip() == ''):
+                                                        missing_lunch += 1
+                                                        print(f"Falta registro de almuerzo en fila {row+1}")
+                                            except:
+                                                print(f"Error procesando fecha en fila {row+1}")
+                                    except Exception as e:
+                                        print(f"Error en fila {row+1}: {str(e)}")
+                        except Exception as e:
+                            print(f"Error procesando posición: {str(e)}")
+
+                except Exception as e:
+                    print(f"Error procesando hoja {sheet}: {str(e)}")
+
+            print(f"Total días sin registro - Entrada: {missing_entry}, Salida: {missing_exit}, Almuerzo: {missing_lunch}")
+            return missing_entry, missing_exit, missing_lunch
+
+        except Exception as e:
+            print(f"Error general: {str(e)}")
+            return 0, 0, 0
+
     def get_employee_stats(self, employee_name):
         """Obtiene estadísticas para un empleado específico"""
         summary = self.process_attendance_summary()
@@ -306,6 +412,9 @@ class ExcelProcessor:
         # Calcular días de llegada tarde
         late_days, late_minutes = self.count_late_days(employee_name)
 
+        # Calcular días sin registros
+        missing_entry, missing_exit, missing_lunch = self.count_missing_records(employee_name)
+
         stats = {
             'name': employee_name,
             'department': str(employee_summary['department']),
@@ -319,7 +428,9 @@ class ExcelProcessor:
             'lunch_overtime_days': lunch_overtime_days,
             'total_lunch_minutes': total_lunch_minutes,
             'attendance_ratio': float(employee_summary['attendance_ratio']),
-            'missing_records': 0,  # Placeholder hasta implementar la funcionalidad
+            'missing_entry_days': missing_entry,
+            'missing_exit_days': missing_exit,
+            'missing_lunch_days': missing_lunch,
             'mid_day_departures': 0  # Placeholder hasta implementar la funcionalidad
         }
 

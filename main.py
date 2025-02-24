@@ -9,44 +9,99 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for layout
+# Updated CSS for layout with animations and transitions
 st.markdown("""
 <style>
     .stat-group {
         background-color: rgba(33, 150, 243, 0.1);
-        border-radius: 10px;
-        padding: 15px;
-        margin: 10px 0;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        animation: slideIn 0.5s ease-out;
     }
+
+    .stat-group:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+
     .stat-card {
-        background-color: #F8F9FA;
-        border-radius: 8px;
-        padding: 12px;
-        margin: 5px;
-        text-align: center;
+        background-color: white;
+        border-radius: 10px;
+        padding: 16px;
+        margin: 8px;
+        transition: all 0.3s ease;
         border: 1px solid #E9ECEF;
+        animation: fadeIn 0.5s ease-out;
     }
+
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        border-color: #2196F3;
+    }
+
     .metric-value {
         font-size: 24px;
         font-weight: bold;
-        margin: 5px 0;
+        margin: 8px 0;
+        transition: color 0.3s ease;
     }
+
     .metric-label {
         font-size: 14px;
         color: #6C757D;
+        transition: color 0.3s ease;
     }
+
     .warning {
         color: #FFC107;
     }
+
     .danger {
         color: #DC3545;
     }
+
     .success {
         color: #28A745;
     }
+
     .auth-required {
         border-left: 4px solid #FFC107;
+        transition: border-left-width 0.3s ease;
     }
+
+    .auth-required:hover {
+        border-left-width: 8px;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    /* Staggered animation delays for cards */
+    .stat-card:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card:nth-child(2) { animation-delay: 0.2s; }
+    .stat-card:nth-child(3) { animation-delay: 0.3s; }
+    .stat-card:nth-child(4) { animation-delay: 0.4s; }
+
     /* Floating Menu Styles */
     .floating-menu {
         position: fixed;

@@ -291,6 +291,7 @@ class ExcelProcessor:
 
             for sheet in attendance_sheets:
                 try:
+                    print(f"\nVerificando registros en hoja {sheet}")
                     df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
 
                     employee_positions = [
@@ -322,19 +323,16 @@ class ExcelProcessor:
 
                     for position in employee_positions:
                         try:
-                            # Convertir letras de columnas a índices
-                            cols = {key: self.get_column_index(value)
-                                   for key, value in position.items()}
-
+                            cols = {key: self.get_column_index(value) for key, value in position.items()}
                             name_cell = df.iloc[2, cols['name_col']]
                             if pd.isna(name_cell):
                                 continue
 
                             employee_cell = str(name_cell).strip()
                             if employee_cell == employee_name:
-                                print(f"Verificando registros en hoja {sheet}")
+                                print(f"Empleado encontrado en hoja {sheet}, columna {position['name_col']}")
 
-                                for row in range(11, 42):
+                                for row in range(11, 42):  # Filas 12-42
                                     try:
                                         day_value = df.iloc[row, cols['day_col']]
                                         if pd.isna(day_value):
@@ -344,21 +342,21 @@ class ExcelProcessor:
                                         if day_str == '' or day_str == 'nan':
                                             break
 
-                                        # Solo verificar días no marcados como ausencia
+                                        # Solo verificar si no es ausencia y es día laboral
                                         if day_str != 'absence':
                                             try:
-                                                # Verificar si es día laboral
-                                                day_date = datetime.strptime(str(day_value), '%Y-%m-%d')
-                                                if day_date.weekday() < 5:  # Lunes a Viernes
+                                                # Verificar si es día laboral (no fin de semana)
+                                                day_date = pd.to_datetime(day_value)
+                                                if day_date.weekday() < 5:  # 0-4 son días de semana
                                                     # Verificar entrada
-                                                    entry = df.iloc[row, cols['entry_col']]
-                                                    if pd.isna(entry) or str(entry).strip() == '':
+                                                    entry_value = df.iloc[row, cols['entry_col']]
+                                                    if pd.isna(entry_value) or str(entry_value).strip() == '':
                                                         missing_entry += 1
                                                         print(f"Falta registro de entrada en fila {row+1}")
 
                                                     # Verificar salida
-                                                    exit_val = df.iloc[row, cols['exit_col']]
-                                                    if pd.isna(exit_val) or str(exit_val).strip() == '':
+                                                    exit_value = df.iloc[row, cols['exit_col']]
+                                                    if pd.isna(exit_value) or str(exit_value).strip() == '':
                                                         missing_exit += 1
                                                         print(f"Falta registro de salida en fila {row+1}")
 
@@ -369,8 +367,9 @@ class ExcelProcessor:
                                                             pd.isna(lunch_return) or str(lunch_return).strip() == ''):
                                                         missing_lunch += 1
                                                         print(f"Falta registro de almuerzo en fila {row+1}")
-                                            except:
-                                                print(f"Error procesando fecha en fila {row+1}")
+
+                                            except Exception as e:
+                                                print(f"Error procesando fecha en fila {row+1}: {str(e)}")
                                     except Exception as e:
                                         print(f"Error en fila {row+1}: {str(e)}")
                         except Exception as e:

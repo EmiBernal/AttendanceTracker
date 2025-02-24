@@ -1,0 +1,73 @@
+Estructura de los datos en el archivo de Excel
+El archivo de Excel contiene múltiples hojas. A partir de la hoja llamada "Exceptional", las siguientes hojas contienen información detallada de asistencia de los empleados en un formato estructurado.
+
+Cada hoja contiene información de tres empleados, organizados en filas y columnas específicas.
+
+Secciones principales del archivo:
+Información general de cada trabajador (ubicada en las primeras filas de la hoja)
+Registro diario de asistencia (ubicado desde la fila 12 en adelante, hasta la fila 42 si el mes tiene 31 días)
+1. Información General de los Trabajadores
+Cada hoja tiene datos de tres empleados, organizados de la siguiente manera:
+
+Primer trabajador
+Departamento → Fila 3, Columnas B-H
+Nombre → Fila 3, Columnas J-N
+Fechas en las que trabajará → Fila 4, Columnas B-H
+Número de identificación → Fila 4, Columnas J-N
+Ausencias → Fila 7, Columna A
+Veces que llegó tarde → Fila 7, Columna I
+Minutos totales de tardanza → Fila 7, Columnas J-K
+Veces que se fue temprano → Fila 7, Columnas L-M
+Minutos totales de salida temprana → Fila 7, Columna N
+Segundo trabajador
+Departamento → Fila 3, Columnas Q-W
+Nombre → Fila 3, Columnas Y-AC
+Fechas en las que trabajará → Fila 4, Columnas Q-W
+Número de identificación → Fila 4, Columnas Y-AC
+Ausencias → Fila 7, Columna P
+Veces que llegó tarde → Fila 7, Columna X
+Minutos totales de tardanza → Fila 7, Columnas Y-Z
+Veces que se fue temprano → Fila 7, Columnas AA-AB
+Minutos totales de salida temprana → Fila 7, Columna AC
+Tercer trabajador
+Departamento → Fila 3, Columnas AF-AL
+Nombre → Fila 3, Columnas AN-AR
+Fechas en las que trabajará → Fila 4, Columnas AF-AL
+Número de identificación → Fila 4, Columnas AN-AR
+Ausencias → Fila 7, Columna AE
+Veces que llegó tarde → Fila 7, Columna AM
+Minutos totales de tardanza → Fila 7, Columnas AN-AO
+Veces que se fue temprano → Fila 7, Columnas AP-AQ
+Minutos totales de salida temprana → Fila 7, Columna AR
+2. Registro Diario de Asistencia
+Desde la fila 12 hasta la fila 42, cada hoja registra la asistencia diaria de cada trabajador.
+
+Cada trabajador tiene asignadas diferentes columnas:
+
+Primer trabajador
+Día del mes → Fila 12-42, Columna A
+Horario de entrada (AM) → Fila 12-42, Columna B
+Horario de salida antes del almuerzo (AM) → Fila 12-42, Columna D
+Horario de regreso después del almuerzo (PM) → Fila 12-42, Columna G
+Horario de salida final del día (PM) → Fila 12-42, Columna I
+Segundo trabajador
+Día del mes → Fila 12-42, Columna P
+Horario de entrada (AM) → Fila 12-42, Columna Q
+Horario de salida antes del almuerzo (AM) → Fila 12-42, Columna S
+Horario de regreso después del almuerzo (PM) → Fila 12-42, Columna V
+Horario de salida final del día (PM) → Fila 12-42, Columna X
+Tercer trabajador
+Día del mes → Fila 12-42, Columna AE
+Horario de entrada (AM) → Fila 12-42, Columna AF
+Horario de salida antes del almuerzo (AM) → Fila 12-42, Columna AH
+Horario de regreso después del almuerzo (PM) → Fila 12-42, Columna AK
+Horario de salida final del día (PM) → Fila 12-42, Columna AM
+3. Cálculo del tiempo de almuerzo
+Para calcular el tiempo que un trabajador tardó en comer:
+
+Tiempo de almuerzo = Horario de regreso (PM) - Horario de salida antes del almuerzo (AM)
+Si no hay un horario de regreso, se asume que el trabajador se fue temprano.
+4. Casos especiales
+Si en la fila de un trabajador dice "Ausente", significa que no asistió ese día.
+Si no tiene horario de regreso después del almuerzo, se considera que no volvió y se fue temprano.
+Con esta información, un programa puede leer la hoja de Excel y extraer los datos necesarios para calcular la asistencia, los minutos de tardanza y el tiempo de almuerzo de cada trabajador.

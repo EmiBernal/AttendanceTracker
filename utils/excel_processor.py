@@ -67,16 +67,16 @@ class ExcelProcessor:
 
                 # Verificar en qué posición está el empleado
                 name_positions = [
-                    ('J', 'N'),  # Primera persona
-                    ('Y', 'AC'), # Segunda persona
-                    ('AN', 'AR') # Tercera persona
+                    'J',  # Primera persona
+                    'Y',  # Segunda persona
+                    'AN'  # Tercera persona
                 ]
                 entry_columns = ['B', 'Q', 'AF']  # Columnas de entrada correspondientes
                 day_columns = ['A', 'P', 'AE']    # Columnas de días correspondientes
 
-                for idx, (name_start, name_end) in enumerate(name_positions):
+                for idx, name_col in enumerate(name_positions):
                     try:
-                        employee_cell = str(df.iloc[2, df.columns.get_loc(name_start)]).strip()
+                        employee_cell = str(df.iloc[2, df.columns.get_loc(name_col)]).strip()
                         if employee_cell == employee_name:
                             # Encontramos al empleado, procesar sus registros
                             entry_col = entry_columns[idx]
@@ -125,16 +125,16 @@ class ExcelProcessor:
 
                 # Verificar en qué posición está el empleado
                 name_positions = [
-                    ('J', 'N'),  # Primera persona
-                    ('Y', 'AC'), # Segunda persona
-                    ('AN', 'AR') # Tercera persona
+                    'J',  # Primera persona
+                    'Y',  # Segunda persona
+                    'AN'  # Tercera persona
                 ]
                 exit_columns = ['I', 'X', 'AM']  # Columnas de salida correspondientes
                 day_columns = ['A', 'P', 'AE']    # Columnas de días correspondientes
 
-                for idx, (name_start, name_end) in enumerate(name_positions):
+                for idx, name_col in enumerate(name_positions):
                     try:
-                        employee_cell = str(df.iloc[2, df.columns.get_loc(name_start)]).strip()
+                        employee_cell = str(df.iloc[2, df.columns.get_loc(name_col)]).strip()
                         if employee_cell == employee_name:
                             # Encontramos al empleado, procesar sus registros
                             exit_col = exit_columns[idx]

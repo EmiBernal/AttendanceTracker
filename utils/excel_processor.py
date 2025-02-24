@@ -28,10 +28,11 @@ class ExcelProcessor:
 
                 # Definir los grupos de empleados y sus columnas correspondientes
                 employee_groups = [
+                    # Primer empleado
                     {
-                        'name_cell': (2, 'J'),
-                        'dept_cell': (2, 'B'),
-                        'stats_row': 6,
+                        'dept_cols': (2, 'B'),  # Fila 3, Columnas B-H
+                        'name_cols': (2, 'J'),  # Fila 3, Columnas J-N
+                        'stats_row': 6,         # Fila 7 para estadísticas
                         'stats_cols': {
                             'absences': 'A',
                             'late_count': 'I',
@@ -40,10 +41,11 @@ class ExcelProcessor:
                             'early_minutes': 'N'
                         }
                     },
+                    # Segundo empleado
                     {
-                        'name_cell': (2, 'Y'),
-                        'dept_cell': (2, 'Q'),
-                        'stats_row': 6,
+                        'dept_cols': (2, 'Q'),  # Fila 3, Columnas Q-W
+                        'name_cols': (2, 'Y'),  # Fila 3, Columnas Y-AC
+                        'stats_row': 6,         # Fila 7 para estadísticas
                         'stats_cols': {
                             'absences': 'P',
                             'late_count': 'X',
@@ -52,10 +54,11 @@ class ExcelProcessor:
                             'early_minutes': 'AC'
                         }
                     },
+                    # Tercer empleado
                     {
-                        'name_cell': (2, 'AN'),
-                        'dept_cell': (2, 'AF'),
-                        'stats_row': 6,
+                        'dept_cols': (2, 'AF'),  # Fila 3, Columnas AF-AL
+                        'name_cols': (2, 'AN'),  # Fila 3, Columnas AN-AR
+                        'stats_row': 6,          # Fila 7 para estadísticas
                         'stats_cols': {
                             'absences': 'AE',
                             'late_count': 'AM',
@@ -70,11 +73,13 @@ class ExcelProcessor:
                 for group in employee_groups:
                     try:
                         # Extraer nombre y departamento
-                        name = str(df.iloc[group['name_cell'][0], df.columns.get_loc(group['name_cell'][1])]).strip()
-                        dept = str(df.iloc[group['dept_cell'][0], df.columns.get_loc(group['dept_cell'][1])]).strip()
+                        name = str(df.iloc[group['name_cols'][0], df.columns.get_loc(group['name_cols'][1])]).strip()
+                        dept = str(df.iloc[group['dept_cols'][0], df.columns.get_loc(group['dept_cols'][1])]).strip()
 
-                        if pd.isna(name) or name == '' or name == 'nan':
+                        if pd.isna(name) or name == '' or name == 'nan' or name.lower() == 'name':
                             continue
+
+                        print(f"Processing employee: {name}, department: {dept}")
 
                         # Obtener estadísticas
                         stats_row = group['stats_row']
@@ -118,6 +123,7 @@ class ExcelProcessor:
                         }
 
                         all_records.append(record)
+                        print(f"Added record for {name}")
 
                     except Exception as e:
                         print(f"Error processing employee in sheet {sheet}: {str(e)}")
@@ -129,7 +135,6 @@ class ExcelProcessor:
 
         if not all_records:
             print("No records processed!")
-            # Return empty DataFrame with expected columns
             return pd.DataFrame(columns=[
                 'employee_name', 'department', 'required_hours', 'actual_hours',
                 'late_count', 'late_minutes', 'early_departure_count',
@@ -143,6 +148,7 @@ class ExcelProcessor:
         summary = self.process_attendance_summary()
         print(f"Columns in summary: {summary.columns.tolist()}")
         print(f"Number of records: {len(summary)}")
+        print(f"Available employees: {summary['employee_name'].tolist()}")
 
         if len(summary) == 0:
             raise ValueError("No employee records found in the Excel file")

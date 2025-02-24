@@ -501,26 +501,29 @@ class ExcelProcessor:
                     entry_time = df.iloc[row, entry_col]
                     exit_time = df.iloc[row, exit_col]
 
-                    # Saltar si no hay datos o si es "Absence"
-                    if pd.isna(entry_time) or pd.isna(exit_time) or str(exit_time).strip().lower() == 'absence':
+                    # Saltar solo si específicamente dice "Absence" en la columna AK
+                    if pd.isna(exit_time) or str(exit_time).strip().lower() == 'absence':
+                        print(f"Fila {row+1}: Ausencia registrada")
                         continue
 
-                    try:
-                        # Convertir a datetime
-                        entry_time = pd.to_datetime(entry_time).time()
-                        exit_time = pd.to_datetime(exit_time).time()
+                    # Verificar si hay una entrada válida
+                    if not pd.isna(entry_time):
+                        try:
+                            # Convertir a datetime
+                            entry_time = pd.to_datetime(entry_time).time()
+                            exit_time = pd.to_datetime(exit_time).time()
 
-                        # Calcular horas trabajadas
-                        hours = (datetime.combine(datetime.min, exit_time) - 
-                               datetime.combine(datetime.min, entry_time)).total_seconds() / 3600
+                            # Calcular horas trabajadas
+                            hours = (datetime.combine(datetime.min, exit_time) - 
+                                   datetime.combine(datetime.min, entry_time)).total_seconds() / 3600
 
-                        if hours > 0:
-                            total_hours += hours
-                            print(f"Fila {row+1}: {hours:.2f} horas")
+                            if hours > 0:
+                                total_hours += hours
+                                print(f"Fila {row+1}: {hours:.2f} horas")
 
-                    except Exception as e:
-                        print(f"Error procesando horarios en fila {row+1}: {str(e)}")
-                        continue
+                        except Exception as e:
+                            print(f"Error procesando horarios en fila {row+1}: {str(e)}")
+                            continue
 
                 except Exception as e:
                     print(f"Error en fila {row+1}: {str(e)}")

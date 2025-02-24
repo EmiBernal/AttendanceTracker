@@ -1,0 +1,34 @@
+Calcular los días sin registro de almuerzo de cada persona:
+
+Para calcular los días, utiliza las hojas luego de "Exceptional" y utiliza esta información:
+
+
+Si el nombre de la persona es igual a la cadena que esta en J3 se usa esta información:
+**Fila 12-42, Columna A**: Dias 
+**Fila 12-42, Columna B**: Horario de entrada del trabajador (AM) 
+**Fila 12-42, Columna D**: Horario de salida (AM) (En este horario se retira para comer(si es que después vuelve) sino es pq se fue temprano)
+**Fila 12-42, Columna G**: Horario de regreso (PM) (En este horario vuelve de comer, se puede calcular cuanto tardo en comer)
+**Fila 12-42, Columna I**: Horario de salida del trabajador (PM) 
+
+Si el nombre de la persona es igual a la cadena que esta en Y3 se usa esta información:
+**Fila 12-42, Columna P**: Dias 
+**Fila 12-42, Columna Q**: Horario de entrada del trabajador (AM) 
+**Fila 12-42, Columna S**: Horario de salida (AM) (En este horario se retira para comer(si es que después vuelve) sino es pq se fue temprano)
+**Fila 12-42, Columna V**: Horario de regreso (PM) (En este horario vuelve de comer, se puede calcular cuanto tardo en comer)
+**Fila 12-42, Columna X**: Horario de salida del trabajador (PM) 
+
+Si el nombre de la persona es igual a la cadena que esta en AN3 se usa esta información:
+**Fila 12-42, Columna AE**: Dias 
+**Fila 12-42, Columna AF**: Horario de entrada del trabajador (AM) 
+**Fila 12-42, Columna AH**: Horario de salida (AM) (En este horario se retira para comer(si es que después vuelve) sino es pq se fue temprano)
+**Fila 12-42, Columna AK**: Horario de regreso (PM) (En este horario vuelve de comer, se puede calcular cuanto tardo en comer)
+**Fila 12-42, Columna AM**: Horario de salida del trabajador (PM)   
+
+Pasos para el cálculo:
+Obtener la hora de salida (AM): Esto está en la columna D.
+Obtener la hora de regreso (PM): Esto está en la columna G.
+Calcular la diferencia de tiempo entre la salida y el regreso:
+Si el tiempo que pasó en el almuerzo es mayor a 20 minutos, contamos ese día como uno en el que se pasó de hora.
+Contar los días en los que el almuerzo excede los 20 minutos.
+
+Ademas, calcular los minutos en total

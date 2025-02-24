@@ -12,18 +12,25 @@ st.set_page_config(
 # Custom CSS for layout
 st.markdown("""
 <style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        grid-template-rows: repeat(5, 1fr);
+        gap: 16px;
+        padding: 20px;
+        height: calc(100vh - 80px);
+    }
     .stat-group {
         background-color: #F8F9FA;
         border-radius: 12px;
         padding: 20px;
-        margin: 15px 0;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     .stat-card {
         background-color: white;
         border-radius: 10px;
         padding: 16px;
-        margin: 8px;
+        height: 100%;
         transition: transform 0.2s, box-shadow 0.2s;
         border: 1px solid #E9ECEF;
     }
@@ -47,15 +54,9 @@ st.markdown("""
         color: #ADB5BD;
         margin-top: 4px;
     }
-    .warning {
-        color: #F59E0B;
-    }
-    .danger {
-        color: #EF4444;
-    }
-    .success {
-        color: #10B981;
-    }
+    .warning { color: #F59E0B; }
+    .danger { color: #EF4444; }
+    .success { color: #10B981; }
     .auth-required {
         border-left: 3px solid #F59E0B;
     }
@@ -65,158 +66,121 @@ st.markdown("""
         color: #1F2937;
         margin-bottom: 16px;
     }
-    .employee-header {
-        padding: 24px;
-        background: linear-gradient(to right, #F8F9FA, #E9ECEF);
-        border-radius: 12px;
-        margin-bottom: 24px;
+
+    /* Grid Areas */
+    .overview-section { grid-row: span 5 / span 5; }
+    .hours-section { grid-column: span 2 / span 2; grid-row: span 2 / span 2; }
+    .late-days { grid-column-start: 4; }
+    .early-leaves { grid-column-start: 4; grid-row-start: 2; }
+    .absences { grid-column-start: 5; grid-row-start: 2; }
+    .lunch-overtime { grid-column-start: 5; grid-row-start: 1; }
+    .attendance-metrics { 
+        grid-column: span 2 / span 2;
+        grid-row: span 3 / span 3;
+        grid-column-start: 2;
+        grid-row-start: 3;
     }
-    .employee-name {
-        font-size: 32px;
-        font-weight: 700;
-        color: #1F2937;
-        margin: 0;
+    .auth-metrics {
+        grid-column: span 2 / span 2;
+        grid-row: span 2 / span 2;
+        grid-column-start: 4;
+        grid-row-start: 4;
     }
-    .employee-department {
-        font-size: 16px;
-        color: #6C757D;
-        margin-top: 8px;
+    .missing-records {
+        grid-column: span 2 / span 2;
+        grid-column-start: 4;
+        grid-row-start: 3;
     }
 </style>
 """, unsafe_allow_html=True)
-
-def create_missing_records_section(stats):
-    """Crea una sección expandible para mostrar los días sin registros"""
-    with st.expander("📋 Registros Faltantes", expanded=False):
-        st.markdown("""
-            <div class="stat-group">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
-        """, unsafe_allow_html=True)
-
-        missing_records = [
-            ('Sin Registro de Entrada', stats['missing_entry_days'], "Total días sin marcar"),
-            ('Sin Registro de Salida', stats['missing_exit_days'], "Total días sin marcar"),
-            ('Sin Registro de Almuerzo', stats['missing_lunch_days'], "Total días sin marcar")
-        ]
-
-        for label, value, subtitle in missing_records:
-            status = 'success' if value == 0 else 'warning' if value <= 3 else 'danger'
-            st.markdown(f"""
-                <div class="stat-card">
-                    <div class="metric-label">{label}</div>
-                    <div class="metric-value {status}">{value}</div>
-                    <div class="metric-subtitle">{subtitle}</div>
-                </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("</div></div>", unsafe_allow_html=True)
 
 def create_employee_dashboard(processor, employee_name):
     """Create a detailed dashboard for a single employee"""
     stats = processor.get_employee_stats(employee_name)
 
-    # Header with employee info
+    st.markdown('<div class="dashboard-grid">', unsafe_allow_html=True)
+
+    # Overview Section
     st.markdown(f"""
-        <div class="employee-header">
-            <h1 class="employee-name">{stats['name']}</h1>
-            <p class="employee-department">{stats['department'].title()}</p>
+        <div class="stat-group overview-section">
+            <h1 style="font-size: 32px; font-weight: 700; color: #1F2937; margin: 0;">
+                {stats['name']}
+            </h1>
+            <p style="font-size: 16px; color: #6C757D; margin-top: 8px;">
+                {stats['department'].title()}
+            </p>
         </div>
     """, unsafe_allow_html=True)
 
-    # Work Hours Overview
-    col1, col2 = st.columns(2)
+    # Hours Section
+    hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100) if stats['required_hours'] > 0 else 0
+    hours_status = 'success' if hours_ratio >= 95 else 'warning' if hours_ratio >= 85 else 'danger'
 
-    with col1:
-        st.markdown("""
-            <div class="stat-group">
-                <div class="section-title">📊 Resumen de Horas</div>
-        """, unsafe_allow_html=True)
-
-        hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100) if stats['required_hours'] > 0 else 0
-        hours_status = 'success' if hours_ratio >= 95 else 'warning' if hours_ratio >= 85 else 'danger'
-
-        st.markdown(f"""
+    st.markdown(f"""
+        <div class="stat-group hours-section">
+            <div class="section-title">📊 Horas Trabajadas</div>
             <div class="stat-card">
-                <div class="metric-label">Horas Trabajadas</div>
                 <div class="metric-value {hours_status}">
                     {stats['actual_hours']:.1f}/{stats['required_hours']:.1f}
                 </div>
                 <div class="metric-subtitle">({hours_ratio:.1f}% completado)</div>
             </div>
-        """, unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with col2:
-        st.markdown("""
-            <div class="stat-group">
-                <div class="section-title">📋 Resumen de Asistencia</div>
-        """, unsafe_allow_html=True)
-
-        attendance_ratio = float(stats['attendance_ratio']) * 100
-        attendance_status = 'success' if attendance_ratio >= 95 else 'warning' if attendance_ratio >= 85 else 'danger'
-
-        st.markdown(f"""
-            <div class="stat-card">
-                <div class="metric-label">Tasa de Asistencia</div>
-                <div class="metric-value {attendance_status}">{attendance_ratio:.1f}%</div>
-                <div class="metric-subtitle">del total requerido</div>
-            </div>
-        """, unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    # Regular Attendance Metrics
-    st.markdown("""
-        <div class="stat-group">
-            <div class="section-title">📈 Métricas de Asistencia Regular</div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+        </div>
     """, unsafe_allow_html=True)
 
-    regular_metrics = [
-        ('Inasistencias', stats['absences'], "Total días"),
-        ('Días con Llegada Tarde', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total"),
-        ('Días con Exceso en Almuerzo', stats['lunch_overtime_days'], f"{stats['total_lunch_minutes']:.0f} minutos en total"),
-    ]
+    # Individual Metrics
+    metrics = {
+        'late-days': ('Llegadas Tarde', stats['late_days'], f"{stats['late_minutes']:.0f} min"),
+        'early-leaves': ('Salidas Temprano', stats['early_departures'], f"{stats['early_minutes']:.0f} min"),
+        'absences': ('Inasistencias', stats['absences'], "días"),
+        'lunch-overtime': ('Exceso Almuerzo', stats['lunch_overtime_days'], f"{stats['total_lunch_minutes']:.0f} min")
+    }
 
-    for label, value, subtitle in regular_metrics:
+    for key, (label, value, subtitle) in metrics.items():
         status = 'success' if value == 0 else 'warning' if value <= 3 else 'danger'
         st.markdown(f"""
-            <div class="stat-card">
-                <div class="metric-label">{label}</div>
-                <div class="metric-value {status}">{value}</div>
-                <div class="metric-subtitle">{subtitle}</div>
+            <div class="stat-group {key}">
+                <div class="stat-card">
+                    <div class="metric-label">{label}</div>
+                    <div class="metric-value {status}">{value}</div>
+                    <div class="metric-subtitle">{subtitle}</div>
+                </div>
             </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("</div></div>", unsafe_allow_html=True)
-
-    # Sección expandible para días sin registros
-    create_missing_records_section(stats)
-
-    # Metrics Requiring Authorization
-    st.markdown("""
-        <div class="stat-group">
-            <div class="section-title">🔒 Situaciones que Requieren Autorización</div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+    # Missing Records Section
+    st.markdown(f"""
+        <div class="stat-group missing-records">
+            <div class="section-title">📋 Registros Faltantes</div>
+            <div class="stat-card">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                    <div>
+                        <div class="metric-label">Entrada</div>
+                        <div class="metric-value {get_status(stats['missing_entry_days'])}">
+                            {stats['missing_entry_days']}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="metric-label">Salida</div>
+                        <div class="metric-value {get_status(stats['missing_exit_days'])}">
+                            {stats['missing_exit_days']}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="metric-label">Almuerzo</div>
+                        <div class="metric-value {get_status(stats['missing_lunch_days'])}">
+                            {stats['missing_lunch_days']}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     """, unsafe_allow_html=True)
 
-    auth_metrics = [
-        ('Retiros Anticipados', stats['early_departures'], f"{stats['early_minutes']:.0f} minutos en total"),
-        ('Ingresos con Retraso', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total"),
-        ('Retiros Durante Horario Laboral', stats.get('mid_day_departures', 0), "Total ocasiones")
-    ]
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    for label, value, subtitle in auth_metrics:
-        status = 'success' if value == 0 else 'warning' if value <= 2 else 'danger'
-        st.markdown(f"""
-            <div class="stat-card auth-required">
-                <div class="metric-label">{label}</div>
-                <div class="metric-value {status}">{value}</div>
-                <div class="metric-subtitle">{subtitle}</div>
-                <div class="metric-subtitle warning">Requiere Autorización</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("</div></div>", unsafe_allow_html=True)
+def get_status(value, warning_threshold=3, danger_threshold=5):
+    return 'success' if value == 0 else 'warning' if value <= warning_threshold else 'danger'
 
 def main():
     st.title("📊 Visualizador de Asistencia")
@@ -241,7 +205,7 @@ def main():
                 selected_employee = st.selectbox(
                     "Selecciona un empleado para ver sus detalles",
                     attendance_summary['employee_name'].unique(),
-                    format_func=lambda x: x  # Mostrar el nombre completo
+                    format_func=lambda x: x
                 )
 
             # Create dashboard for selected employee

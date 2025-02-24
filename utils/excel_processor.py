@@ -28,9 +28,16 @@ class ExcelProcessor:
                 'early_departure_minutes', 'attendance_ratio', 'absences'
             ]
 
+            # Limpiar los datos
             empleados_df = empleados_df.dropna(subset=['employee_name'])
             empleados_df = empleados_df.fillna(0)
 
+            # Corregir el nombre del departamento
+            empleados_df['department'] = empleados_df['department'].apply(
+                lambda x: 'administracion' if str(x).strip().lower() == 'administri' else str(x).strip()
+            )
+
+            # Convertir columnas numéricas
             numeric_cols = ['required_hours', 'actual_hours', 'late_count', 'late_minutes',
                           'early_departure_count', 'early_departure_minutes', 'absences']
             for col in numeric_cols:

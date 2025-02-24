@@ -80,10 +80,12 @@ def create_employee_dashboard(processor, employee_name):
     stats = processor.get_employee_stats(employee_name)
 
     # Header with employee info
+    schedule_note = "📅 Horario Especial" if stats.get('special_schedule', False) else ""
     st.markdown(f"""
         <div class="stat-group">
-            <h2>{stats['name']}</h2>
+            <h2>{stats['name']} {schedule_note}</h2>
             <p style="color: #6C757D;">Departamento: {stats['department']}</p>
+            {f'<p style="color: #F59E0B; font-size: 14px;">Empleado con horario especial</p>' if stats.get('special_schedule', False) else ''}
         </div>
     """, unsafe_allow_html=True)
 

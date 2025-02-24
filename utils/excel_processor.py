@@ -486,6 +486,53 @@ class ExcelProcessor:
             print(f"Error general: {str(e)}")
             return 0, 0, 0
 
+    def calculate_agustin_hours(self, df, start_row=11, end_row=42):
+        """Calcula las horas trabajadas específicamente para Agustín Tabasso"""
+        try:
+            total_hours = 0.0
+            entry_col = self.get_column_index('AF')
+            exit_col = self.get_column_index('AK')
+
+            print("\nCalculando horas trabajadas para Agustín:")
+
+            for row in range(start_row, end_row):
+                try:
+                    # Verificar si hay datos en la fila
+                    entry_time = df.iloc[row, entry_col]
+                    exit_time = df.iloc[row, exit_col]
+
+                    # Saltar si no hay datos o si es "Absence"
+                    if pd.isna(entry_time) or pd.isna(exit_time) or str(exit_time).strip().lower() == 'absence':
+                        continue
+
+                    try:
+                        # Convertir a datetime
+                        entry_time = pd.to_datetime(entry_time).time()
+                        exit_time = pd.to_datetime(exit_time).time()
+
+                        # Calcular horas trabajadas
+                        hours = (datetime.combine(datetime.min, exit_time) - 
+                               datetime.combine(datetime.min, entry_time)).total_seconds() / 3600
+
+                        if hours > 0:
+                            total_hours += hours
+                            print(f"Fila {row+1}: {hours:.2f} horas")
+
+                    except Exception as e:
+                        print(f"Error procesando horarios en fila {row+1}: {str(e)}")
+                        continue
+
+                except Exception as e:
+                    print(f"Error en fila {row+1}: {str(e)}")
+                    continue
+
+            print(f"Total horas trabajadas: {total_hours:.2f}")
+            return total_hours
+
+        except Exception as e:
+            print(f"Error calculando horas: {str(e)}")
+            return 0.0
+
     def get_employee_stats(self, employee_name):
         """Obtiene estadísticas para un empleado específico"""
         summary = self.process_attendance_summary()
@@ -518,6 +565,23 @@ class ExcelProcessor:
         # Ajustar el cálculo de horas requeridas según el horario especial
         required_hours = float(employee_summary['required_hours'])
         actual_hours = float(employee_summary['actual_hours'])
+
+        # Si es Agustín Tabasso, calcular las horas trabajadas de manera especial
+        if employee_name.lower() == 'agustin taba':
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            total_actual_hours = 0.0
+
+            for sheet in attendance_sheets:
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+                    if df.iloc[2, self.get_column_index('AN')].strip() == employee_name:
+                        total_actual_hours += self.calculate_agustin_hours(df)
+                except Exception as e:
+                    print(f"Error procesando hoja {sheet}: {str(e)}")
+                    continue
+
+            actual_hours = total_actual_hours
 
         if employee_name.lower() in self.SPECIAL_SCHEDULES:
             schedule = self.SPECIAL_SCHEDULES[employee_name.lower()]

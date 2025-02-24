@@ -9,13 +9,19 @@ class ExcelProcessor:
         self.WORK_END_TIME = datetime.strptime('17:10', '%H:%M').time()
 
     def process_attendance_summary(self):
-        """Procesa los datos de asistencia desde la hoja summary"""
+        """Procesa los datos de asistencia desde la hoja Summary"""
         try:
-            # Leer la hoja summary
-            df = pd.read_excel(self.excel_file, sheet_name="summary")
+            # Leer la hoja Summary y mostrar su contenido
+            print("Leyendo hoja Summary...")
+            summary_df = pd.read_excel(self.excel_file, sheet_name="Summary")
+            print("\nContenido de las primeras filas de Summary:")
+            print(summary_df.head())
+            print("\nColumnas en Summary:", summary_df.columns.tolist())
 
             # Procesar las filas 5 a 23 de la hoja summary
-            empleados_df = df.iloc[4:23, [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 13]]
+            empleados_df = summary_df.iloc[4:23, [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 13]]
+            print("\nDatos procesados de empleados:")
+            print(empleados_df.head())
 
             # Renombrar las columnas
             empleados_df.columns = [
@@ -46,6 +52,8 @@ class ExcelProcessor:
 
             empleados_df['attendance_ratio'] = empleados_df['attendance_ratio'].apply(convert_ratio)
 
+            print("\nDataFrame final procesado:")
+            print(empleados_df.head())
             return empleados_df
 
         except Exception as e:

@@ -1,0 +1,70 @@
+import pandas as pd
+import tkinter as tk
+from tkinter import filedialog
+
+# 1. Función para cargar y leer datos de Excel
+def cargar_excel(file):
+    # Leer el archivo Excel
+    excel_data = pd.ExcelFile(file)
+    
+    # Obtener la hoja "summary"
+    summary_df = excel_data.parse("summary")
+    
+    # Procesar las filas 5 a 23 de la hoja summary (la información de los empleados)
+    empleados_summary = summary_df.iloc[4:23, [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 13]]
+    
+    # Leer las hojas de excepciones (por ejemplo, para las horas de ingreso, salida, etc.)
+    excepciones_data = []
+    for sheet_name in excel_data.sheet_names:
+        if "Exception" in sheet_name:
+            excepciones_df = excel_data.parse(sheet_name)
+            excepciones_data.append(excepciones_df)
+    
+    return empleados_summary, excepciones_data
+
+# 2. Función para procesar los datos de entrada/salida y calcular el tiempo de comida
+def procesar_asistencia(excepciones_data):
+    tiempo_comida = []
+    for df in excepciones_data:
+        for index, row in df.iterrows():
+            if 'Ausencia' not in row.values:  # Si no está ausente
+                hora_salida = row['D']  # Horario de salida
+                hora_regreso = row['G']  # Horario de regreso
+                # Calcula el tiempo de comida (en minutos)
+                tiempo_almuerzo = (hora_regreso - hora_salida).total_seconds() / 60
+                tiempo_comida.append(tiempo_almuerzo)
+    return tiempo_comida
+
+# 3. Función principal que usa la interfaz de "browse files"
+def cargar_y_procesar_datos(file):
+    # Cargar los datos desde el archivo Excel
+    empleados_summary, excepciones_data = cargar_excel(file)
+    
+    # Procesar los datos de asistencia y calcular el tiempo de comida
+    tiempo_comida = procesar_asistencia(excepciones_data)
+    
+    # Aquí puedes hacer otros cálculos según las necesidades (como asistencia, etc.)
+    return empleados_summary, tiempo_comida
+
+# 4. Función para abrir el cuadro de diálogo para seleccionar un archivo
+def abrir_archivo():
+    # Abrir el cuadro de diálogo para seleccionar el archivo Excel
+    file_path = filedialog.askopenfilename(title="Selecciona un archivo Excel", filetypes=[("Archivos Excel", "*.xlsx")])
+    
+    if file_path:
+        # Llamar a la función principal para procesar el archivo cargado
+        empleados_summary, tiempo_comida = cargar_y_procesar_datos(file_path)
+        
+        # Aquí puedes mostrar los resultados en la interfaz o hacer algo con ellos
+        print(empleados_summary)
+        print(tiempo_comida)
+
+# 5. Configuración básica de la interfaz gráfica
+root = tk.Tk()
+root.title("Gestión de Asistencia")
+
+# Botón para cargar el archivo Excel
+boton_abrir = tk.Button(root, text="Abrir archivo Excel", command=abrir_archivo)
+boton_abrir.pack(pady=20)
+
+root.mainloop()

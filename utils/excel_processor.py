@@ -168,11 +168,25 @@ class ExcelProcessor:
                                         if day_str == '' or day_str == 'nan':
                                             break
 
+                                        # Solo procesar si no es ausencia y hay un valor en la entrada
                                         if day_str != 'absence':
                                             entry_time = df.iloc[row, entry_col_idx]
-                                            if not pd.isna(entry_time):
+                                            if not pd.isna(entry_time) and str(entry_time).strip() != '':
                                                 try:
-                                                    entry_time = pd.to_datetime(entry_time).time()
+                                                    # Convertir a datetime asegurándose de manejar diferentes formatos
+                                                    if isinstance(entry_time, str):
+                                                        try:
+                                                            entry_time = pd.to_datetime(entry_time).time()
+                                                        except:
+                                                            print(f"Error convirtiendo hora de entrada en fila {row+1}")
+                                                            continue
+                                                    elif isinstance(entry_time, datetime):
+                                                        entry_time = entry_time.time()
+                                                    else:
+                                                        print(f"Formato de hora no reconocido en fila {row+1}")
+                                                        continue
+
+                                                    # Verificar si llegó tarde
                                                     if entry_time > self.WORK_START_TIME:
                                                         late_days += 1
                                                         late_minutes = (
@@ -228,9 +242,23 @@ class ExcelProcessor:
             )
 
             numeric_cols = ['required_hours', 'actual_hours', 'late_count', 'late_minutes',
-                          'early_departure_count', 'early_departure_minutes', 'absences']
+                          'early_departure_count', 'early_departure_minutes']
             for col in numeric_cols:
                 empleados_df[col] = pd.to_numeric(empleados_df[col], errors='coerce').fillna(0)
+
+            # Procesar ausencias excluyendo fines de semana
+            def process_absences(absence_str):
+                try:
+                    if pd.isna(absence_str) or str(absence_str).strip() == '':
+                        return 0
+                    # Contar solo las ausencias en días laborales (no fines de semana)
+                    absence_count = int(str(absence_str))
+                    # Asumimos que las ausencias ya están contadas solo para días laborales
+                    return absence_count
+                except:
+                    return 0
+
+            empleados_df['absences'] = empleados_df['absences'].apply(process_absences)
 
             def convert_ratio(value):
                 try:

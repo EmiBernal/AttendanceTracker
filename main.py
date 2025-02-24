@@ -13,54 +13,90 @@ st.set_page_config(
 st.markdown("""
 <style>
     .stat-group {
-        background-color: rgba(33, 150, 243, 0.1);
-        border-radius: 10px;
-        padding: 15px;
-        margin: 10px 0;
+        background-color: #F8F9FA;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     .stat-card {
-        background-color: #F8F9FA;
-        border-radius: 8px;
-        padding: 12px;
-        margin: 5px;
-        text-align: center;
+        background-color: white;
+        border-radius: 10px;
+        padding: 16px;
+        margin: 8px;
+        transition: transform 0.2s, box-shadow 0.2s;
         border: 1px solid #E9ECEF;
     }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
     .metric-value {
-        font-size: 24px;
-        font-weight: bold;
-        margin: 5px 0;
+        font-size: 28px;
+        font-weight: 600;
+        margin: 8px 0;
+        line-height: 1.2;
     }
     .metric-label {
         font-size: 14px;
         color: #6C757D;
+        margin-bottom: 4px;
+    }
+    .metric-subtitle {
+        font-size: 12px;
+        color: #ADB5BD;
+        margin-top: 4px;
     }
     .warning {
-        color: #FFC107;
+        color: #F59E0B;
     }
     .danger {
-        color: #DC3545;
+        color: #EF4444;
     }
     .success {
-        color: #28A745;
+        color: #10B981;
     }
     .auth-required {
-        border-left: 4px solid #FFC107;
+        border-left: 3px solid #F59E0B;
+    }
+    .section-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #1F2937;
+        margin-bottom: 16px;
+    }
+    .employee-header {
+        padding: 24px;
+        background: linear-gradient(to right, #F8F9FA, #E9ECEF);
+        border-radius: 12px;
+        margin-bottom: 24px;
+    }
+    .employee-name {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1F2937;
+        margin: 0;
+    }
+    .employee-department {
+        font-size: 16px;
+        color: #6C757D;
+        margin-top: 8px;
     }
 </style>
 """, unsafe_allow_html=True)
 
 def create_missing_records_section(stats):
     """Crea una sección expandible para mostrar los días sin registros"""
-    with st.expander("📋 Días sin Registros", expanded=False):
+    with st.expander("📋 Registros Faltantes", expanded=False):
         st.markdown("""
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+            <div class="stat-group">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
         """, unsafe_allow_html=True)
 
         missing_records = [
-            ('Sin Registro de Entrada', stats['missing_entry_days'], "Total días"),
-            ('Sin Registro de Salida', stats['missing_exit_days'], "Total días"),
-            ('Sin Registro de Almuerzo', stats['missing_lunch_days'], "Total días")
+            ('Sin Registro de Entrada', stats['missing_entry_days'], "Total días sin marcar"),
+            ('Sin Registro de Salida', stats['missing_exit_days'], "Total días sin marcar"),
+            ('Sin Registro de Almuerzo', stats['missing_lunch_days'], "Total días sin marcar")
         ]
 
         for label, value, subtitle in missing_records:
@@ -69,11 +105,11 @@ def create_missing_records_section(stats):
                 <div class="stat-card">
                     <div class="metric-label">{label}</div>
                     <div class="metric-value {status}">{value}</div>
-                    <div class="metric-label">{subtitle}</div>
+                    <div class="metric-subtitle">{subtitle}</div>
                 </div>
             """, unsafe_allow_html=True)
 
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div></div>", unsafe_allow_html=True)
 
 def create_employee_dashboard(processor, employee_name):
     """Create a detailed dashboard for a single employee"""
@@ -81,9 +117,9 @@ def create_employee_dashboard(processor, employee_name):
 
     # Header with employee info
     st.markdown(f"""
-        <div class="stat-group">
-            <h2>{stats['name']}</h2>
-            <p style="color: #6C757D;">Departamento: {stats['department']}</p>
+        <div class="employee-header">
+            <h1 class="employee-name">{stats['name']}</h1>
+            <p class="employee-department">{stats['department'].title()}</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -93,7 +129,7 @@ def create_employee_dashboard(processor, employee_name):
     with col1:
         st.markdown("""
             <div class="stat-group">
-                <h3>📊 Resumen de Horas</h3>
+                <div class="section-title">📊 Resumen de Horas</div>
         """, unsafe_allow_html=True)
 
         hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100) if stats['required_hours'] > 0 else 0
@@ -105,7 +141,7 @@ def create_employee_dashboard(processor, employee_name):
                 <div class="metric-value {hours_status}">
                     {stats['actual_hours']:.1f}/{stats['required_hours']:.1f}
                 </div>
-                <div class="metric-label">({hours_ratio:.1f}%)</div>
+                <div class="metric-subtitle">({hours_ratio:.1f}% completado)</div>
             </div>
         """, unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
@@ -113,7 +149,7 @@ def create_employee_dashboard(processor, employee_name):
     with col2:
         st.markdown("""
             <div class="stat-group">
-                <h3>📋 Resumen de Asistencia</h3>
+                <div class="section-title">📋 Resumen de Asistencia</div>
         """, unsafe_allow_html=True)
 
         attendance_ratio = float(stats['attendance_ratio']) * 100
@@ -123,6 +159,7 @@ def create_employee_dashboard(processor, employee_name):
             <div class="stat-card">
                 <div class="metric-label">Tasa de Asistencia</div>
                 <div class="metric-value {attendance_status}">{attendance_ratio:.1f}%</div>
+                <div class="metric-subtitle">del total requerido</div>
             </div>
         """, unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
@@ -130,12 +167,12 @@ def create_employee_dashboard(processor, employee_name):
     # Regular Attendance Metrics
     st.markdown("""
         <div class="stat-group">
-            <h3>📈 Métricas de Asistencia Regular</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+            <div class="section-title">📈 Métricas de Asistencia Regular</div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
     """, unsafe_allow_html=True)
 
     regular_metrics = [
-        ('Inasistencias', stats['absences'], "Días totales"),
+        ('Inasistencias', stats['absences'], "Total días"),
         ('Días con Llegada Tarde', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total"),
         ('Días con Exceso en Almuerzo', stats['lunch_overtime_days'], f"{stats['total_lunch_minutes']:.0f} minutos en total"),
     ]
@@ -146,7 +183,7 @@ def create_employee_dashboard(processor, employee_name):
             <div class="stat-card">
                 <div class="metric-label">{label}</div>
                 <div class="metric-value {status}">{value}</div>
-                <div class="metric-label">{subtitle}</div>
+                <div class="metric-subtitle">{subtitle}</div>
             </div>
         """, unsafe_allow_html=True)
 
@@ -158,8 +195,8 @@ def create_employee_dashboard(processor, employee_name):
     # Metrics Requiring Authorization
     st.markdown("""
         <div class="stat-group">
-            <h3>🔒 Situaciones que Requieren Autorización</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+            <div class="section-title">🔒 Situaciones que Requieren Autorización</div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
     """, unsafe_allow_html=True)
 
     auth_metrics = [
@@ -174,8 +211,8 @@ def create_employee_dashboard(processor, employee_name):
             <div class="stat-card auth-required">
                 <div class="metric-label">{label}</div>
                 <div class="metric-value {status}">{value}</div>
-                <div class="metric-label">{subtitle}</div>
-                <div class="metric-label warning">Requiere Autorización</div>
+                <div class="metric-subtitle">{subtitle}</div>
+                <div class="metric-subtitle warning">Requiere Autorización</div>
             </div>
         """, unsafe_allow_html=True)
 

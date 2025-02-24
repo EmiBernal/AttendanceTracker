@@ -123,46 +123,68 @@ class ExcelProcessor:
             for sheet in attendance_sheets:
                 df = pd.read_excel(self.excel_file, sheet_name=sheet)
 
-                # Verificar en qué posición está el empleado
-                name_positions = [
-                    'J',  # Primera persona
-                    'Y',  # Segunda persona
-                    'AN'  # Tercera persona
+                # Definir las columnas para cada posición de empleado
+                employee_positions = [
+                    {
+                        'name_col': 'J',        # Primera persona
+                        'exit_col': 'I',        # Columna de salida
+                        'day_col': 'A'          # Columna de días
+                    },
+                    {
+                        'name_col': 'Y',        # Segunda persona
+                        'exit_col': 'X',        # Columna de salida
+                        'day_col': 'P'          # Columna de días
+                    },
+                    {
+                        'name_col': 'AN',       # Tercera persona
+                        'exit_col': 'AM',       # Columna de salida
+                        'day_col': 'AE'         # Columna de días
+                    }
                 ]
-                exit_columns = ['I', 'X', 'AM']  # Columnas de salida correspondientes
-                day_columns = ['A', 'P', 'AE']    # Columnas de días correspondientes
 
-                for idx, name_col in enumerate(name_positions):
+                # Buscar al empleado en cada posición posible
+                for position in employee_positions:
                     try:
-                        employee_cell = str(df.iloc[2, df.columns.get_loc(name_col)]).strip()
+                        # Verificar si el nombre coincide en la fila 3 (índice 2)
+                        employee_cell = str(df.iloc[2, df.columns.get_loc(position['name_col'])]).strip()
+
                         if employee_cell == employee_name:
-                            # Encontramos al empleado, procesar sus registros
-                            exit_col = exit_columns[idx]
-                            day_col = day_columns[idx]
-
-                            # Revisar desde la fila 12 hasta encontrar una fila vacía o llegar a 42
-                            for row in range(11, 42):  # Empezamos en 11 (índice 0-based para fila 12)
+                            # Procesar los días desde la fila 12 hasta 42
+                            for row in range(11, 42):  # índices 0-based para filas 12-42
                                 try:
-                                    day_value = str(df.iloc[row, df.columns.get_loc(day_col)]).strip()
-                                    if pd.isna(day_value) or day_value == '' or day_value == 'nan':
-                                        break  # Fin del mes
+                                    # Verificar el valor en la columna de días
+                                    day_value = str(df.iloc[row, df.columns.get_loc(position['day_col'])]).strip()
 
-                                    # Verificar si es un día laboral y no es ausencia
+                                    # Si no hay valor en la columna de días, llegamos al final del mes
+                                    if pd.isna(day_value) or day_value == '' or day_value == 'nan':
+                                        break
+
+                                    # Si no es una ausencia, verificar si es día laboral
                                     if day_value.lower() != 'absence':
                                         try:
+                                            # Intentar convertir el valor a fecha
                                             day_date = datetime.strptime(str(day_value), '%Y-%m-%d')
-                                            if day_date.weekday() < 5:  # 0-4 son días de semana
-                                                exit_value = str(df.iloc[row, df.columns.get_loc(exit_col)]).strip()
+
+                                            # Si es día laboral (lunes a viernes)
+                                            if day_date.weekday() < 5:
+                                                # Verificar si hay registro de salida
+                                                exit_value = str(df.iloc[row, df.columns.get_loc(position['exit_col'])]).strip()
+
+                                                # Si no hay registro de salida, incrementar el contador
                                                 if pd.isna(exit_value) or exit_value == '' or exit_value == 'nan':
                                                     missing_exit_days += 1
+                                                    print(f"Día sin registro de salida encontrado para {employee_name} en {day_value}")
                                         except:
-                                            # Si no se puede convertir la fecha, asumimos que es día laboral
-                                            exit_value = str(df.iloc[row, df.columns.get_loc(exit_col)]).strip()
+                                            # Si no se puede convertir la fecha, verificar directamente el registro de salida
+                                            exit_value = str(df.iloc[row, df.columns.get_loc(position['exit_col'])]).strip()
                                             if pd.isna(exit_value) or exit_value == '' or exit_value == 'nan':
                                                 missing_exit_days += 1
-                                except:
+                                                print(f"Día sin registro de salida encontrado para {employee_name}")
+                                except Exception as e:
+                                    print(f"Error procesando fila {row}: {str(e)}")
                                     continue
-                    except:
+                    except Exception as e:
+                        print(f"Error verificando posición: {str(e)}")
                         continue
 
             return missing_exit_days

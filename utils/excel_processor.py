@@ -89,7 +89,7 @@ class ExcelProcessor:
                                                     lunch_return_time = pd.to_datetime(lunch_return).time()
 
                                                     lunch_minutes = (
-                                                        datetime.combine(datetime.min, lunch_return_time) - 
+                                                        datetime.combine(datetime.min, lunch_return_time) -
                                                         datetime.combine(datetime.min, lunch_out_time)
                                                     ).total_seconds() / 60
 
@@ -110,12 +110,12 @@ class ExcelProcessor:
                     print(f"Error procesando hoja {sheet}: {str(e)}")
 
             print(f"Total días con exceso de tiempo de almuerzo: {lunch_overtime_days}")
-            print(f"Promedio de minutos excedidos: {total_lunch_minutes/lunch_overtime_days if lunch_overtime_days > 0 else 0:.0f}")
-            return lunch_overtime_days
+            print(f"Total minutos excedidos: {total_lunch_minutes:.0f}")
+            return lunch_overtime_days, total_lunch_minutes
 
         except Exception as e:
             print(f"Error general: {str(e)}")
-            return 0
+            return 0, 0
 
     def process_attendance_summary(self):
         """Procesa los datos de asistencia desde la hoja Summary"""
@@ -189,7 +189,7 @@ class ExcelProcessor:
         employee_summary = employee_data.iloc[0]
 
         # Calcular días con exceso de tiempo de almuerzo
-        lunch_overtime_days = self.count_lunch_overtime_days(employee_name)
+        lunch_overtime_days, total_lunch_minutes = self.count_lunch_overtime_days(employee_name)
 
         stats = {
             'name': employee_name,
@@ -202,6 +202,7 @@ class ExcelProcessor:
             'early_minutes': float(employee_summary['early_departure_minutes']),
             'absences': int(employee_summary['absences']),
             'lunch_overtime_days': lunch_overtime_days,
+            'total_lunch_minutes': total_lunch_minutes,
             'attendance_ratio': float(employee_summary['attendance_ratio'])
         }
 

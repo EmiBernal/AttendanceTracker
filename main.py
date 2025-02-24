@@ -114,7 +114,7 @@ def create_employee_dashboard(processor, employee_name):
     metrics = [
         ('Días con Llegada Tarde', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total"),
         ('Días con Salida Anticipada', stats['early_departures'], f"{stats['early_minutes']:.0f} minutos en total"),
-        ('Días con Exceso en Almuerzo', stats['lunch_overtime_days'], "Días que excedió tiempo de almuerzo"),
+        ('Días con Exceso en Almuerzo', stats['lunch_overtime_days'], f"{stats['total_lunch_minutes']:.0f} minutos en total"),
         ('Inasistencias', stats['absences'], "Días totales")
     ]
 

@@ -203,7 +203,9 @@ class ExcelProcessor:
             'absences': int(employee_summary['absences']),
             'lunch_overtime_days': lunch_overtime_days,
             'total_lunch_minutes': total_lunch_minutes,
-            'attendance_ratio': float(employee_summary['attendance_ratio'])
+            'attendance_ratio': float(employee_summary['attendance_ratio']),
+            'missing_records': 0,  # Placeholder hasta implementar la funcionalidad
+            'mid_day_departures': 0  # Placeholder hasta implementar la funcionalidad
         }
 
         return stats

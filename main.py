@@ -44,6 +44,9 @@ st.markdown("""
     .success {
         color: #28A745;
     }
+    .auth-required {
+        border-left: 4px solid #FFC107;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -99,32 +102,53 @@ def create_employee_dashboard(processor, employee_name):
         """, unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Detailed Statistics
+    # Regular Attendance Metrics
     st.markdown("""
         <div class="stat-group">
-            <h3>📈 Estadísticas Detalladas</h3>
+            <h3>📈 Métricas de Asistencia Regular</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
     """, unsafe_allow_html=True)
 
-    # Function to determine status color
-    def get_status_color(value, threshold_warning=1, threshold_danger=3):
-        return 'success' if value == 0 else 'warning' if value <= threshold_warning else 'danger'
-
-    # List of metrics to display
-    metrics = [
+    regular_metrics = [
+        ('Inasistencias', stats['absences'], "Días totales"),
         ('Días con Llegada Tarde', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total"),
-        ('Días con Salida Anticipada', stats['early_departures'], f"{stats['early_minutes']:.0f} minutos en total"),
         ('Días con Exceso en Almuerzo', stats['lunch_overtime_days'], f"{stats['total_lunch_minutes']:.0f} minutos en total"),
-        ('Inasistencias', stats['absences'], "Días totales")
+        ('Días sin Registro de Entrada/Salida/Almuerzo', stats.get('missing_records', 0), "Total días"),
     ]
 
-    for label, value, subtitle in metrics:
-        status = get_status_color(value)
+    for label, value, subtitle in regular_metrics:
+        status = 'success' if value == 0 else 'warning' if value <= 3 else 'danger'
         st.markdown(f"""
             <div class="stat-card">
                 <div class="metric-label">{label}</div>
                 <div class="metric-value {status}">{value}</div>
                 <div class="metric-label">{subtitle}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("</div></div>", unsafe_allow_html=True)
+
+    # Metrics Requiring Authorization
+    st.markdown("""
+        <div class="stat-group">
+            <h3>🔒 Situaciones que Requieren Autorización</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+    """, unsafe_allow_html=True)
+
+    auth_metrics = [
+        ('Retiros Anticipados', stats['early_departures'], f"{stats['early_minutes']:.0f} minutos en total"),
+        ('Ingresos con Retraso', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total"),
+        ('Retiros Durante Horario Laboral', stats.get('mid_day_departures', 0), "Total ocasiones")
+    ]
+
+    for label, value, subtitle in auth_metrics:
+        status = 'success' if value == 0 else 'warning' if value <= 2 else 'danger'
+        st.markdown(f"""
+            <div class="stat-card auth-required">
+                <div class="metric-label">{label}</div>
+                <div class="metric-value {status}">{value}</div>
+                <div class="metric-label">{subtitle}</div>
+                <div class="metric-label warning">Requiere Autorización</div>
             </div>
         """, unsafe_allow_html=True)
 

@@ -170,18 +170,13 @@ def create_employee_dashboard(processor, employee_name):
     with col2:
         st.markdown("""
             <div class="stat-group">
-                <h3>📋 Resumen de Asistencia</h3>
+                <h3>📈 Asistencia Semanal</h3>
         """, unsafe_allow_html=True)
 
-        attendance_ratio = float(stats['attendance_ratio']) * 100
-        attendance_status = 'success' if attendance_ratio >= 95 else 'warning' if attendance_ratio >= 85 else 'danger'
+        # Agregar el gráfico de asistencia semanal
+        fig = processor.create_weekly_attendance_chart(employee_name)
+        st.plotly_chart(fig, use_container_width=True)
 
-        st.markdown(f"""
-            <div class="stat-card">
-                <div class="metric-label">Tasa de Asistencia</div>
-                <div class="metric-value {attendance_status}">{attendance_ratio:.1f}%</div>
-            </div>
-        """, unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     # Regular Attendance Metrics

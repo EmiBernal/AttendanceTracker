@@ -49,57 +49,47 @@ class ExcelProcessor:
             early_departures = 0
             total_early_minutes = 0
 
-            employee_positions = [
-                {'name_col': 'J', 'exit_col': 'I', 'day_col': 'A'},
-                {'name_col': 'Y', 'exit_col': 'X', 'day_col': 'P'},
-                {'name_col': 'AN', 'exit_col': 'AM', 'day_col': 'AE'}
-            ]
-
             for sheet in attendance_sheets:
                 try:
                     print(f"\nProcesando hoja: {sheet}")
                     df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
 
-                    for position in employee_positions:
-                        try:
-                            cols = {key: self.get_column_index(value) for key, value in position.items()}
-                            name_cell = df.iloc[2, cols['name_col']]
-                            if pd.isna(name_cell):
-                                continue
+                    name_col_index = self.get_column_index('Y')
+                    name_cell = df.iloc[2, name_col_index]
+                    if pd.isna(name_cell):
+                        continue
 
-                            employee_cell = str(name_cell).strip()
-                            if employee_cell == employee_name:
-                                print(f"Empleado encontrado en hoja {sheet}, columna {position['name_col']}")
+                    employee_cell = str(name_cell).strip()
+                    if employee_cell == employee_name:
+                        print(f"Empleado encontrado en hoja {sheet}, columna Y")
 
-                                for row in range(11, 42):
-                                    try:
-                                        day_value = df.iloc[row, cols['day_col']]
-                                        if pd.isna(day_value):
-                                            break
+                        for row in range(11, 42):
+                            try:
+                                day_value = df.iloc[row, self.get_column_index('P')]
+                                if pd.isna(day_value):
+                                    break
 
-                                        day_str = str(day_value).strip().lower()
-                                        if day_str == '' or day_str == 'nan':
-                                            break
+                                day_str = str(day_value).strip().lower()
+                                if day_str == '' or day_str == 'nan':
+                                    break
 
-                                        if day_str != 'absence':
-                                            exit_time = df.iloc[row, cols['exit_col']]
-                                            if not pd.isna(exit_time):
-                                                try:
-                                                    exit_time = pd.to_datetime(exit_time).time()
-                                                    if self.is_early_departure(employee_name, exit_time):
-                                                        early_departures += 1
-                                                        early_minutes = (
-                                                            datetime.combine(datetime.min, self.WORK_END_TIME) -
-                                                            datetime.combine(datetime.min, exit_time)
-                                                        ).total_seconds() / 60
-                                                        total_early_minutes += early_minutes
-                                                        print(f"Salida temprana en fila {row+1}: {early_minutes:.0f} minutos")
-                                                except Exception as e:
-                                                    print(f"Error procesando hora de salida en fila {row+1}: {str(e)}")
-                                    except Exception as e:
-                                        print(f"Error en fila {row+1}: {str(e)}")
-                        except Exception as e:
-                            print(f"Error procesando posición en hoja {sheet}: {str(e)}")
+                                if day_str != 'absence':
+                                    exit_time = df.iloc[row, self.get_column_index('X')]
+                                    if not pd.isna(exit_time):
+                                        try:
+                                            exit_time = pd.to_datetime(exit_time).time()
+                                            if self.is_early_departure(employee_name, exit_time):
+                                                early_departures += 1
+                                                early_minutes = (
+                                                    datetime.combine(datetime.min, self.WORK_END_TIME) -
+                                                    datetime.combine(datetime.min, exit_time)
+                                                ).total_seconds() / 60
+                                                total_early_minutes += early_minutes
+                                                print(f"Salida temprana en fila {row+1}: {early_minutes:.0f} minutos")
+                                        except Exception as e:
+                                            print(f"Error procesando hora de salida en fila {row+1}: {str(e)}")
+                            except Exception as e:
+                                print(f"Error en fila {row+1}: {str(e)}")
 
                 except Exception as e:
                     print(f"Error procesando hoja {sheet}: {str(e)}")
@@ -229,54 +219,35 @@ class ExcelProcessor:
                     print(f"\nProcesando hoja: {sheet}")
                     df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
 
-                    employee_positions = [
-                        {
-                            'name_col': 'J',        # Primera persona
-                            'entry_col': 'B',       # Entrada
-                            'day_col': 'A',          # Columna de días
-                            'exit_col': 'I'         # Salida
-                        },
-                        {
-                            'name_col': 'Y',        # Segunda persona
-                            'entry_col': 'Q',       # Entrada
-                            'day_col': 'P',          # Columna de días
-                            'exit_col': 'X'         # Salida
-                        },
-                        {
-                            'name_col': 'AN',       # Tercera persona
-                            'entry_col': 'AF',      # Entrada
-                            'day_col': 'AE',         # Columna de días
-                            'exit_col': 'AM'        # Salida
-                        }
-                    ]
+                    # Buscar si Ana está en esta hoja
+                    name_col_index = self.get_column_index('Y')
+                    name_cell = df.iloc[2, name_col_index]
 
-                    for position in employee_positions:
-                        try:
-                            cols = {key: self.get_column_index(value) for key, value in position.items()}
-                            name_cell = df.iloc[2, cols['name_col']]
-                            if pd.isna(name_cell):
-                                continue
+                    if pd.isna(name_cell):
+                        continue
 
-                            employee_cell = str(name_cell).strip()
-                            if employee_cell == employee_name:
-                                print(f"Empleado encontrado en hoja {sheet}, columna {position['name_col']}")
+                    employee_cell = str(name_cell).strip()
+                    if employee_cell == employee_name:
+                        print(f"Empleado encontrado en hoja {sheet}")
 
-                                for row in range(11, 42):
-                                    try:
-                                        day_value = df.iloc[row, cols['day_col']]
-                                        if pd.isna(day_value):
-                                            break
+                        # Para Ana, usar específicamente columna Q para entrada y V para ausencias
+                        entry_col = self.get_column_index('Q')
+                        absence_col = self.get_column_index('V')
+                        day_col = self.get_column_index('P')
 
-                                        day_str = str(day_value).strip().lower()
-                                        if day_str == '' or day_str == 'nan':
-                                            break
-
-                                        # Solo procesar si no es ausencia y hay un valor en la entrada
-                                        if day_str != 'absence':
-                                            entry_time = df.iloc[row, cols['entry_col']]
+                        for row in range(12, 42):  # Q13 a Q42
+                            try:
+                                # Verificar si es ausencia
+                                absence_value = df.iloc[row, absence_col]
+                                if pd.isna(absence_value) or str(absence_value).strip().lower() != 'absence':
+                                    # Verificar si es día laborable (no fin de semana)
+                                    day_value = df.iloc[row, day_col]
+                                    if not pd.isna(day_value):
+                                        try:
+                                            entry_time = df.iloc[row, entry_col]
                                             if not pd.isna(entry_time) and str(entry_time).strip() != '':
                                                 try:
-                                                    # Convertir a datetime asegurándose de manejar diferentes formatos
+                                                    # Convertir a datetime
                                                     if isinstance(entry_time, str):
                                                         try:
                                                             entry_time = pd.to_datetime(entry_time).time()
@@ -301,10 +272,11 @@ class ExcelProcessor:
 
                                                 except Exception as e:
                                                     print(f"Error procesando hora de entrada en fila {row+1}: {str(e)}")
-                                    except Exception as e:
-                                        print(f"Error en fila {row+1}: {str(e)}")
-                        except Exception as e:
-                            print(f"Error procesando posición en hoja {sheet}: {str(e)}")
+                                        except Exception as e:
+                                            print(f"Error en fila {row+1}: {str(e)}")
+
+                            except Exception as e:
+                                print(f"Error verificando ausencia en fila {row+1}: {str(e)}")
 
                 except Exception as e:
                     print(f"Error procesando hoja {sheet}: {str(e)}")
@@ -614,7 +586,8 @@ class ExcelProcessor:
         }
 
         return stats
-    
+
+
     def get_weekly_attendance_data(self, employee_name):
         """Calcula las estadísticas de asistencia semanal"""
         try:
@@ -696,7 +669,7 @@ class ExcelProcessor:
                                         exit_time = df.iloc[row, cols['exit_col']]
                                         if not pd.isna(exit_time):
                                             exit_time = pd.to_datetime(exit_time).time()
-                                            if self.isearly_departure(employee_name, exit_time):
+                                            if self.is_early_departure(employee_name, exit_time):
                                                 weekly_stats[week_key]['early_departure_days'] += 1
                                                 weekly_stats[week_key]['events'].append(
                                                     f"{date.strftime('%d/%m')}: Salida temprana"
@@ -722,7 +695,7 @@ class ExcelProcessor:
 
         weeks = list(weekly_stats.keys())
         attendance_rates = [
-            (stats['present_days'] / stats['total_days'] * 100) if stats['total_days'] > 0 else 0
+            (stats['present_days'] / stats['total_days']) * 100 if stats['total_days'] > 0 else 0
             for stats in weekly_stats.values()
         ]
 
@@ -734,8 +707,7 @@ class ExcelProcessor:
             x=weeks,
             y=attendance_rates,
             mode='lines+markers',
-            name='Asistencia',
-            line=dict(color='#2196F3', width=3),
+            name='Asistencia',            line=dict(color='#2196F3', width=3),
             marker=dict(size=8)
         ))
 

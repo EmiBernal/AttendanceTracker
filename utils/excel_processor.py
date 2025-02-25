@@ -303,12 +303,13 @@ class ExcelProcessor:
             return 0, 0
 
     def count_missing_records(self, employee_name):
-        """Cuenta los días sin registros de entrada y salida"""
+        """Cuenta los días sin registros de entrada, salida y almuerzo"""
         try:
             exceptional_index = self.excel_file.sheet_names.index('Exceptional')
             attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
             missing_entry = 0
             missing_exit = 0
+            missing_lunch = 0
 
             for sheet in attendance_sheets:
                 try:
@@ -316,9 +317,33 @@ class ExcelProcessor:
                     df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
 
                     positions = [
-                        {'name_col': 'J', 'entry_col': 'B', 'exit_col': 'I', 'day_col': 'A', 'absence_col': 'G'},  # Primera persona
-                        {'name_col': 'Y', 'entry_col': 'Q', 'exit_col': 'X', 'day_col': 'P', 'absence_col': 'V'},  # Segunda persona
-                        {'name_col': 'AN', 'entry_col': 'AF', 'exit_col': 'AM', 'day_col': 'AE', 'absence_col': 'AK'}  # Tercera persona
+                        {
+                            'name_col': 'J', 
+                            'entry_col': 'B', 
+                            'exit_col': 'I', 
+                            'day_col': 'A', 
+                            'absence_col': 'G',
+                            'lunch_out': 'D',
+                            'lunch_return': 'G'
+                        },
+                        {
+                            'name_col': 'Y', 
+                            'entry_col': 'Q', 
+                            'exit_col': 'X', 
+                            'day_col': 'P', 
+                            'absence_col': 'V',
+                            'lunch_out': 'S',
+                            'lunch_return': 'V'
+                        },
+                        {
+                            'name_col': 'AN', 
+                            'entry_col': 'AF', 
+                            'exit_col': 'AM', 
+                            'day_col': 'AE', 
+                            'absence_col': 'AK',
+                            'lunch_out': 'AH',
+                            'lunch_return': 'AK'
+                        }
                     ]
 
                     for position in positions:
@@ -336,6 +361,8 @@ class ExcelProcessor:
                             exit_col = self.get_column_index(position['exit_col'])
                             day_col = self.get_column_index(position['day_col'])
                             absence_col = self.get_column_index(position['absence_col'])
+                            lunch_out_col = self.get_column_index(position['lunch_out'])
+                            lunch_return_col = self.get_column_index(position['lunch_return'])
 
                             for row in range(11, 42):  # Filas 12-42
                                 try:
@@ -370,6 +397,21 @@ class ExcelProcessor:
                                                     missing_exit += 1
                                                     print(f"Falta registro de salida en fila {row+1} ({sheet})")
 
+                                                # Verificar almuerzo solo si hay salida final
+                                                if not pd.isna(exit_value) and str(exit_value).strip() != '':
+                                                    lunch_out = df.iloc[row, lunch_out_col]
+                                                    lunch_return = df.iloc[row, lunch_return_col]
+
+                                                    # Caso 1: Hay salida almuerzo pero no regreso
+                                                    if (not pd.isna(lunch_out) and pd.isna(lunch_return)):
+                                                        missing_lunch += 1
+                                                        print(f"Falta registro de regreso almuerzo en fila {row+1} ({sheet})")
+
+                                                    # Caso 2: No hay salida ni regreso almuerzo
+                                                    elif (pd.isna(lunch_out) and pd.isna(lunch_return)):
+                                                        missing_lunch += 1
+                                                        print(f"Falta registro completo de almuerzo en fila {row+1} ({sheet})")
+
                                     except Exception as e:
                                         print(f"Error procesando fecha en fila {row+1}: {str(e)}")
                                         continue
@@ -391,8 +433,8 @@ class ExcelProcessor:
                 except Exception as e:
                     print(f"Error procesando hoja {sheet}: {str(e)}")
 
-            print(f"Total días sin registro - Entrada: {missing_entry}, Salida: {missing_exit}")
-            return missing_entry, missing_exit, 0  # El último 0 es para mantener compatibilidad con missing_lunch
+            print(f"Total días sin registro - Entrada: {missing_entry}, Salida: {missing_exit}, Almuerzo: {missing_lunch}")
+            return missing_entry, missing_exit, missing_lunch
 
         except Exception as e:
             print(f"Error general: {str(e)}")

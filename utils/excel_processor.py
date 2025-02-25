@@ -185,8 +185,10 @@ class ExcelProcessor:
 
                                                 if lunch_minutes > self.LUNCH_TIME_LIMIT:
                                                     lunch_overtime_days += 1
-                                                    total_lunch_minutes += lunch_minutes
-                                                    print(f"Exceso de tiempo de almuerzo en fila {row+1}: {lunch_minutes:.0f} minutos")
+                                                    # Solo contar los minutos que exceden el límite
+                                                    excess_minutes = lunch_minutes - self.LUNCH_TIME_LIMIT
+                                                    total_lunch_minutes += excess_minutes
+                                                    print(f"Exceso de tiempo de almuerzo en fila {row+1}: {excess_minutes:.0f} minutos (total almuerzo: {lunch_minutes:.0f} minutos)")
 
                                             except Exception as e:
                                                 print(f"Error procesando horarios en fila {row+1}: {str(e)}")

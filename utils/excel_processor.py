@@ -303,13 +303,12 @@ class ExcelProcessor:
             return 0, 0
 
     def count_missing_records(self, employee_name):
-        """Cuenta los días sin registros de entrada"""
+        """Cuenta los días sin registros de entrada y salida"""
         try:
             exceptional_index = self.excel_file.sheet_names.index('Exceptional')
             attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
             missing_entry = 0
             missing_exit = 0
-            missing_lunch = 0
 
             for sheet in attendance_sheets:
                 try:
@@ -317,9 +316,9 @@ class ExcelProcessor:
                     df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
 
                     positions = [
-                        {'name_col': 'J', 'entry_col': 'B', 'day_col': 'A'},  # Primera persona
-                        {'name_col': 'Y', 'entry_col': 'Q', 'day_col': 'P'},  # Segunda persona
-                        {'name_col': 'AN', 'entry_col': 'AF', 'day_col': 'AE'}  # Tercera persona
+                        {'name_col': 'J', 'entry_col': 'B', 'exit_col': 'I', 'day_col': 'A'},  # Primera persona
+                        {'name_col': 'Y', 'entry_col': 'Q', 'exit_col': 'X', 'day_col': 'P'},  # Segunda persona
+                        {'name_col': 'AN', 'entry_col': 'AF', 'exit_col': 'AM', 'day_col': 'AE'}  # Tercera persona
                     ]
 
                     for position in positions:
@@ -334,6 +333,7 @@ class ExcelProcessor:
                             print(f"Empleado encontrado en hoja {sheet}, columna {position['name_col']}")
 
                             entry_col = self.get_column_index(position['entry_col'])
+                            exit_col = self.get_column_index(position['exit_col'])
                             day_col = self.get_column_index(position['day_col'])
 
                             for row in range(11, 42):  # Filas 12-42
@@ -356,11 +356,17 @@ class ExcelProcessor:
                                                 print(f"Fila {row+1}: Fin de semana ({day_str}), ignorando")
                                                 continue
 
-                                            # Es día laboral, verificar registro de entrada
+                                            # Es día laboral, verificar registros
                                             entry_value = df.iloc[row, entry_col]
                                             if pd.isna(entry_value) or str(entry_value).strip() == '':
                                                 missing_entry += 1
                                                 print(f"Falta registro de entrada en fila {row+1} ({sheet})")
+
+                                            exit_value = df.iloc[row, exit_col]
+                                            if pd.isna(exit_value) or str(exit_value).strip() == '':
+                                                missing_exit += 1
+                                                print(f"Falta registro de salida en fila {row+1} ({sheet})")
+
                                     except Exception as e:
                                         print(f"Error procesando fecha en fila {row+1}: {str(e)}")
                                         continue
@@ -372,8 +378,8 @@ class ExcelProcessor:
                 except Exception as e:
                     print(f"Error procesando hoja {sheet}: {str(e)}")
 
-            print(f"Total días sin registro de entrada: {missing_entry}")
-            return missing_entry, missing_exit, missing_lunch
+            print(f"Total días sin registro - Entrada: {missing_entry}, Salida: {missing_exit}")
+            return missing_entry, missing_exit, 0  # El último 0 es para mantener compatibilidad con missing_lunch
 
         except Exception as e:
             print(f"Error general: {str(e)}")
@@ -705,7 +711,7 @@ class ExcelProcessor:
                         showarrow=True,
                         arrowhead=2,
                         arrowsize=1,
-                        arrowwidth=2,
+arrowwidth=2,
                         arrowcolor="#636363",
                         ax=-40,
                         ay=-40

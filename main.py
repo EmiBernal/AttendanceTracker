@@ -52,7 +52,7 @@ st.markdown("""
     }
 
     .stat-card:hover {
-        transform: translateY(-3px) scale(1.02);
+        transform: translateY(-2px);
         box-shadow: 0 6px 15px rgba(0,0,0,0.1);
         border-color: #2196F3;
     }
@@ -69,8 +69,8 @@ st.markdown("""
     }
 
     .stat-card:hover .metric-value {
-        transform: scale(1.05);
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transform: scale(1.02);
+        text-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
     .metric-label {
@@ -83,17 +83,9 @@ st.markdown("""
         color: #2196F3;
     }
 
-    .warning {
-        color: #FFC107;
-    }
-
-    .danger {
-        color: #DC3545;
-    }
-
-    .success {
-        color: #28A745;
-    }
+    .warning { color: #FFC107; }
+    .danger { color: #DC3545; }
+    .success { color: #28A745; }
 
     .auth-required {
         border-left: 4px solid #FFC107;
@@ -105,18 +97,15 @@ st.markdown("""
         background-color: rgba(255, 193, 7, 0.05);
     }
 
-    @keyframes pulse {
+    @keyframes subtlePulse {
         0% { transform: scale(1); }
-        50% { transform: scale(1.02); }
+        50% { transform: scale(1.01); }
         100% { transform: scale(1); }
     }
 
-    .stat-card:hover .warning {
-        animation: pulse 1s infinite;
-    }
-
+    .stat-card:hover .warning,
     .stat-card:hover .danger {
-        animation: pulse 1s infinite;
+        animation: subtlePulse 1.5s infinite;
     }
 </style>
 """, unsafe_allow_html=True)

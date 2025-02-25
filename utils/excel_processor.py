@@ -239,41 +239,39 @@ class ExcelProcessor:
                             try:
                                 # Verificar si es ausencia
                                 absence_value = df.iloc[row, absence_col]
-                                if pd.isna(absence_value) or str(absence_value).strip().lower() != 'absence':
-                                    # Verificar si es día laborable (no fin de semana)
-                                    day_value = df.iloc[row, day_col]
-                                    if not pd.isna(day_value):
-                                        try:
-                                            entry_time = df.iloc[row, entry_col]
-                                            if not pd.isna(entry_time) and str(entry_time).strip() != '':
-                                                try:
-                                                    # Convertir a datetime
-                                                    if isinstance(entry_time, str):
-                                                        try:
-                                                            entry_time = pd.to_datetime(entry_time).time()
-                                                        except:
-                                                            print(f"Error convirtiendo hora de entrada en fila {row+1}")
-                                                            continue
-                                                    elif isinstance(entry_time, datetime):
-                                                        entry_time = entry_time.time()
-                                                    else:
-                                                        print(f"Formato de hora no reconocido en fila {row+1}")
-                                                        continue
+                                day_value = df.iloc[row, day_col]
+                                entry_time = df.iloc[row, entry_col]
 
-                                                    # Verificar si llegó tarde
-                                                    if entry_time > self.WORK_START_TIME:
-                                                        late_days += 1
-                                                        late_minutes = (
-                                                            datetime.combine(datetime.min, entry_time) -
-                                                            datetime.combine(datetime.min, self.WORK_START_TIME)
-                                                        ).total_seconds() / 60
-                                                        total_late_minutes += late_minutes
-                                                        print(f"Llegada tarde en fila {row+1}: {late_minutes:.0f} minutos")
+                                print(f"Fila {row+1}: Entrada={entry_time}, Ausencia={absence_value}")
 
-                                                except Exception as e:
-                                                    print(f"Error procesando hora de entrada en fila {row+1}: {str(e)}")
-                                        except Exception as e:
-                                            print(f"Error en fila {row+1}: {str(e)}")
+                                # Procesar solo si no es ausencia y hay un valor de entrada
+                                if (pd.isna(absence_value) or str(absence_value).strip().lower() != 'absence') and not pd.isna(entry_time):
+                                    try:
+                                        # Convertir a datetime
+                                        if isinstance(entry_time, str):
+                                            try:
+                                                entry_time = pd.to_datetime(entry_time).time()
+                                            except:
+                                                print(f"Error convirtiendo hora de entrada en fila {row+1}")
+                                                continue
+                                        elif isinstance(entry_time, datetime):
+                                            entry_time = entry_time.time()
+                                        else:
+                                            print(f"Formato de hora no reconocido en fila {row+1}")
+                                            continue
+
+                                        # Verificar si llegó tarde
+                                        if entry_time > self.WORK_START_TIME:
+                                            late_days += 1
+                                            late_minutes = (
+                                                datetime.combine(datetime.min, entry_time) -
+                                                datetime.combine(datetime.min, self.WORK_START_TIME)
+                                            ).total_seconds() / 60
+                                            total_late_minutes += late_minutes
+                                            print(f"Llegada tarde en fila {row+1}: {late_minutes:.0f} minutos (hora: {entry_time})")
+
+                                    except Exception as e:
+                                        print(f"Error procesando hora de entrada en fila {row+1}: {str(e)}")
 
                             except Exception as e:
                                 print(f"Error verificando ausencia en fila {row+1}: {str(e)}")

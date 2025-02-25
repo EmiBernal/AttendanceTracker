@@ -350,6 +350,17 @@ class ExcelProcessor:
                                     if day_str == '' or day_str == 'nan' or day_str == 'absence':
                                         continue
 
+                                    # Verificar si es día de semana
+                                    try:
+                                        # Convertir el valor a datetime para verificar si es día de semana
+                                        day_date = pd.to_datetime(day_value, format='%d %a')
+                                        if day_date.weekday() >= 5:  # 5 = Sábado, 6 = Domingo
+                                            print(f"Fila {row+1}: Fin de semana, ignorando")
+                                            continue
+                                    except:
+                                        # Si hay error al convertir la fecha, asumir que es día laborable
+                                        pass
+
                                     # Verificar entrada
                                     entry_value = df.iloc[row, entry_col]
                                     print(f"Fila {row+1}: Valor entrada={entry_value}")
@@ -723,7 +734,7 @@ class ExcelProcessor:
                 except:
                     return 0.0
 
-            empleados_df['attendance_ratio'] = empleados_df['attendance_ratio'].apply(convert_ratio)
+            empleadosdf['attendance_ratio'] = empleados_df['attendance_ratio'].apply(convert_ratio)
             return empleados_df
 
         except Exception as e:

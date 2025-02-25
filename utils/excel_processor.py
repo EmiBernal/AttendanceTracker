@@ -344,9 +344,10 @@ class ExcelProcessor:
                                         continue
 
                                     day_str = str(day_value).strip().lower()
-                                    if day_str == '' or day_str == 'nan' or day_str == 'absence':
+                                    if day_str == '' or day_str == 'nan':
                                         continue
 
+                                    # Verificar si es día laboral usando el formato "dd aa"
                                     try:
                                         # Extraer el día y nombre del día de la cadena (e.g., "01 Mo")
                                         day_parts = day_str.split()
@@ -357,16 +358,22 @@ class ExcelProcessor:
                                                 print(f"Fila {row+1}: Fin de semana ({day_str}), ignorando")
                                                 continue
 
-                                            # Es día laboral, verificar registros
-                                            entry_value = df.iloc[row, entry_col]
-                                            if pd.isna(entry_value) or str(entry_value).strip() == '':
-                                                missing_entry += 1
-                                                print(f"Falta registro de entrada en fila {row+1} ({sheet})")
+                                            # Es día laboral, verificar registros si no es ausencia
+                                            absence_value = df.iloc[row, absence_col]
+                                            is_absence = not pd.isna(absence_value) and str(absence_value).strip().lower() == 'absence'
 
-                                            exit_value = df.iloc[row, exit_col]
-                                            if pd.isna(exit_value) or str(exit_value).strip() == '':
-                                                missing_exit += 1
-                                                print(f"Falta registro de salida en fila {row+1} ({sheet})")
+                                            if not is_absence:
+                                                # Verificar entrada
+                                                entry_value = df.iloc[row, entry_col]
+                                                if pd.isna(entry_value) or str(entry_value).strip() == '':
+                                                    missing_entry += 1
+                                                    print(f"Falta registro de entrada en fila {row+1} ({sheet})")
+
+                                                # Verificar salida
+                                                exit_value = df.iloc[row, exit_col]
+                                                if pd.isna(exit_value) or str(exit_value).strip() == '':
+                                                    missing_exit += 1
+                                                    print(f"Falta registro de salida en fila {row+1} ({sheet})")
 
                                     except Exception as e:
                                         print(f"Error procesando fecha en fila {row+1}: {str(e)}")
@@ -376,7 +383,7 @@ class ExcelProcessor:
                                     print(f"Error en fila {row+1}: {str(e)}")
                                     continue
 
-                            # Después de contar todos los registros faltantes, verificar si hay "Absence" y decrementar
+                            # Después de contar todos los registros faltantes, verificar si hay "Absence" y decrementar solo entradas
                             for row in range(11, 42):
                                 try:
                                     absence_value = df.iloc[row, absence_col]

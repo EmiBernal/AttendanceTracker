@@ -316,7 +316,6 @@ class ExcelProcessor:
                     print(f"\nVerificando registros en hoja {sheet}")
                     df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
 
-                    # Definir las posiciones posibles y sus columnas correspondientes
                     positions = [
                         {'name_col': 'J', 'entry_col': 'B', 'day_col': 'A'},  # Primera persona
                         {'name_col': 'Y', 'entry_col': 'Q', 'day_col': 'P'},  # Segunda persona
@@ -324,59 +323,45 @@ class ExcelProcessor:
                     ]
 
                     for position in positions:
-                        try:
-                            name_col_index = self.get_column_index(position['name_col'])
-                            name_cell = df.iloc[2, name_col_index]
+                        name_col_index = self.get_column_index(position['name_col'])
+                        name_cell = df.iloc[2, name_col_index]
 
-                            if pd.isna(name_cell):
-                                continue
+                        if pd.isna(name_cell):
+                            continue
 
-                            employee_cell = str(name_cell).strip()
-                            if employee_cell == employee_name:
-                                print(f"Empleado encontrado en hoja {sheet}, columna {position['name_col']}")
+                        employee_cell = str(name_cell).strip()
+                        if employee_cell == employee_name:
+                            print(f"Empleado encontrado en hoja {sheet}, columna {position['name_col']}")
 
-                                entry_col = self.get_column_index(position['entry_col'])
-                                day_col = self.get_column_index(position['day_col'])
+                            entry_col = self.get_column_index(position['entry_col'])
+                            day_col = self.get_column_index(position['day_col'])
 
-                                for row in range(11, 42):  # Filas 12-42
-                                    try:
-                                        day_value = df.iloc[row, day_col]
+                            for row in range(11, 42):  # Filas 12-42
+                                try:
+                                    day_value = df.iloc[row, day_col]
 
-                                        # Si no hay valor en la columna del día, terminar
-                                        if pd.isna(day_value) or str(day_value).strip() == '':
-                                            continue
-
-                                        # Verificar si es día laboral
-                                        try:
-                                            day_date = pd.to_datetime(day_value)
-                                            if day_date.weekday() < 5:  # 0-4 son días de semana
-                                                day_str = str(day_value).strip().lower()
-
-                                                # Solo procesar si no es ausencia
-                                                if day_str != 'absence':
-                                                    entry_value = df.iloc[row, entry_col]
-                                                    entry_str = str(entry_value).strip() if not pd.isna(entry_value) else ''
-
-                                                    print(f"Fila {row+1}: Valor entrada={entry_str}")
-
-                                                    # Si la celda está vacía o es nula, contar como día sin registro
-                                                    if entry_str == '' or pd.isna(entry_value):
-                                                        missing_entry += 1
-                                                        print(f"Falta registro de entrada en fila {row+1} ({sheet})")
-                                                    else:
-                                                        print(f"Registro válido en fila {row+1}: {entry_str}")
-
-                                        except Exception as e:
-                                            print(f"Error procesando fecha en fila {row+1}: {str(e)}")
-                                            continue
-
-                                    except Exception as e:
-                                        print(f"Error en fila {row+1}: {str(e)}")
+                                    # Si no hay valor en la columna del día, continuar al siguiente
+                                    if pd.isna(day_value):
                                         continue
 
-                        except Exception as e:
-                            print(f"Error procesando posición: {str(e)}")
-                            continue
+                                    day_str = str(day_value).strip().lower()
+
+                                    # Si el día está vacío o es "absence", ignorar
+                                    if day_str == '' or day_str == 'nan' or day_str == 'absence':
+                                        continue
+
+                                    # Verificar entrada
+                                    entry_value = df.iloc[row, entry_col]
+                                    print(f"Fila {row+1}: Valor entrada={entry_value}")
+
+                                    # Si la celda está vacía o es nula, contar como día sin registro
+                                    if pd.isna(entry_value) or str(entry_value).strip() == '':
+                                        missing_entry += 1
+                                        print(f"Falta registro de entrada en fila {row+1} ({sheet})")
+
+                                except Exception as e:
+                                    print(f"Error en fila {row+1}: {str(e)}")
+                                    continue
 
                 except Exception as e:
                     print(f"Error procesando hoja {sheet}: {str(e)}")

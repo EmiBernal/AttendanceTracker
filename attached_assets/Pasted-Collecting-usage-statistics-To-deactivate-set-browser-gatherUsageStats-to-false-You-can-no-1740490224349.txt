@@ -1,0 +1,413 @@
+Collecting usage statistics. To deactivate, set browser.gatherUsageStats to false.
+
+
+  You can now view your Streamlit app in your browser.
+
+  URL: http://0.0.0.0:5000
+
+Leyendo hoja Summary...
+
+Contenido de las primeras filas de Summary:
+                   0                                1   ...          21      22
+0  Attendance Summary                              NaN  ...         NaN     NaN
+1               Date:  2024/12/01 ~ 12/31\t( gampack )  ...         NaN     NaN
+2                 No.                             Name  ...  Actual Pay  Remark
+3                 NaN                              NaN  ...         NaN     NaN
+4                   1                           mili p  ...         NaN     NaN
+
+[5 rows x 23 columns]
+
+Columnas en Summary: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+
+Datos procesados de empleados:
+  0             1             2      3      4    5    6    7    8      11 13
+4  1        mili p     logistica  84.20  61.50  NaN  NaN  NaN  NaN  22/17  5
+5  2          ana   administraci  84.20  62.59    1    7    1   24  22/19  3
+6  3    stefania s  administraci  84.20  77.50  NaN  NaN  NaN  NaN  22/21  1
+7  4  angel gonzal     logistica  84.20  78.30  NaN  NaN  NaN  NaN  22/21  1
+8  5  ignacio ceba     logistica  84.20  77.29    1   21  NaN  NaN  22/21  1
+Leyendo hoja Summary...
+
+Contenido de las primeras filas de Summary:
+                   0                                1   ...          21      22
+0  Attendance Summary                              NaN  ...         NaN     NaN
+1               Date:  2024/12/01 ~ 12/31\t( gampack )  ...         NaN     NaN
+2                 No.                             Name  ...  Actual Pay  Remark
+3                 NaN                              NaN  ...         NaN     NaN
+4                   1                           mili p  ...         NaN     NaN
+
+[5 rows x 23 columns]
+
+Columnas en Summary: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+
+Datos procesados de empleados:
+  0             1             2      3      4    5    6    7    8      11 13
+4  1        mili p     logistica  84.20  61.50  NaN  NaN  NaN  NaN  22/17  5
+5  2          ana   administraci  84.20  62.59    1    7    1   24  22/19  3
+6  3    stefania s  administraci  84.20  77.50  NaN  NaN  NaN  NaN  22/21  1
+7  4  angel gonzal     logistica  84.20  78.30  NaN  NaN  NaN  NaN  22/21  1
+8  5  ignacio ceba     logistica  84.20  77.29    1   21  NaN  NaN  22/21  1
+Columns in summary: ['employee_id', 'employee_name', 'department', 'required_hours', 'actual_hours', 'late_count', 'late_minutes', 'early_departure_count', 'early_departure_minutes', 'attendance_ratio', 'absences']
+Number of records: 17
+Available employees: ['mili p', 'ana ', 'stefania s', 'angel gonzal', 'ignacio ceba', 'agustin taba', 'agustin manc', 'dario alfons', 'valentina al', 'antonella ra', 'german calde', 'diego ligorr', 'joana lampol', 'micaela arri', 'yohana llano', 'soledad silv', 'ma alejandra']
+
+Procesando hoja: Exceptional
+Error procesando hoja Exceptional: index 24 is out of bounds for axis 0 with size 12
+
+Procesando hoja: 1.2.3
+Empleado encontrado en hoja 1.2.3, columna J
+Fila 12: No hay información completa de almuerzo
+Exceso de tiempo de almuerzo en fila 16: 30 minutos (total almuerzo: 50 minutos)
+Fila 18: No hay información completa de almuerzo
+Fila 19: No hay información completa de almuerzo
+Fila 22: No hay información completa de almuerzo
+Fila 24: No hay información completa de almuerzo
+Fila 25: No hay información completa de almuerzo
+Fila 26: No hay información completa de almuerzo
+Fila 27: No hay información completa de almuerzo
+Exceso de tiempo de almuerzo en fila 29: 10 minutos (total almuerzo: 30 minutos)
+Fila 30: No hay información completa de almuerzo
+Fila 31: No hay información completa de almuerzo
+Fila 32: No hay información completa de almuerzo
+Fila 33: No hay información completa de almuerzo
+Fila 34: No hay información completa de almuerzo
+Fila 35: No hay información completa de almuerzo
+Fila 36: No hay información completa de almuerzo
+Fila 39: No hay información completa de almuerzo
+Fila 40: No hay información completa de almuerzo
+Exceso de tiempo de almuerzo en fila 41: 9 minutos (total almuerzo: 29 minutos)
+Fila 42: No hay información completa de almuerzo
+
+Procesando hoja: 4.5.6
+
+Procesando hoja: 7.8.9
+
+Procesando hoja: 10.11.12
+
+Procesando hoja: 14.15.16
+
+Procesando hoja: 17.18
+Total días con exceso de tiempo de almuerzo: 3
+Total minutos excedidos: 49
+
+Procesando hoja: Exceptional
+Error procesando posición: index 24 is out of bounds for axis 0 with size 12
+Error procesando posición: index 39 is out of bounds for axis 0 with size 12
+
+Procesando hoja: 1.2.3
+Empleado encontrado en hoja 1.2.3, columna J
+Fila 12: Entrada=nan
+Sin registro de entrada en fila 12
+Fila 13: Entrada=07:49
+Fila 14: Entrada=07:48
+Fila 15: Entrada=07:48
+Fila 16: Entrada=07:46
+Fila 17: Entrada=07:50
+Fila 18: Entrada=nan
+Sin registro de entrada en fila 18
+Fila 19: Entrada=nan
+Sin registro de entrada en fila 19
+Fila 20: Entrada=07:47
+Fila 21: Entrada=07:48
+Fila 22: Entrada=07:47
+Fila 23: Entrada=07:49
+Fila 24: Entrada=07:46
+Fila 25: Entrada=nan
+Sin registro de entrada en fila 25
+Fila 26: Entrada=nan
+Sin registro de entrada en fila 26
+Fila 27: Entrada=07:48
+Fila 28: Entrada=07:50
+Fila 29: Entrada=07:49
+Fila 30: Entrada=07:48
+Fila 31: Entrada=07:45
+Fila 32: Entrada=nan
+Sin registro de entrada en fila 32
+Fila 33: Entrada=nan
+Sin registro de entrada en fila 33
+Fila 34: Entrada=07:47
+Fila 35: Entrada=07:46
+Fila 36: Entrada=nan
+Sin registro de entrada en fila 36
+Fila 37: Entrada=07:47
+Fila 38: Entrada=07:43
+Fila 39: Entrada=nan
+Sin registro de entrada en fila 39
+Fila 40: Entrada=nan
+Sin registro de entrada en fila 40
+Fila 41: Entrada=07:48
+Fila 42: Entrada=07:47
+
+Procesando hoja: 4.5.6
+
+Procesando hoja: 7.8.9
+
+Procesando hoja: 10.11.12
+
+Procesando hoja: 14.15.16
+
+Procesando hoja: 17.18
+Total días de llegada tarde: 0
+Total minutos de tardanza: 0
+
+Verificando registros en hoja Exceptional
+Error procesando posición: index 24 is out of bounds for axis 0 with size 12
+Error procesando posición: index 39 is out of bounds for axis 0 with size 12
+
+Verificando registros en hoja 1.2.3
+Empleado encontrado en hoja 1.2.3, columna J
+Error procesando fecha en fila 12: Unknown datetime string format, unable to parse: 01 Su, at position 0
+Error procesando fecha en fila 13: Unknown datetime string format, unable to parse: 02 Mo, at position 0
+Error procesando fecha en fila 14: Unknown datetime string format, unable to parse: 03 Tu, at position 0
+Error procesando fecha en fila 15: Unknown datetime string format, unable to parse: 04 We, at position 0
+Error procesando fecha en fila 16: Out of bounds nanosecond timestamp: 05 Th, at position 0
+Error procesando fecha en fila 17: Unknown datetime string format, unable to parse: 06 Fr, at position 0
+Error procesando fecha en fila 18: Unknown datetime string format, unable to parse: 07 Sa, at position 0
+Error procesando fecha en fila 19: Unknown datetime string format, unable to parse: 08 Su, at position 0
+Error procesando fecha en fila 20: Unknown datetime string format, unable to parse: 09 Mo, at position 0
+Error procesando fecha en fila 21: Unknown datetime string format, unable to parse: 10 Tu, at position 0
+Error procesando fecha en fila 22: Unknown datetime string format, unable to parse: 11 We, at position 0
+Error procesando fecha en fila 23: Out of bounds nanosecond timestamp: 12 Th, at position 0
+Error procesando fecha en fila 24: Unknown datetime string format, unable to parse: 13 Fr, at position 0
+Error procesando fecha en fila 25: Unknown datetime string format, unable to parse: 14 Sa, at position 0
+Error procesando fecha en fila 26: Unknown datetime string format, unable to parse: 15 Su, at position 0
+Error procesando fecha en fila 27: Unknown datetime string format, unable to parse: 16 Mo, at position 0
+Error procesando fecha en fila 28: Unknown datetime string format, unable to parse: 17 Tu, at position 0
+Error procesando fecha en fila 29: Unknown datetime string format, unable to parse: 18 We, at position 0
+Error procesando fecha en fila 30: Out of bounds nanosecond timestamp: 19 Th, at position 0
+Error procesando fecha en fila 31: Unknown datetime string format, unable to parse: 20 Fr, at position 0
+Error procesando fecha en fila 32: Unknown datetime string format, unable to parse: 21 Sa, at position 0
+Error procesando fecha en fila 33: Unknown datetime string format, unable to parse: 22 Su, at position 0
+Error procesando fecha en fila 34: Unknown datetime string format, unable to parse: 23 Mo, at position 0
+Error procesando fecha en fila 35: Unknown datetime string format, unable to parse: 24 Tu, at position 0
+Error procesando fecha en fila 36: Unknown datetime string format, unable to parse: 25 We, at position 0
+Error procesando fecha en fila 37: Out of bounds nanosecond timestamp: 26 Th, at position 0
+Error procesando fecha en fila 38: Unknown datetime string format, unable to parse: 27 Fr, at position 0
+Error procesando fecha en fila 39: Unknown datetime string format, unable to parse: 28 Sa, at position 0
+Error procesando fecha en fila 40: Unknown datetime string format, unable to parse: 29 Su, at position 0
+Error procesando fecha en fila 41: Unknown datetime string format, unable to parse: 30 Mo, at position 0
+Error procesando fecha en fila 42: Unknown datetime string format, unable to parse: 31 Tu, at position 0
+
+Verificando registros en hoja 4.5.6
+
+Verificando registros en hoja 7.8.9
+
+Verificando registros en hoja 10.11.12
+
+Verificando registros en hoja 14.15.16
+
+Verificando registros en hoja 17.18
+Total días sin registro de entrada: 0
+Leyendo hoja Summary...
+
+Contenido de las primeras filas de Summary:
+                   0                                1   ...          21      22
+0  Attendance Summary                              NaN  ...         NaN     NaN
+1               Date:  2024/12/01 ~ 12/31\t( gampack )  ...         NaN     NaN
+2                 No.                             Name  ...  Actual Pay  Remark
+3                 NaN                              NaN  ...         NaN     NaN
+4                   1                           mili p  ...         NaN     NaN
+
+[5 rows x 23 columns]
+
+Columnas en Summary: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+
+Datos procesados de empleados:
+  0             1             2      3      4    5    6    7    8      11 13
+4  1        mili p     logistica  84.20  61.50  NaN  NaN  NaN  NaN  22/17  5
+5  2          ana   administraci  84.20  62.59    1    7    1   24  22/19  3
+6  3    stefania s  administraci  84.20  77.50  NaN  NaN  NaN  NaN  22/21  1
+7  4  angel gonzal     logistica  84.20  78.30  NaN  NaN  NaN  NaN  22/21  1
+8  5  ignacio ceba     logistica  84.20  77.29    1   21  NaN  NaN  22/21  1
+Leyendo hoja Summary...
+
+Contenido de las primeras filas de Summary:
+                   0                                1   ...          21      22
+0  Attendance Summary                              NaN  ...         NaN     NaN
+1               Date:  2024/12/01 ~ 12/31\t( gampack )  ...         NaN     NaN
+2                 No.                             Name  ...  Actual Pay  Remark
+3                 NaN                              NaN  ...         NaN     NaN
+4                   1                           mili p  ...         NaN     NaN
+
+[5 rows x 23 columns]
+
+Columnas en Summary: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+
+Datos procesados de empleados:
+  0             1             2      3      4    5    6    7    8      11 13
+4  1        mili p     logistica  84.20  61.50  NaN  NaN  NaN  NaN  22/17  5
+5  2          ana   administraci  84.20  62.59    1    7    1   24  22/19  3
+6  3    stefania s  administraci  84.20  77.50  NaN  NaN  NaN  NaN  22/21  1
+7  4  angel gonzal     logistica  84.20  78.30  NaN  NaN  NaN  NaN  22/21  1
+8  5  ignacio ceba     logistica  84.20  77.29    1   21  NaN  NaN  22/21  1
+Columns in summary: ['employee_id', 'employee_name', 'department', 'required_hours', 'actual_hours', 'late_count', 'late_minutes', 'early_departure_count', 'early_departure_minutes', 'attendance_ratio', 'absences']
+Number of records: 17
+Available employees: ['mili p', 'ana ', 'stefania s', 'angel gonzal', 'ignacio ceba', 'agustin taba', 'agustin manc', 'dario alfons', 'valentina al', 'antonella ra', 'german calde', 'diego ligorr', 'joana lampol', 'micaela arri', 'yohana llano', 'soledad silv', 'ma alejandra']
+
+Procesando hoja: Exceptional
+Error procesando hoja Exceptional: index 24 is out of bounds for axis 0 with size 12
+
+Procesando hoja: 1.2.3
+
+Procesando hoja: 4.5.6
+
+Procesando hoja: 7.8.9
+Empleado encontrado en hoja 7.8.9, columna AN
+Fila 12: No hay información completa de almuerzo
+Fila 13: No hay información completa de almuerzo
+Fila 14: No hay información completa de almuerzo
+Fila 15: No hay información completa de almuerzo
+Fila 16: No hay información completa de almuerzo
+Fila 17: No hay información completa de almuerzo
+Fila 18: No hay información completa de almuerzo
+Fila 19: No hay información completa de almuerzo
+Fila 20: No hay información completa de almuerzo
+Fila 21: No hay información completa de almuerzo
+Fila 22: No hay información completa de almuerzo
+Fila 23: No hay información completa de almuerzo
+Fila 24: No hay información completa de almuerzo
+Fila 25: No hay información completa de almuerzo
+Fila 26: No hay información completa de almuerzo
+Fila 27: No hay información completa de almuerzo
+Fila 28: No hay información completa de almuerzo
+Fila 29: No hay información completa de almuerzo
+Fila 30: No hay información completa de almuerzo
+Fila 31: No hay información completa de almuerzo
+Fila 32: No hay información completa de almuerzo
+Fila 33: No hay información completa de almuerzo
+Fila 34: No hay información completa de almuerzo
+Fila 35: No hay información completa de almuerzo
+Fila 36: No hay información completa de almuerzo
+Fila 37: No hay información completa de almuerzo
+Fila 38: No hay información completa de almuerzo
+Fila 39: No hay información completa de almuerzo
+Fila 40: No hay información completa de almuerzo
+Fila 41: No hay información completa de almuerzo
+Fila 42: No hay información completa de almuerzo
+
+Procesando hoja: 10.11.12
+
+Procesando hoja: 14.15.16
+
+Procesando hoja: 17.18
+Total días con exceso de tiempo de almuerzo: 0
+Total minutos excedidos: 0
+
+Procesando hoja: Exceptional
+Error procesando posición: index 24 is out of bounds for axis 0 with size 12
+Error procesando posición: index 39 is out of bounds for axis 0 with size 12
+
+Procesando hoja: 1.2.3
+
+Procesando hoja: 4.5.6
+
+Procesando hoja: 7.8.9
+Empleado encontrado en hoja 7.8.9, columna AN
+Fila 12: Entrada=nan
+Sin registro de entrada en fila 12
+Fila 13: Entrada=nan
+Sin registro de entrada en fila 13
+Fila 14: Entrada=07:45
+Fila 15: Entrada=07:48
+Fila 16: Entrada=09:18
+Llegada tarde en fila 16: 88 minutos (hora: 09:18:00)
+Fila 17: Entrada=07:50
+Fila 18: Entrada=nan
+Sin registro de entrada en fila 18
+Fila 19: Entrada=nan
+Sin registro de entrada en fila 19
+Fila 20: Entrada=nan
+Sin registro de entrada en fila 20
+Fila 21: Entrada=07:51
+Llegada tarde en fila 21: 1 minutos (hora: 07:51:00)
+Fila 22: Entrada=nan
+Sin registro de entrada en fila 22
+Fila 23: Entrada=07:50
+Fila 24: Entrada=07:51
+Llegada tarde en fila 24: 1 minutos (hora: 07:51:00)
+Fila 25: Entrada=nan
+Sin registro de entrada en fila 25
+Fila 26: Entrada=nan
+Sin registro de entrada en fila 26
+Fila 27: Entrada=07:50
+Fila 28: Entrada=07:52
+Llegada tarde en fila 28: 2 minutos (hora: 07:52:00)
+Fila 29: Entrada=07:53
+Llegada tarde en fila 29: 3 minutos (hora: 07:53:00)
+Fila 30: Entrada=08:06
+Llegada tarde en fila 30: 16 minutos (hora: 08:06:00)
+Fila 31: Entrada=07:50
+Fila 32: Entrada=nan
+Sin registro de entrada en fila 32
+Fila 33: Entrada=nan
+Sin registro de entrada en fila 33
+Fila 34: Entrada=07:49
+Fila 35: Entrada=07:51
+Llegada tarde en fila 35: 1 minutos (hora: 07:51:00)
+Fila 36: Entrada=nan
+Sin registro de entrada en fila 36
+Fila 37: Entrada=07:43
+Fila 38: Entrada=07:46
+Fila 39: Entrada=nan
+Sin registro de entrada en fila 39
+Fila 40: Entrada=nan
+Sin registro de entrada en fila 40
+Fila 41: Entrada=07:47
+Fila 42: Entrada=07:46
+
+Procesando hoja: 10.11.12
+
+Procesando hoja: 14.15.16
+
+Procesando hoja: 17.18
+Total días de llegada tarde: 7
+Total minutos de tardanza: 112
+
+Verificando registros en hoja Exceptional
+Error procesando posición: index 24 is out of bounds for axis 0 with size 12
+Error procesando posición: index 39 is out of bounds for axis 0 with size 12
+
+Verificando registros en hoja 1.2.3
+
+Verificando registros en hoja 4.5.6
+
+Verificando registros en hoja 7.8.9
+Empleado encontrado en hoja 7.8.9, columna AN
+Error procesando fecha en fila 12: Unknown datetime string format, unable to parse: 01 Su, at position 0
+Error procesando fecha en fila 13: Unknown datetime string format, unable to parse: 02 Mo, at position 0
+Error procesando fecha en fila 14: Unknown datetime string format, unable to parse: 03 Tu, at position 0
+Error procesando fecha en fila 15: Unknown datetime string format, unable to parse: 04 We, at position 0
+Error procesando fecha en fila 16: Out of bounds nanosecond timestamp: 05 Th, at position 0
+Error procesando fecha en fila 17: Unknown datetime string format, unable to parse: 06 Fr, at position 0
+Error procesando fecha en fila 18: Unknown datetime string format, unable to parse: 07 Sa, at position 0
+Error procesando fecha en fila 19: Unknown datetime string format, unable to parse: 08 Su, at position 0
+Error procesando fecha en fila 20: Unknown datetime string format, unable to parse: 09 Mo, at position 0
+Error procesando fecha en fila 21: Unknown datetime string format, unable to parse: 10 Tu, at position 0
+Error procesando fecha en fila 22: Unknown datetime string format, unable to parse: 11 We, at position 0
+Error procesando fecha en fila 23: Out of bounds nanosecond timestamp: 12 Th, at position 0
+Error procesando fecha en fila 24: Unknown datetime string format, unable to parse: 13 Fr, at position 0
+Error procesando fecha en fila 25: Unknown datetime string format, unable to parse: 14 Sa, at position 0
+Error procesando fecha en fila 26: Unknown datetime string format, unable to parse: 15 Su, at position 0
+Error procesando fecha en fila 27: Unknown datetime string format, unable to parse: 16 Mo, at position 0
+Error procesando fecha en fila 28: Unknown datetime string format, unable to parse: 17 Tu, at position 0
+Error procesando fecha en fila 29: Unknown datetime string format, unable to parse: 18 We, at position 0
+Error procesando fecha en fila 30: Out of bounds nanosecond timestamp: 19 Th, at position 0
+Error procesando fecha en fila 31: Unknown datetime string format, unable to parse: 20 Fr, at position 0
+Error procesando fecha en fila 32: Unknown datetime string format, unable to parse: 21 Sa, at position 0
+Error procesando fecha en fila 33: Unknown datetime string format, unable to parse: 22 Su, at position 0
+Error procesando fecha en fila 34: Unknown datetime string format, unable to parse: 23 Mo, at position 0
+Error procesando fecha en fila 35: Unknown datetime string format, unable to parse: 24 Tu, at position 0
+Error procesando fecha en fila 36: Unknown datetime string format, unable to parse: 25 We, at position 0
+Error procesando fecha en fila 37: Out of bounds nanosecond timestamp: 26 Th, at position 0
+Error procesando fecha en fila 38: Unknown datetime string format, unable to parse: 27 Fr, at position 0
+Error procesando fecha en fila 39: Unknown datetime string format, unable to parse: 28 Sa, at position 0
+Error procesando fecha en fila 40: Unknown datetime string format, unable to parse: 29 Su, at position 0
+Error procesando fecha en fila 41: Unknown datetime string format, unable to parse: 30 Mo, at position 0
+Error procesando fecha en fila 42: Unknown datetime string format, unable to parse: 31 Tu, at position 0
+
+Verificando registros en hoja 10.11.12
+
+Verificando registros en hoja 14.15.16
+
+Verificando registros en hoja 17.18
+Total días sin registro de entrada: 0

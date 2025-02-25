@@ -339,36 +339,31 @@ class ExcelProcessor:
                             for row in range(11, 42):  # Filas 12-42
                                 try:
                                     day_value = df.iloc[row, day_col]
-
-                                    # Si no hay valor en la columna del día, continuar al siguiente
                                     if pd.isna(day_value):
                                         continue
 
                                     day_str = str(day_value).strip().lower()
-
-                                    # Si el día está vacío o es "absence", ignorar
                                     if day_str == '' or day_str == 'nan' or day_str == 'absence':
                                         continue
 
-                                    # Verificar si es día de semana
                                     try:
-                                        # Convertir el valor a datetime para verificar si es día de semana
-                                        day_date = pd.to_datetime(day_value, format='%d %a')
-                                        if day_date.weekday() >= 5:  # 5 = Sábado, 6 = Domingo
-                                            print(f"Fila {row+1}: Fin de semana, ignorando")
-                                            continue
-                                    except:
-                                        # Si hay error al convertir la fecha, asumir que es día laborable
-                                        pass
+                                        # Extraer el día y nombre del día de la cadena (e.g., "01 Mo")
+                                        day_parts = day_str.split()
+                                        if len(day_parts) >= 2:
+                                            day_abbr = day_parts[1].lower()
+                                            # Verificar si es fin de semana
+                                            if day_abbr in ['sa', 'su']:
+                                                print(f"Fila {row+1}: Fin de semana ({day_str}), ignorando")
+                                                continue
 
-                                    # Verificar entrada
-                                    entry_value = df.iloc[row, entry_col]
-                                    print(f"Fila {row+1}: Valor entrada={entry_value}")
-
-                                    # Si la celda está vacía o es nula, contar como día sin registro
-                                    if pd.isna(entry_value) or str(entry_value).strip() == '':
-                                        missing_entry += 1
-                                        print(f"Falta registro de entrada en fila {row+1} ({sheet})")
+                                            # Es día laboral, verificar registro de entrada
+                                            entry_value = df.iloc[row, entry_col]
+                                            if pd.isna(entry_value) or str(entry_value).strip() == '':
+                                                missing_entry += 1
+                                                print(f"Falta registro de entrada en fila {row+1} ({sheet})")
+                                    except Exception as e:
+                                        print(f"Error procesando fecha en fila {row+1}: {str(e)}")
+                                        continue
 
                                 except Exception as e:
                                     print(f"Error en fila {row+1}: {str(e)}")

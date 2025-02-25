@@ -434,6 +434,68 @@ class ExcelProcessor:
             print(f"Error calculando horas: {str(e)}")
             return 0.0
 
+    def process_attendance_summary(self):
+        """Procesa los datos de asistencia desde la hoja Summary"""
+        try:
+            print("Leyendo hoja Summary...")
+            summary_df = pd.read_excel(self.excel_file, sheet_name="Summary", header=None)
+            print("\nContenido de las primeras filas de Summary:")
+            print(summary_df.head())
+            print("\nColumnas en Summary:", summary_df.columns.tolist())
+
+            empleados_df = summary_df.iloc[4:23, [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 13]]
+            print("\nDatos procesados de empleados:")
+            print(empleados_df.head())
+
+            empleados_df.columns = [
+                'employee_id', 'employee_name', 'department', 'required_hours',
+                'actual_hours', 'late_count', 'late_minutes', 'early_departure_count',
+                'early_departure_minutes', 'attendance_ratio', 'absences'
+            ]
+
+            empleados_df = empleados_df.dropna(subset=['employee_name'])
+            empleados_df = empleados_df.fillna(0)
+
+            empleados_df['department'] = empleados_df['department'].apply(
+                lambda x: 'administracion' if str(x).strip().lower() == 'administri' else str(x).strip()
+            )
+
+            numeric_cols = ['required_hours', 'actual_hours', 'late_count', 'late_minutes',
+                          'early_departure_count', 'early_departure_minutes']
+            for col in numeric_cols:
+                empleados_df[col] = pd.to_numeric(empleados_df[col], errors='coerce').fillna(0)
+
+            def process_absences(absence_str):
+                try:
+                    if pd.isna(absence_str) or str(absence_str).strip() == '':
+                        return 0
+                    absence_count = int(str(absence_str))
+                    return absence_count
+                except:
+                    return 0
+
+            empleados_df['absences'] = empleados_df['absences'].apply(process_absences)
+
+            def convert_ratio(value):
+                try:
+                    if isinstance(value, str) and '/' in value:
+                        required, actual = map(float, value.split('/'))
+                        return actual / required if required > 0 else 0
+                    return float(value)
+                except:
+                    return 0.0
+
+            empleados_df['attendance_ratio'] = empleados_df['attendance_ratio'].apply(convert_ratio)
+            return empleados_df
+
+        except Exception as e:
+            print(f"Error procesando el archivo: {str(e)}")
+            return pd.DataFrame(columns=[
+                'employee_id', 'employee_name', 'department', 'required_hours',
+                'actual_hours', 'late_count', 'late_minutes', 'early_departure_count',
+                'early_departure_minutes', 'attendance_ratio', 'absences'
+            ])
+
     def get_employee_stats(self, employee_name):
         """Obtiene estadísticas para un empleado específico"""
         summary = self.process_attendance_summary()
@@ -689,48 +751,39 @@ class ExcelProcessor:
             print(summary_df.head())
             print("\nColumnas en Summary:", summary_df.columns.tolist())
 
-            # Procesar los datos desde la fila 4 (índice 3) hasta la 23 y seleccionar las columnas relevantes
-            empleados_df = summary_df.iloc[4:23, [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 13]].copy()
+            empleados_df = summary_df.iloc[4:23, [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 13]]
             print("\nDatos procesados de empleados:")
             print(empleados_df.head())
 
-            # Asignar nombres de columnas
             empleados_df.columns = [
                 'employee_id', 'employee_name', 'department', 'required_hours',
                 'actual_hours', 'late_count', 'late_minutes', 'early_departure_count',
                 'early_departure_minutes', 'attendance_ratio', 'absences'
             ]
 
-            # Limpiar y procesar los datos
-            empleados_df['employee_name'] = empleados_df['employee_name'].apply(
-                lambda x: str(x).strip() if pd.notna(x) else ''
-            )
-            empleados_df = empleados_df[empleados_df['employee_name'] != '']
+            empleados_df = empleados_df.dropna(subset=['employee_name'])
             empleados_df = empleados_df.fillna(0)
 
-            # Limpiar el departamento
             empleados_df['department'] = empleados_df['department'].apply(
                 lambda x: 'administracion' if str(x).strip().lower() == 'administri' else str(x).strip()
             )
 
-            # Convertir columnas numéricas
             numeric_cols = ['required_hours', 'actual_hours', 'late_count', 'late_minutes',
                           'early_departure_count', 'early_departure_minutes']
             for col in numeric_cols:
                 empleados_df[col] = pd.to_numeric(empleados_df[col], errors='coerce').fillna(0)
 
-            # Procesar ausencias
             def process_absences(absence_str):
                 try:
                     if pd.isna(absence_str) or str(absence_str).strip() == '':
                         return 0
-                    return int(str(absence_str))
+                    absence_count = int(str(absence_str))
+                    return absence_count
                 except:
                     return 0
 
-            empleados_df['absences'] = empleadosdf['absences'].apply(process_absences)
+            empleados_df['absences'] = empleados_df['absences'].apply(process_absences)
 
-            # Procesar ratio de asistencia
             def convert_ratio(value):
                 try:
                     if isinstance(value, str) and '/' in value:
@@ -741,10 +794,6 @@ class ExcelProcessor:
                     return 0.0
 
             empleados_df['attendance_ratio'] = empleados_df['attendance_ratio'].apply(convert_ratio)
-
-            print("Empleados procesados:", len(empleados_df))
-            print("Nombres de empleados:", empleados_df['employee_name'].tolist())
-
             return empleados_df
 
         except Exception as e:

@@ -303,7 +303,7 @@ class ExcelProcessor:
             return 0, 0
 
     def count_missing_records(self, employee_name):
-        """Cuenta los días sin registros de entrada, salida y almuerzo"""
+        """Cuenta los días sin registros de entrada"""
         try:
             exceptional_index = self.excel_file.sheet_names.index('Exceptional')
             attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
@@ -341,10 +341,12 @@ class ExcelProcessor:
                                 for row in range(11, 42):  # Filas 12-42
                                     try:
                                         day_value = df.iloc[row, day_col]
-                                        if pd.isna(day_value):
+
+                                        # Si no hay valor en la columna del día, terminar
+                                        if pd.isna(day_value) or str(day_value).strip() == '':
                                             continue
 
-                                        # Verificar si es día laboral (no fin de semana)
+                                        # Verificar si es día laboral
                                         try:
                                             day_date = pd.to_datetime(day_value)
                                             if day_date.weekday() < 5:  # 0-4 son días de semana
@@ -353,10 +355,16 @@ class ExcelProcessor:
                                                 # Solo procesar si no es ausencia
                                                 if day_str != 'absence':
                                                     entry_value = df.iloc[row, entry_col]
+                                                    entry_str = str(entry_value).strip() if not pd.isna(entry_value) else ''
+
+                                                    print(f"Fila {row+1}: Valor entrada={entry_str}")
+
                                                     # Si la celda está vacía o es nula, contar como día sin registro
-                                                    if pd.isna(entry_value) or str(entry_value).strip() == '':
+                                                    if entry_str == '' or pd.isna(entry_value):
                                                         missing_entry += 1
-                                                        print(f"Falta registro de entrada en fila {row+1}")
+                                                        print(f"Falta registro de entrada en fila {row+1} ({sheet})")
+                                                    else:
+                                                        print(f"Registro válido en fila {row+1}: {entry_str}")
 
                                         except Exception as e:
                                             print(f"Error procesando fecha en fila {row+1}: {str(e)}")
@@ -725,7 +733,7 @@ class ExcelProcessor:
                 try:
                     if isinstance(value, str) and '/' in value:
                         required, actual = map(float, value.split('/'))
-                        return actual / required if required > 0 else 0
+                        return actual / required if required> 0 else 0
                     return float(value)
                 except:
                     return 0.0

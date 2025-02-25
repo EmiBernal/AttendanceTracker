@@ -689,52 +689,62 @@ class ExcelProcessor:
             print(summary_df.head())
             print("\nColumnas en Summary:", summary_df.columns.tolist())
 
-            empleados_df = summary_df.iloc[4:23, [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 13]]
+            # Procesar los datos desde la fila 4 (índice 3) hasta la 23 y seleccionar las columnas relevantes
+            empleados_df = summary_df.iloc[4:23, [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 13]].copy()
             print("\nDatos procesados de empleados:")
             print(empleados_df.head())
 
+            # Asignar nombres de columnas
             empleados_df.columns = [
                 'employee_id', 'employee_name', 'department', 'required_hours',
                 'actual_hours', 'late_count', 'late_minutes', 'early_departure_count',
                 'early_departure_minutes', 'attendance_ratio', 'absences'
             ]
 
-            empleados_df = empleados_df.dropna(subset=['employee_name'])
+            # Limpiar y procesar los datos
+            empleados_df['employee_name'] = empleados_df['employee_name'].apply(
+                lambda x: str(x).strip() if pd.notna(x) else ''
+            )
+            empleados_df = empleados_df[empleados_df['employee_name'] != '']
             empleados_df = empleados_df.fillna(0)
 
+            # Limpiar el departamento
             empleados_df['department'] = empleados_df['department'].apply(
                 lambda x: 'administracion' if str(x).strip().lower() == 'administri' else str(x).strip()
             )
 
+            # Convertir columnas numéricas
             numeric_cols = ['required_hours', 'actual_hours', 'late_count', 'late_minutes',
                           'early_departure_count', 'early_departure_minutes']
             for col in numeric_cols:
                 empleados_df[col] = pd.to_numeric(empleados_df[col], errors='coerce').fillna(0)
 
-            # Procesar ausencias excluyendo fines de semana
+            # Procesar ausencias
             def process_absences(absence_str):
                 try:
                     if pd.isna(absence_str) or str(absence_str).strip() == '':
                         return 0
-                    # Contar solo las ausencias en días laborales (no fines de semana)
-                    absence_count = int(str(absence_str))
-                    # Asumimos que las ausencias ya están contadas solo para días laborales
-                    return absence_count
+                    return int(str(absence_str))
                 except:
                     return 0
 
-            empleados_df['absences'] = empleados_df['absences'].apply(process_absences)
+            empleados_df['absences'] = empleadosdf['absences'].apply(process_absences)
 
+            # Procesar ratio de asistencia
             def convert_ratio(value):
                 try:
                     if isinstance(value, str) and '/' in value:
                         required, actual = map(float, value.split('/'))
-                        return actual / required if required> 0 else 0
+                        return actual / required if required > 0 else 0
                     return float(value)
                 except:
                     return 0.0
 
-            empleadosdf['attendance_ratio'] = empleados_df['attendance_ratio'].apply(convert_ratio)
+            empleados_df['attendance_ratio'] = empleados_df['attendance_ratio'].apply(convert_ratio)
+
+            print("Empleados procesados:", len(empleados_df))
+            print("Nombres de empleados:", empleados_df['employee_name'].tolist())
+
             return empleados_df
 
         except Exception as e:
@@ -744,3 +754,249 @@ class ExcelProcessor:
                 'actual_hours', 'late_count', 'late_minutes', 'early_departure_count',
                 'early_departure_minutes', 'attendance_ratio', 'absences'
             ])
+
+    def get_employee_stats(self, employee_name):
+        """Obtiene estadísticas para un empleado específico"""
+        summary = self.process_attendance_summary()
+        print(f"Columns in summary: {summary.columns.tolist()}")
+        print(f"Number of records: {len(summary)}")
+        print(f"Available employees: {summary['employee_name'].tolist()}")
+
+        if len(summary) == 0:
+            raise ValueError("No employee records found in the Excel file")
+
+        if 'employee_name' not in summary.columns:
+            raise ValueError("Column 'employee_name' not found in processed data")
+
+        employee_data = summary[summary['employee_name'] == employee_name]
+
+        if len(employee_data) == 0:
+            raise ValueError(f"Employee '{employee_name}' not found in records")
+
+        employee_summary = employee_data.iloc[0]
+
+        # Calcular días con exceso de tiempo de almuerzo
+        lunch_overtime_days, total_lunch_minutes = self.count_lunch_overtime_days(employee_name)
+
+        # Calcular días de llegada tarde
+        late_days, late_minutes = self.count_late_days(employee_name)
+
+        # Calcular días sin registros
+        missing_entry, missing_exit, missing_lunch = self.count_missing_records(employee_name)
+
+        # Ajustar el cálculo de horas requeridas según el horario especial
+        required_hours = float(employee_summary['required_hours'])
+        actual_hours = float(employee_summary['actual_hours'])
+
+        # Si es Agustín Tabasso, calcular las horas trabajadas de manera especial
+        if employee_name.lower() == 'agustin taba':
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            total_actual_hours = 0.0
+
+            for sheet in attendance_sheets:
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+                    if df.iloc[2, self.get_column_index('AN')].strip() == employee_name:
+                        total_actual_hours += self.calculate_agustin_hours(df)
+                except Exception as e:
+                    print(f"Error procesando hoja {sheet}: {str(e)}")
+                    continue
+
+            actual_hours = total_actual_hours
+
+        if employee_name.lower() in self.SPECIAL_SCHEDULES:
+            schedule = self.SPECIAL_SCHEDULES[employee_name.lower()]
+            if schedule['half_day']:
+                # Para empleados de medio día, ajustar las horas requeridas
+                required_hours = required_hours / 2
+
+        stats = {
+            'name': employee_name,
+            'department': str(employee_summary['department']),
+            'required_hours': required_hours,
+            'actual_hours': actual_hours,
+            'late_days': late_days,
+            'late_minutes': late_minutes,
+            'early_departures': int(employee_summary['early_departure_count']),
+            'early_minutes': float(employee_summary['early_departure_minutes']),
+            'absences': int(employee_summary['absences']),
+            'lunch_overtime_days': lunch_overtime_days,
+            'total_lunch_minutes': total_lunch_minutes,
+            'attendance_ratio': float(employee_summary['attendance_ratio']),
+            'missing_entry_days': missing_entry,
+            'missing_exit_days': missing_exit,
+            'missing_lunch_days': missing_lunch,
+            'mid_day_departures': 0,  # Placeholder hasta implementar la funcionalidad
+            'special_schedule': employee_name.lower() in self.SPECIAL_SCHEDULES
+        }
+
+        return stats
+
+
+    def get_weekly_attendance_data(self, employee_name):
+        """Calcula las estadísticas de asistencia semanal"""
+        try:
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            weekly_stats = {}
+
+            for sheet in attendance_sheets:
+                df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+
+                employee_positions = [
+                    {'name_col': 'J', 'entry_col': 'B', 'exit_col': 'I', 'lunch_out': 'D', 'lunch_return': 'G', 'day_col': 'A'},
+                    {'name_col': 'Y', 'entry_col': 'Q', 'exit_col': 'X', 'lunch_out': 'S', 'lunch_return': 'V', 'day_col': 'P'},
+                    {'name_col': 'AN', 'entry_col': 'AF', 'exit_col': 'AM', 'lunch_out': 'AH', 'lunch_return': 'AK', 'day_col': 'AE'}
+                ]
+
+                for position in employee_positions:
+                    cols = {key: self.get_column_index(value) for key, value in position.items()}
+                    name_cell = df.iloc[2, cols['name_col']]
+
+                    if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
+                        continue
+
+                    for row in range(11, 42):
+                        try:
+                            day_value = df.iloc[row, cols['day_col']]
+                            if pd.isna(day_value):
+                                continue
+
+                            try:
+                                date = pd.to_datetime(day_value)
+                                week_start = date - timedelta(days=date.weekday())
+                                week_key = week_start.strftime('%Y-%m-%d')
+
+                                if week_key not in weekly_stats:
+                                    weekly_stats[week_key] = {
+                                        'total_days': 0,
+                                        'present_days': 0,
+                                        'late_days': 0,
+                                        'lunch_overtime_days': 0,
+                                        'early_departure_days': 0,
+                                        'events': []
+                                    }
+
+                                if date.weekday() < 5:  # Solo días laborables
+                                    weekly_stats[week_key]['total_days'] += 1
+
+                                    day_str = str(day_value).strip().lower()
+                                    if day_str != 'absence':
+                                        weekly_stats[week_key]['present_days'] += 1
+
+                                        # Verificar llegada tarde
+                                        entry_time = df.iloc[row, cols['entry_col']]
+                                        if not pd.isna(entry_time):
+                                            entry_time = pd.to_datetime(entry_time).time()
+                                            if entry_time > self.WORK_START_TIME:
+                                                weekly_stats[week_key]['late_days'] += 1
+                                                weekly_stats[week_key]['events'].append(
+                                                    f"{date.strftime('%d/%m')}: Llegada tarde"
+                                                )
+
+                                        # Verificar exceso en almuerzo
+                                        lunch_out = df.iloc[row, cols['lunch_out']]
+                                        lunch_return = df.iloc[row, cols['lunch_return']]
+                                        if not pd.isna(lunch_out) and not pd.isna(lunch_return):
+                                            lunch_out = pd.to_datetime(lunch_out).time()
+                                            lunch_return = pd.to_datetime(lunch_return).time()
+                                            lunch_minutes = (
+                                                datetime.combine(datetime.min, lunch_return) -
+                                                datetime.combine(datetime.min, lunch_out)
+                                            ).total_seconds() / 60
+                                            if lunch_minutes > self.LUNCH_TIME_LIMIT:
+                                                weekly_stats[week_key]['lunch_overtime_days'] += 1
+                                                weekly_stats[week_key]['events'].append(
+                                                    f"{date.strftime('%d/%m')}: Exceso almuerzo"
+                                                )
+
+                                        # Verificar salida temprana
+                                        exit_time = df.iloc[row, cols['exit_col']]
+                                        if not pd.isna(exit_time):
+                                            exit_time = pd.to_datetime(exit_time).time()
+                                            if self.is_early_departure(employee_name, exit_time):
+                                                weekly_stats[week_key]['early_departure_days'] += 1
+                                                weekly_stats[week_key]['events'].append(
+                                                    f"{date.strftime('%d/%m')}: Salida temprana"
+                                                )
+
+                            except Exception as e:
+                                print(f"Error procesando fecha en fila {row+1}: {str(e)}")
+                                continue
+
+                        except Exception as e:
+                            print(f"Error en fila {row+1}: {str(e)}")
+                            continue
+
+            return weekly_stats
+
+        except Exception as e:
+            print(f"Error procesando estadísticas semanales: {str(e)}")
+            return {}
+
+    def create_weekly_attendance_chart(self, employee_name):
+        """Crea un gráfico de asistencia semanal"""
+        weekly_stats = self.get_weekly_attendance_data(employee_name)
+
+        weeks = list(weekly_stats.keys())
+        attendance_rates = [
+            (stats['present_days'] / stats['total_days']) * 100 if stats['total_days'] > 0 else 0
+            for stats in weekly_stats.values()
+        ]
+
+        # Crear el gráfico base
+        fig = go.Figure()
+
+        # Agregar la línea de asistencia
+        fig.add_trace(go.Scatter(
+            x=weeks,
+            y=attendance_rates,
+            mode='lines+markers',
+            name='Asistencia',            line=dict(color='#2196F3', width=3),
+            marker=dict(size=8)
+        ))
+
+        # Agregar anotaciones para eventos importantes
+        annotations =[]
+        for week, stats in weekly_stats.items():
+            if stats['events']:
+                annotations.extend([
+                    dict(
+                        x=week,
+                        y=stats['present_days'] / stats['total_days'] * 100,
+                        text=event,
+                        showarrow=True,
+                        arrowhead=2,
+                        arrowsize=1,
+                        arrowwidth=2,
+                        arrowcolor="#636363",
+                        ax=-40,
+                        ay=-40
+                    )
+                    for event in stats['events']
+                ])
+
+        # Configurar el diseño
+        fig.update_layout(
+            title=dict(
+                text="Porcentaje de Asistencia Semanal",
+                font=dict(size=24)
+            ),
+            xaxis=dict(
+                title="Semana",
+                tickformat="%d/%m",
+                tickangle=45
+            ),
+            yaxis=dict(
+                title="Porcentaje de Asistencia",
+                range=[0, 100],
+                ticksuffix="%"
+            ),
+            showlegend=False,
+            annotations=annotations,
+            height=400,
+            margin=dict(t=50, r=50, b=100, l=50)
+        )
+
+        return fig

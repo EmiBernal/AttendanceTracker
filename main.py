@@ -17,13 +17,15 @@ st.markdown("""
         border-radius: 12px;
         padding: 20px;
         margin: 15px 0;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        animation: slideIn 0.5s ease-out;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
     }
 
     .stat-group:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        background-color: rgba(33, 150, 243, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
     }
 
     .stat-card {
@@ -31,28 +33,54 @@ st.markdown("""
         border-radius: 10px;
         padding: 16px;
         margin: 8px;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid #E9ECEF;
-        animation: fadeIn 0.5s ease-out;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+        transform: translateX(-100%);
+        transition: transform 0.6s;
     }
 
     .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.1);
         border-color: #2196F3;
+    }
+
+    .stat-card:hover::before {
+        transform: translateX(100%);
     }
 
     .metric-value {
         font-size: 24px;
         font-weight: bold;
         margin: 8px 0;
-        transition: color 0.3s ease;
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover .metric-value {
+        transform: scale(1.05);
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .metric-label {
         font-size: 14px;
         color: #6C757D;
         transition: color 0.3s ease;
+    }
+
+    .stat-card:hover .metric-label {
+        color: #2196F3;
     }
 
     .warning {
@@ -69,38 +97,27 @@ st.markdown("""
 
     .auth-required {
         border-left: 4px solid #FFC107;
-        transition: border-left-width 0.3s ease;
+        transition: all 0.3s ease;
     }
 
     .auth-required:hover {
         border-left-width: 8px;
+        background-color: rgba(255, 193, 7, 0.05);
     }
 
-    @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
     }
 
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
+    .stat-card:hover .warning {
+        animation: pulse 1s infinite;
     }
 
-    /* Staggered animation delays for cards */
-    .stat-card:nth-child(1) { animation-delay: 0.1s; }
-    .stat-card:nth-child(2) { animation-delay: 0.2s; }
-    .stat-card:nth-child(3) { animation-delay: 0.3s; }
-    .stat-card:nth-child(4) { animation-delay: 0.4s; }
+    .stat-card:hover .danger {
+        animation: pulse 1s infinite;
+    }
 </style>
 """, unsafe_allow_html=True)
 

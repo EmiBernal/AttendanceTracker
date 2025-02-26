@@ -578,7 +578,17 @@ class ExcelProcessor:
             except Exception as e:
                 print(f"Error processing Agustin's special absences: {str(e)}")
 
-            empleados_df = summary_df.iloc[4:23, [0, 1, 2, 3, 4, 5, 6, 7, 8, 13]]  # Remove attendance_ratio column
+            # Extraer datos directamente de las celdas específicas (filas 5-18)
+            empleados_df = summary_df.iloc[4:18, [0, 1, 2]]  # ID, Nombre, Departamento
+            # Agregar horas requeridas y trabajadas de las columnas D y E
+            empleados_df['required_hours'] = summary_df.iloc[4:18, 3]  # Columna D
+            empleados_df['actual_hours'] = summary_df.iloc[4:18, 4]    # Columna E
+            # Agregar el resto de las columnas
+            empleados_df = pd.concat([
+                empleados_df,
+                summary_df.iloc[4:18, [5, 6, 7, 8, 13]]  # late_count hasta absences
+            ], axis=1)
+
             print("\nDatos procesados de empleados:")
             print(empleados_df.head())
 
@@ -649,31 +659,11 @@ class ExcelProcessor:
         # Calcular días sin registros
         missing_entry, missing_exit, missing_lunch = self.count_missing_records(employee_name)
 
-        # Ajustar el cálculo de horas requeridas según el horario especial
-        required_hours = float(employee_summary['required_hours'])
-        actual_hours = float(employee_summary['actual_hours'])
-
-        # Si es Agustín Tabasso, calcular las horas trabajadas de manera especial
-        if employee_name.lower() == 'agustin taba':
-            try:
-                sheet_name = self.SPECIAL_SCHEDULES['agustin taba']['sheet_name']
-                df = pd.read_excel(self.excel_file, sheet_name=sheet_name, header=None)
-                actual_hours = self.calculate_agustin_hours(df)
-            except Exception as e:
-                print(f"Error processing Agustin's hours: {str(e)}")
-                actual_hours = 0.0
-
-        if employee_name.lower() in self.SPECIAL_SCHEDULES:
-            schedule = self.SPECIAL_SCHEDULES[employee_name.lower()]
-            if schedule['half_day']:
-                # Para empleados de medio día, ajustar las horas requeridas
-                required_hours = required_hours / 2
-
         stats = {
             'name': employee_name,
             'department': str(employee_summary['department']),
-            'required_hours': required_hours,
-            'actual_hours': actual_hours,
+            'required_hours': float(employee_summary['required_hours']),
+            'actual_hours': float(employee_summary['actual_hours']),
             'late_days': late_days,
             'late_minutes': late_minutes,
             'early_departures': int(employee_summary['early_departure_count']),

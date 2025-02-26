@@ -529,14 +529,14 @@ class ExcelProcessor:
             except Exception as e:
                 print(f"Error processing Agustin's special absences: {str(e)}")
 
-            empleados_df = summary_df.iloc[4:23, [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 13]]
+            empleados_df = summary_df.iloc[4:23, [0, 1, 2, 3, 4, 5, 6, 7, 8, 13]]  # Remove attendance_ratio column
             print("\nDatos procesados de empleados:")
             print(empleados_df.head())
 
             empleados_df.columns = [
                 'employee_id', 'employee_name', 'department', 'required_hours',
                 'actual_hours', 'late_count', 'late_minutes', 'early_departure_count',
-                'early_departure_minutes', 'attendance_ratio', 'absences'
+                'early_departure_minutes', 'absences'
             ]
 
             empleados_df = empleados_df.dropna(subset=['employee_name'])
@@ -547,7 +547,7 @@ class ExcelProcessor:
             )
 
             numeric_cols = ['required_hours', 'actual_hours', 'late_count', 'late_minutes',
-                          'early_departure_count', 'early_departure_minutes', 'attendance_ratio']
+                          'early_departure_count', 'early_departure_minutes']
             for col in numeric_cols:
                 empleados_df[col] = pd.to_numeric(empleados_df[col], errors='coerce').fillna(0)
 
@@ -568,7 +568,7 @@ class ExcelProcessor:
             return pd.DataFrame(columns=[
                 'employee_id', 'employee_name', 'department', 'required_hours',
                 'actual_hours', 'late_count', 'late_minutes', 'early_departure_count',
-                'early_departure_minutes', 'attendance_ratio', 'absences'
+                'early_departure_minutes', 'absences'
             ])
 
     def get_employee_stats(self, employee_name):

@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Updated CSS with animations and centered text
+# Updated CSS with futuristic animations and centered text
 st.markdown("""
 <style>
     /* Base transitions and animations */
@@ -28,56 +28,118 @@ st.markdown("""
         }
     }
 
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    @keyframes borderPulse {
+        0% { border-color: rgba(33, 150, 243, 0.1); }
+        50% { border-color: rgba(33, 150, 243, 0.3); }
+        100% { border-color: rgba(33, 150, 243, 0.1); }
+    }
+
+    @keyframes glowPulse {
+        0% { box-shadow: 0 4px 20px rgba(33, 150, 243, 0.05); }
+        50% { box-shadow: 0 4px 30px rgba(33, 150, 243, 0.15); }
+        100% { box-shadow: 0 4px 20px rgba(33, 150, 243, 0.05); }
+    }
+
     /* Premium card styling with enhanced animations */
     .info-group {
         background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0.1) 100%);
+        background-size: 200% 200%;
         border-radius: 16px;
         padding: 24px;
         margin: 20px 0;
         transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid rgba(33, 150, 243, 0.1);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        animation: fadeInUp 0.6s ease-out forwards;
+        animation: fadeInUp 0.6s ease-out forwards, gradientShift 8s ease-in-out infinite;
         text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .info-group::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transform: translateX(-100%);
+        transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .info-group:hover::before {
+        transform: translateX(100%);
     }
 
     .info-group:hover {
         transform: translateY(-4px) scale(1.01);
         box-shadow: 0 8px 30px rgba(33, 150, 243, 0.15);
+        background-position: right center;
     }
 
-    /* Card styling */
+    /* Card styling with futuristic effects */
     .stat-card {
         background-color: rgba(255, 255, 255, 0.05);
         border-radius: 10px;
         padding: 20px;
         margin: 12px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid rgba(233, 236, 239, 0.2);
-        animation: fadeInUp 0.6s ease-out forwards;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(33, 150, 243, 0.1);
+        animation: fadeInUp 0.6s ease-out forwards, borderPulse 4s ease-in-out infinite;
         text-align: center;
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transform: translateX(-100%);
+        transition: transform 0.6s;
+    }
+
+    .stat-card:hover::before {
+        transform: translateX(100%);
     }
 
     .stat-card:hover {
         transform: translateY(-2px) scale(1.02);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        box-shadow: 0 8px 24px rgba(33, 150, 243, 0.15);
+        border-color: rgba(33, 150, 243, 0.3);
+        animation: glowPulse 2s ease-in-out infinite;
     }
 
     /* Status colors with transitions */
     .warning { 
         color: #FFC107;
         transition: color 0.3s ease;
+        text-shadow: 0 0 10px rgba(255, 193, 7, 0.2);
     }
     .danger { 
         color: #DC3545;
         transition: color 0.3s ease;
+        text-shadow: 0 0 10px rgba(220, 53, 69, 0.2);
     }
     .success { 
         color: #28A745;
         transition: color 0.3s ease;
+        text-shadow: 0 0 10px rgba(40, 167, 69, 0.2);
     }
 
-    /* Metrics styling */
+    /* Metrics styling with glow effect */
     .metric-value {
         font-size: 24px;
         font-weight: bold;
@@ -85,31 +147,61 @@ st.markdown("""
         transition: all 0.3s ease;
     }
 
+    .stat-card:hover .metric-value {
+        transform: scale(1.05);
+        text-shadow: 0 0 15px rgba(33, 150, 243, 0.3);
+    }
+
     .metric-label {
         font-size: 14px;
         color: #6C757D;
-        transition: color 0.3s ease;
+        transition: all 0.3s ease;
     }
 
-    /* Department label */
-    .department-label {
-        color: #6C757D;
-        font-size: 14px;
-        margin-bottom: 8px;
+    .stat-card:hover .metric-label {
+        color: #2196F3;
     }
 
-    /* Special schedule */
-    .special-schedule {
-        color: #F59E0B;
-        font-size: 14px;
-        margin-top: 4px;
-    }
-
+    /* Headers with glow effect */
     h1, h2, h3 {
         text-align: center;
         opacity: 0;
         animation: fadeInUp 0.6s ease-out forwards;
         animation-delay: 0.2s;
+        color: #2C3E50;
+        text-shadow: 0 0 20px rgba(33, 150, 243, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    h1:hover, h2:hover, h3:hover {
+        text-shadow: 0 0 30px rgba(33, 150, 243, 0.2);
+    }
+
+    /* Department label with smooth transition */
+    .department-label {
+        color: #6C757D;
+        font-size: 14px;
+        margin-bottom: 8px;
+        transition: all 0.3s ease;
+    }
+
+    /* Special schedule with highlight effect */
+    .special-schedule {
+        color: #F59E0B;
+        font-size: 14px;
+        margin-top: 4px;
+        animation: fadeInUp 0.6s ease-out forwards;
+        text-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+    }
+
+    /* Streamlit component enhancements */
+    .stSelectbox, .stFileUploader {
+        transition: all 0.3s ease;
+    }
+
+    .stSelectbox:hover, .stFileUploader:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 </style>
 """, unsafe_allow_html=True)

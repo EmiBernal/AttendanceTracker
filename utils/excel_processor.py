@@ -682,7 +682,7 @@ class ExcelProcessor:
             'name': employee_name,
             'department': str(employee_summary['department']),
             'required_hours': float(employee_summary['required_hours']),
-            'actual_hours': float(employee_summary['actual_hours']),  # Corregido el nombre de la columna
+            'actual_hours': float(employee_summary['actual_hours']),
             'late_days': late_days,
             'late_minutes': late_minutes,
             'early_departures': int(employee_summary['early_departure_count']),
@@ -690,7 +690,7 @@ class ExcelProcessor:
             'lunch_overtime_days': lunch_overtime_days,
             'total_lunch_minutes': total_lunch_minutes,
             'missing_entry_days': missing_entry,
-            'missingexit_days': missing_exit,
+            'missing_exit_days': missing_exit,
             'missing_lunch_days': missing_lunch,
             'absences': int(employee_summary['absences']),
             'special_schedule': employee_name.lower() in self.SPECIAL_SCHEDULES

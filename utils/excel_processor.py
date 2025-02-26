@@ -323,6 +323,61 @@ class ExcelProcessor:
             if is_agustin:
                 missing_lunch = 0
 
+            # Procesamiento especial para Agustín Tabasso
+            if is_agustin:
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name="4.5.6", header=None)
+
+                    # Verificar registros de entrada y salida
+                    for row in range(11, 42):  # Filas 12-42
+                        try:
+                            day_value = df.iloc[row, self.get_column_index('AE')]
+                            if pd.isna(day_value):
+                                continue
+
+                            # Extraer el día y nombre del día
+                            day_parts = str(day_value).strip().lower().split()
+                            if len(day_parts) >= 2:
+                                day_abbr = day_parts[1].lower()
+                                # Verificar si es fin de semana
+                                if day_abbr in ['sa', 'su']:
+                                    print(f"Fila {row+1}: Fin de semana ({day_value}), ignorando")
+                                    continue
+
+                                # Verificar entrada
+                                entry_value = df.iloc[row, self.get_column_index('AF')]
+                                if pd.isna(entry_value) or str(entry_value).strip() == '':
+                                    missing_entry += 1
+                                    print(f"Falta registro de entrada en fila {row+1} (4.5.6)")
+
+                                # Verificar salida en columna AH
+                                exit_value = df.iloc[row, self.get_column_index('AH')]
+                                if pd.isna(exit_value) or str(exit_value).strip() == '':
+                                    missing_exit += 1
+                                    print(f"Falta registro de salida en fila {row+1} (4.5.6)")
+
+                        except Exception as e:
+                            print(f"Error en fila {row+1}: {str(e)}")
+                            continue
+
+                    # Verificar ausencias y decrementar contadores
+                    for row in range(11, 42):
+                        try:
+                            absence_value = df.iloc[row, self.get_column_index('AK')]
+                            if not pd.isna(absence_value) and str(absence_value).strip().lower() == 'absence':
+                                missing_entry -= 1
+                                missing_exit -= 1
+                                print(f"Encontrado 'Absence' en fila {row+1}, decrementando contadores")
+                        except Exception as e:
+                            continue
+
+                except Exception as e:
+                    print(f"Error procesando hoja 4.5.6: {str(e)}")
+
+                print(f"Total días sin registro - Entrada: {missing_entry}, Salida: {missing_exit}, Almuerzo: 0 (No aplica)")
+                return missing_entry, missing_exit, 0
+
+            # Procesamiento normal para otros empleados
             for sheet in attendance_sheets:
                 try:
                     print(f"\nVerificando registros en hoja {sheet}")
@@ -384,11 +439,10 @@ class ExcelProcessor:
                                             continue
 
                                         try:
-                                            # Extraer el día y nombre del día de la cadena (e.g., "01 Mo")
+                                            # Extraer el día y nombre del día
                                             day_parts = str(day_value).strip().lower().split()
                                             if len(day_parts) >= 2:
                                                 day_abbr = day_parts[1].lower()
-                                                # Verificar si es fin de semana
                                                 if day_abbr in ['sa', 'su']:
                                                     print(f"Fila {row+1}: Fin de semana ({day_value}), ignorando")
                                                     continue
@@ -433,7 +487,7 @@ class ExcelProcessor:
                                         print(f"Error en fila {row+1}: {str(e)}")
                                         continue
 
-                                # Después de contar todos los registros faltantes, verificar si hay "Absence" y decrementar entradas
+                                # Verificar ausencias y decrementar solo entradas
                                 for row in range(11, 42):
                                     try:
                                         absence_value = df.iloc[row, absence_col]
@@ -449,13 +503,8 @@ class ExcelProcessor:
                 except Exception as e:
                     print(f"Error procesando hoja {sheet}: {str(e)}")
 
-            # Retornar los resultados
-            if is_agustin:
-                print(f"Total días sin registro - Entrada: {missing_entry}, Salida: {missing_exit}, Almuerzo: 0 (No aplica)")
-                return missing_entry, missing_exit, 0
-            else:
-                print(f"Total días sin registro - Entrada: {missing_entry}, Salida: {missing_exit}, Almuerzo: {missing_lunch}")
-                return missing_entry, missing_exit, missing_lunch
+            print(f"Total días sin registro - Entrada: {missing_entry}, Salida: {missing_exit}, Almuerzo: {missing_lunch}")
+            return missing_entry, missing_exit, missing_lunch
 
         except Exception as e:
             print(f"Error general: {str(e)}")

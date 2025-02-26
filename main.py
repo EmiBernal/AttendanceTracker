@@ -12,34 +12,74 @@ st.set_page_config(
 # Updated CSS for premium look and animations
 st.markdown("""
 <style>
-    /* Base styles and transitions */
+    /* Base transitions and animations */
     .stApp {
         transition: all 0.3s ease-in-out;
     }
 
-    /* Premium cards with gradient and animations */
+    @keyframes slideInFade {
+        from { 
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to { 
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* Premium info cards with advanced animations */
     .info-group {
         background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0.1) 100%);
+        background-size: 200% 200%;
         border-radius: 16px;
         padding: 24px;
         margin: 20px 0;
-        transition: all 0.3s ease-in-out;
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
         border: 1px solid rgba(33, 150, 243, 0.1);
+        animation: slideInFade 0.8s ease-out, gradientShift 8s ease-in-out infinite;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
     }
 
     .info-group:hover {
-        transform: translateY(-2px);
+        transform: translateY(-4px) scale(1.01);
         box-shadow: 0 8px 30px rgba(33, 150, 243, 0.15);
+        background-position: right center;
     }
 
-    /* Regular stat cards */
+    .info-group::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+        transform: translateX(-100%);
+        transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .info-group:hover::before {
+        transform: translateX(100%);
+    }
+
+    /* Regular stat cards with hover effects */
     .stat-group {
         background-color: rgba(33, 150, 243, 0.1);
         border-radius: 12px;
         padding: 20px;
         margin: 15px 0;
-        transition: all 0.3s ease-in-out;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
     }
 
     .stat-card {
@@ -47,30 +87,72 @@ st.markdown("""
         border-radius: 10px;
         padding: 16px;
         margin: 8px;
-        transition: all 0.3s ease-in-out;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid rgba(233, 236, 239, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+        transform: translateX(-100%);
+        transition: transform 0.6s;
     }
 
     .stat-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+        border-color: #2196F3;
     }
 
-    /* Status colors */
-    .warning { color: #FFC107; }
-    .danger { color: #DC3545; }
-    .success { color: #28A745; }
+    .stat-card:hover::before {
+        transform: translateX(100%);
+    }
 
-    /* Metrics styling */
+    /* Status colors with transitions */
+    .warning { color: #FFC107; transition: all 0.3s ease; }
+    .danger { color: #DC3545; transition: all 0.3s ease; }
+    .success { color: #28A745; transition: all 0.3s ease; }
+
+    /* Metrics styling with animations */
     .metric-value {
         font-size: 24px;
         font-weight: bold;
         margin: 8px 0;
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover .metric-value {
+        transform: scale(1.02);
+        text-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
     .metric-label {
         font-size: 14px;
         color: #6C757D;
+        transition: color 0.3s ease;
+    }
+
+    .stat-card:hover .metric-label {
+        color: #2196F3;
+    }
+
+    /* Pulse animation for warning indicators */
+    @keyframes subtlePulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.01); }
+        100% { transform: scale(1); }
+    }
+
+    .stat-card:hover .warning,
+    .stat-card:hover .danger {
+        animation: subtlePulse 1.5s infinite;
     }
 
     /* Header text styling */
@@ -91,6 +173,26 @@ st.markdown("""
         color: #F59E0B;
         font-size: 14px;
         margin-top: 4px;
+    }
+
+    /* Interactive element animations */
+    .stFileUploader, .stButton>button, .stSelectbox {
+        transition: all 0.3s ease-in-out;
+    }
+
+    .stFileUploader:hover, .stButton>button:hover, .stSelectbox:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    /* Main content fade in */
+    .main {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 </style>
 """, unsafe_allow_html=True)

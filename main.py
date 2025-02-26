@@ -51,6 +51,29 @@ st.markdown("""
         background-position: right center;
     }
 
+    /* Stat card styling */
+    .stat-card {
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 12px;
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                    border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(33, 150, 243, 0.1);
+        animation: fadeInUp 0.6s ease-out forwards;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 8px 24px rgba(33, 150, 243, 0.15);
+        border-color: rgba(33, 150, 243, 0.3);
+    }
+
     .metric-value {
         font-size: 32px;
         font-weight: bold;
@@ -59,10 +82,19 @@ st.markdown("""
                     text-shadow 0.3s ease;
     }
 
+    .stat-card:hover .metric-value {
+        transform: scale(1.05);
+        text-shadow: 0 0 15px rgba(33, 150, 243, 0.3);
+    }
+
     .metric-label {
         font-size: 14px;
         color: #6C757D;
         transition: color 0.3s ease;
+    }
+
+    .stat-card:hover .metric-label {
+        color: #2196F3;
     }
 
     .warning { color: #FFC107; }
@@ -73,6 +105,29 @@ st.markdown("""
         text-align: center;
         animation: fadeInUp 0.6s ease-out forwards;
         color: #2C3E50;
+        text-shadow: 0 0 20px rgba(33, 150, 243, 0.1);
+        transition: text-shadow 0.3s ease;
+    }
+
+    h1:hover, h2:hover, h3:hover {
+        text-shadow: 0 0 30px rgba(33, 150, 243, 0.2);
+    }
+
+    .department-label {
+        color: #6C757D;
+        font-size: 14px;
+        margin-bottom: 8px;
+        transition: color 0.3s ease;
+    }
+
+    .stSelectbox, .stFileUploader {
+        transition: transform 0.3s ease,
+                    box-shadow 0.3s ease;
+    }
+
+    .stSelectbox:hover, .stFileUploader:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -89,7 +144,7 @@ def create_employee_dashboard(processor, employee_name):
         </div>
     """, unsafe_allow_html=True)
 
-    # Hours Summary Card - Simplified version
+    # Hours Summary Card - Simplified version with animations
     hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100) if stats['required_hours'] > 0 else 0
     hours_status = 'success' if hours_ratio >= 95 else 'warning' if hours_ratio >= 85 else 'danger'
 
@@ -155,7 +210,6 @@ def create_employee_dashboard(processor, employee_name):
         """, unsafe_allow_html=True)
 
     st.markdown("</div></div>", unsafe_allow_html=True)
-
 
 def create_missing_records_section(stats):
     """Creates a section for displaying missing records"""

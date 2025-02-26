@@ -699,17 +699,27 @@ class ExcelProcessor:
         return stats
 
     def calculate_valentina_absences(self, df):
-        """Calcula las ausencias de Valentina verificando solo la columna AK"""        absences = 0
+        """Calcula las ausencias de Valentinaverificando solo la columna AK"""
+        absences = 0
         try:
             absence_col = self.get_column_index('AK')
-            for row in range(11, 42):  # Filas 12-42
+            day_col = self.get_column_index('AE')
+
+            for row in range(11, 42):  # AK12 hasta AK42 (índices 11-41)
                 try:
                     absence_value = df.iloc[row, absence_col]
                     if not pd.isna(absence_value) and str(absence_value).strip().lower() == 'absence':
+                        # Obtener el día correspondiente de la columna A
+                        day_value = df.iloc[row, day_col]
+                        print(f"Ausencia encontrada en fila {row+1}, día: {day_value}")
                         absences += 1
                 except Exception as e:
+                    print(f"Error procesando fila {row+1}: {str(e)}")
                     continue
+
+            print(f"Total de ausencias encontradas: {absences}")
             return absences
+
         except Exception as e:
             print(f"Error calculando ausencias de Valentina: {str(e)}")
             return 0

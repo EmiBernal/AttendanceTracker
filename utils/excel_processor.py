@@ -14,7 +14,16 @@ class ExcelProcessor:
         self.SPECIAL_SCHEDULES = {
             'soledad silv': {
                 'half_day': True,
-                'end_time': datetime.strptime('12:00', '%H:%M').time()
+                'end_time': datetime.strptime('12:00', '%H:%M').time(),
+                'no_lunch': True,  # Nueva flag para indicar que no tiene almuerzo
+                'sheet_name': '17.18',  # Hoja específica para este empleado
+                'position': {
+                    'name_col': 'J',
+                    'entry_col': 'B',
+                    'exit_col': 'D',
+                    'day_col': 'A',
+                    'absence_col': 'G'
+                }
             },
             'agustin taba': {
                 'half_day': True,
@@ -120,8 +129,8 @@ class ExcelProcessor:
 
     def count_lunch_overtime_days(self, employee_name):
         """Cuenta los días que el empleado excedió el tiempo de almuerzo"""
-        # Si es Valentina o Agustín, retornar 0 ya que no tienen almuerzo
-        if employee_name.lower() in ['valentina al', 'agustin taba']:
+        # Si es Valentina, Agustín o Soledad, retornar 0 ya que no tienen almuerzo
+        if employee_name.lower() in ['valentina al', 'agustin taba', 'soledad silv']:
             print(f"{employee_name} no tiene horario de almuerzo")
             return 0, 0
 
@@ -324,10 +333,10 @@ class ExcelProcessor:
             missing_exit = 0
             missing_lunch = 0
 
-            # Procesamiento especial para Valentina
-            if employee_name.lower() == 'valentina al':
+            # Procesamiento especial para Soledad
+            if employee_name.lower() == 'soledad silv':
                 try:
-                    schedule = self.SPECIAL_SCHEDULES['valentina al']
+                    schedule = self.SPECIAL_SCHEDULES['soledad silv']
                     df = pd.read_excel(self.excel_file, sheet_name=schedule['sheet_name'], header=None)
 
                     # Verificar registros de entrada y salida
@@ -576,7 +585,6 @@ class ExcelProcessor:
                 agustin_sheet = pd.read_excel(self.excel_file, sheet_name="4.5.6", header=None)
                 agustin_absences = agustin_sheet.iloc[6, self.get_column_index('AE')]  # AE7 is [6, AE_index]
                 if not pd.isna(agustin_absences):
-                    # Update Agustín's absences in the summary dataframe
                     agustin_idx = summary_df[summary_df.iloc[:, 1].str.strip() == 'agustin taba'].index
                     if len(agustin_idx) > 0:
                         summary_df.iloc[agustin_idx[0], 13] = agustin_absences
@@ -592,6 +600,16 @@ class ExcelProcessor:
                     summary_df.iloc[valentina_idx[0], 13] = valentina_absences
             except Exception as e:
                 print(f"Error processing Valentina's special absences: {str(e)}")
+
+            # Special handling for Soledad's absences
+            try:
+                soledad_sheet = pd.read_excel(self.excel_file, sheet_name="17.18", header=None)
+                soledad_absences = self.calculate_soledad_absences(soledad_sheet)
+                soledad_idx = summary_df[summary_df.iloc[:, 1].str.strip() == 'soledad silv'].index
+                if len(soledad_idx) > 0:
+                    summary_df.iloc[soledad_idx[0], 13] = soledad_absences
+            except Exception as e:
+                print(f"Error processing Soledad's special absences: {str(e)}")
 
             # Extraer datos directamente de las celdas específicas (filas 5-18)
             empleados_df = summary_df.iloc[4:18, [0, 1, 2]]  # ID, Nombre, Departamento
@@ -673,8 +691,7 @@ class ExcelProcessor:
         # Calcular días sin registros
         missing_entry, missing_exit, missing_lunch = self.count_missing_records(employee_name)
 
-        stats = {
-            'name': employee_name,
+        stats = {'name': employee_name,
             'department': str(employee_summary['department']),
             'required_hours': float(employee_summary['required_hours']),
             'actual_hours': float(employee_summary['actual_hours']),
@@ -707,6 +724,21 @@ class ExcelProcessor:
                     continue
         except Exception as e:
             print(f"Error calculando ausencias de Valentina: {str(e)}")
+        return absences
+
+    def calculate_soledad_absences(self, df):
+        """Calcula las ausencias de Soledad verificando solo la columna G"""
+        absences = 0
+        try:
+            for row in range(11, 42):  # Filas 12-42
+                try:
+                    absence_value = df.iloc[row, self.get_column_index('G')]
+                    if not pd.isna(absence_value) and str(absence_value).strip().lower() == 'absence':
+                        absences += 1
+                except Exception as e:
+                    continue
+        except Exception as e:
+            print(f"Error calculando ausencias de Soledad: {str(e)}")
         return absences
 
     def get_weekly_attendance_data(self, employee_name):

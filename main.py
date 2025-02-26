@@ -214,6 +214,35 @@ def create_employee_dashboard(processor, employee_name):
 
     st.markdown("</div></div>", unsafe_allow_html=True)
 
+    # Metrics Requiring Authorization
+    st.markdown("""
+        <div class="stat-group">
+            <h3>🔒 Situaciones que Requieren Autorización</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+    """, unsafe_allow_html=True)
+
+    auth_metrics = [
+        ('Retiros Anticipados', stats['early_departures'], f"{stats['early_minutes']:.0f} minutos en total", "Salidas antes del horario establecido"),
+        ('Ingresos con Retraso', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total", "Llegadas después del horario permitido"),
+        ('Retiros Durante Horario', stats.get('mid_day_departures', 0), "Total salidas", "Salidas durante el horario laboral")
+    ]
+
+    for label, value, subtitle, hover_text in auth_metrics:
+        status = get_status(value)
+        st.markdown(f"""
+            <div class="stat-card">
+                <div class="content">
+                    <div class="metric-label">{label}</div>
+                    <div class="metric-value {status}">{value}</div>
+                    <div class="metric-label">{subtitle}</div>
+                    <div class="metric-label warning">Requiere Autorización</div>
+                </div>
+                <div class="hover-text">{hover_text}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("</div></div>", unsafe_allow_html=True)
+
     # Missing Records Section
     create_missing_records_section(stats)
 

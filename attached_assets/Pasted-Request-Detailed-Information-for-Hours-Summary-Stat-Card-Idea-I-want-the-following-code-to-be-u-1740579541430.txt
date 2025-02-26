@@ -1,0 +1,89 @@
+Request: Detailed Information for "Hours Summary" Stat-Card
+
+Idea: I want the following code to be used for the "stat-card" effect, but with modifications to ensure the functionality for a "stat-card" instead of an image. The card should contain detailed information, and when hovered over, the effect should apply to the card itself.
+
+Here is the adjusted code (based on your requirements):
+
+css
+Copiar
+Editar
+article {
+  position: relative;
+  width: 250px;
+  height: 200px; /* Adjust the height based on content */
+  background-color: #1c1c1c; /* Dark background (can be customized) */
+  border-radius: 8px; /* Rounded corners */
+  transition: all 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  color: white; /* White text */
+  font-family: 'Arial', sans-serif; /* Font customization */
+}
+
+article .content {
+  opacity: 0;
+  transition: 0.3s ease;
+}
+
+article .content p {
+  font-size: 14px;
+  margin: 5px 0;
+}
+
+article:hover {
+  transform: perspective(250px) rotateX(10deg) translateY(-5%) translateZ(0);
+}
+
+article::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  height: 100%;
+  width: 100%;
+  background-image: linear-gradient(
+    to bottom,
+    transparent 10%,
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0) 95%
+  );
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+article:hover::before {
+  opacity: 1;
+}
+
+article:hover .content {
+  opacity: 1;
+}
+
+article:hover .content {
+  transform: translateY(10%);
+}
+Functional Requirements:
+Hover Effect on Stat-Card:
+
+When the cursor hovers over the stat-card, a smooth animation occurs where the card slightly rotates and shifts upwards.
+The detailed information (.content) should only appear once the hover event is triggered, and it should smoothly transition into view from an initial state of opacity 0 to 1.
+Detailed Information Display:
+
+The content inside the stat-card (e.g., hours worked, days worked, late arrivals) should be displayed in a list format (<p> tags). This list should appear clean and easy to read.
+The information should be presented in a clear, concise list format, where each line represents a specific data point (e.g., "Days Worked: 5", "Late Arrivals: 2").
+Card Size:
+
+The size of the card should be dynamic based on the amount of content. If the content is small, the card should shrink to fit the content (it shouldn’t have excessive empty space).
+The background and text color should remain consistent with the existing theme, maintaining a futuristic and modern style with appropriate font choices.
+Transition and Animation:
+
+When the cursor moves away from the stat-card, the .content should smoothly fade out (using opacity), and the transition effect should reverse.
+The transition effect for the card itself should include a small rotation and upward translation, giving a dynamic 3D feel.
+Back Button (Optional):
+
+For each detailed stat-card (e.g., "Hours Worked Summary"), there should be an option to return to the previous screen, where the new screen slides back out to the right and the old screen returns from the left.
+Data Handling:
+
+The "Hours Worked" stat-card should display the days worked and other relevant information such as "Late Arrivals", "Early Departures", and "Total Hours Worked".
+These should be displayed as a list, in a readable and organized way, on the right side of the stat-card when the hover action is triggered.

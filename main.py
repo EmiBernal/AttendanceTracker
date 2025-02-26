@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Updated CSS for layout with animations and transitions
+# Updated CSS for layout with premium animations and transitions
 st.markdown("""
 <style>
     /* Base transitions for all components */
@@ -17,17 +17,80 @@ st.markdown("""
         transition: all 0.3s ease-in-out;
     }
 
-    /* Fade in animation */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+    /* Premium info card animations */
+    @keyframes slideInFade {
+        from { 
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to { 
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
-    /* Add animation to main components */
-    .main, .stat-group, .stat-card {
-        animation: fadeIn 0.5s ease-in-out;
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
     }
 
+    /* Info cards with premium feel */
+    .info-group {
+        background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0.1) 100%);
+        background-size: 200% 200%;
+        border-radius: 16px;
+        padding: 24px;
+        margin: 20px 0;
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(33, 150, 243, 0.1);
+        animation: slideInFade 0.8s ease-out, gradientShift 8s ease-in-out infinite;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    .info-group:hover {
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: 0 8px 30px rgba(33, 150, 243, 0.15);
+        background-position: right center;
+    }
+
+    .info-group::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+        transform: translateX(-100%);
+        transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .info-group:hover::before {
+        transform: translateX(100%);
+    }
+
+    .info-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 10px;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(233, 236, 239, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(33, 150, 243, 0.1);
+        border-color: rgba(33, 150, 243, 0.3);
+    }
+
+    /* Regular stat cards (existing style) */
     .stat-group {
         background-color: rgba(33, 150, 243, 0.1);
         border-radius: 12px;
@@ -36,12 +99,6 @@ st.markdown("""
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         overflow: hidden;
-    }
-
-    .stat-group:hover {
-        background-color: rgba(33, 150, 243, 0.15);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
     }
 
     .stat-card {
@@ -53,6 +110,17 @@ st.markdown("""
         border: 1px solid rgba(233, 236, 239, 0.2);
         position: relative;
         overflow: hidden;
+    }
+
+    /* Fade in animation */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Add animation to main components */
+    .main, .stat-group, .stat-card {
+        animation: fadeIn 0.5s ease-in-out;
     }
 
     /* Enhanced hover effects with smooth transitions */
@@ -195,10 +263,10 @@ def create_employee_dashboard(processor, employee_name):
     """Create a detailed dashboard for a single employee"""
     stats = processor.get_employee_stats(employee_name)
 
-    # Header with employee info
+    # Header with employee info using new info-group class
     schedule_note = "📅 Horario Especial" if stats.get('special_schedule', False) else ""
     st.markdown(f"""
-        <div class="stat-group">
+        <div class="info-group">
             <h2>{stats['name']} {schedule_note}</h2>
             <p style="color: #6C757D;">Departamento: {stats['department']}</p>
             {f'<p style="color: #F59E0B; font-size: 14px;">Empleado con horario especial</p>' if stats.get('special_schedule', False) else ''}
@@ -210,29 +278,29 @@ def create_employee_dashboard(processor, employee_name):
 
     with col1:
         st.markdown("""
-            <div class="stat-group">
+            <div class="info-group">
                 <h3>📊 Resumen de Horas</h3>
+                <div class="info-card">
         """, unsafe_allow_html=True)
 
         hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100) if stats['required_hours'] > 0 else 0
         hours_status = 'success' if hours_ratio >= 95 else 'warning' if hours_ratio >= 85 else 'danger'
 
         st.markdown(f"""
-            <div class="stat-card">
-                <div class="metric-label">Horas Trabajadas</div>
-                <div class="metric-value {hours_status}">
-                    {stats['actual_hours']:.1f}/{stats['required_hours']:.1f}
+                    <div class="metric-label">Horas Trabajadas</div>
+                    <div class="metric-value {hours_status}">
+                        {stats['actual_hours']:.1f}/{stats['required_hours']:.1f}
+                    </div>
+                    <div class="metric-label">({hours_ratio:.1f}%)</div>
                 </div>
-                <div class="metric-label">({hours_ratio:.1f}%)</div>
             </div>
         """, unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
 
     with col2:
         st.markdown("""
-            <div class="stat-group">
+            <div class="info-group">
                 <h3>📋 Resumen de Asistencia</h3>
-                <div class="stat-card">
+                <div class="info-card">
                     <div class="metric-label">Ausencias</div>
                     <div class="metric-value">{stats['absences']}</div>
                 </div>

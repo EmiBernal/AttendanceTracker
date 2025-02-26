@@ -583,6 +583,16 @@ class ExcelProcessor:
             except Exception as e:
                 print(f"Error processing Agustin's special absences: {str(e)}")
 
+            # Special handling for Valentina's absences
+            try:
+                valentina_sheet = pd.read_excel(self.excel_file, sheet_name="7.8.9", header=None)
+                valentina_absences = self.calculate_valentina_absences(valentina_sheet)
+                valentina_idx = summary_df[summary_df.iloc[:, 1].str.strip() == 'valentina al'].index
+                if len(valentina_idx) > 0:
+                    summary_df.iloc[valentina_idx[0], 13] = valentina_absences
+            except Exception as e:
+                print(f"Error processing Valentina's special absences: {str(e)}")
+
             # Extraer datos directamente de las celdas específicas (filas 5-18)
             empleados_df = summary_df.iloc[4:18, [0, 1, 2]]  # ID, Nombre, Departamento
             # Agregar horas requeridas y trabajadas de las columnas D y E
@@ -619,8 +629,7 @@ class ExcelProcessor:
                 try:
                     if pd.isna(absence_str) or str(absence_str).strip() == '':
                         return 0
-                    absence_count = int(str(absence_str))
-                    return absence_count
+                    return float(absence_str)
                 except:
                     return 0
 
@@ -628,7 +637,7 @@ class ExcelProcessor:
             return empleados_df
 
         except Exception as e:
-            print(f"Error procesando el archivo: {str(e)}")
+            print(f"Error processing attendance summary: {str(e)}")
             return pd.DataFrame(columns=[
                 'employee_id', 'employee_name', 'department', 'required_hours',
                 'actual_hours', 'late_count', 'late_minutes', 'early_departure_count',
@@ -686,7 +695,7 @@ class ExcelProcessor:
         return stats
 
     def calculate_valentina_absences(self, df):
-        """Calcula las ausencias de Valentina verificando la columna AK"""
+        """Calcula las ausencias de Valentina verificando solo la columna AK"""
         absences = 0
         try:
             for row in range(11, 42):  # Filas 12-42
@@ -699,7 +708,6 @@ class ExcelProcessor:
         except Exception as e:
             print(f"Error calculando ausencias de Valentina: {str(e)}")
         return absences
-
 
     def get_weekly_attendance_data(self, employee_name):
         """Calcula las estadísticas de asistencia semanal"""

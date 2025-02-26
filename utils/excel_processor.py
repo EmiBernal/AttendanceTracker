@@ -664,49 +664,35 @@ class ExcelProcessor:
             ])
 
     def get_employee_stats(self, employee_name):
-        """Obtiene estadísticas para un empleado específico"""
-        summary = self.process_attendance_summary()
-        print(f"Columns in summary: {summary.columns.tolist()}")
-        print(f"Number of records: {len(summary)}")
-        print(f"Available employees: {summary['employee_name'].tolist()}")
+        """Obtiene las estadísticas completas de un empleado"""
+        # Obtener datos del resumen
+        attendance_summary = self.process_attendance_summary()
+        employee_summary = attendance_summary[attendance_summary['employee_name'].str.strip() == employee_name].iloc[0]
 
-        if len(summary) == 0:
-            raise ValueError("No employee records found in the Excel file")
-
-        if 'employee_name' not in summary.columns:
-            raise ValueError("Column 'employee_name' not found in processed data")
-
-        employee_data = summary[summary['employee_name'] == employee_name]
-
-        if len(employee_data) == 0:
-            raise ValueError(f"Employee '{employee_name}' not found in records")
-
-        employee_summary = employee_data.iloc[0]
-
-        # Calcular días con exceso de tiempo de almuerzo
-        lunch_overtime_days, total_lunch_minutes = self.count_lunch_overtime_days(employee_name)
-
-        # Calcular días de llegada tarde
+        # Calcular días con llegada tarde y minutos totales
         late_days, late_minutes = self.count_late_days(employee_name)
+
+        # Calcular días con exceso de almuerzo y minutos totales
+        lunch_overtime_days, total_lunch_minutes = self.count_lunch_overtime_days(employee_name)
 
         # Calcular días sin registros
         missing_entry, missing_exit, missing_lunch = self.count_missing_records(employee_name)
 
-        stats = {'name': employee_name,
+        stats = {
+            'name': employee_name,
             'department': str(employee_summary['department']),
             'required_hours': float(employee_summary['required_hours']),
-            'actual_hours': float(employee_summary['actualhours']),
+            'actual_hours': float(employee_summary['actual_hours']),  # Corregido el nombre de la columna
             'late_days': late_days,
             'late_minutes': late_minutes,
             'early_departures': int(employee_summary['early_departure_count']),
             'early_minutes': float(employee_summary['early_departure_minutes']),
-            'absences': int(employee_summary['absences']),
             'lunch_overtime_days': lunch_overtime_days,
             'total_lunch_minutes': total_lunch_minutes,
             'missing_entry_days': missing_entry,
-            'missing_exit_days': missing_exit,
+            'missingexit_days': missing_exit,
             'missing_lunch_days': missing_lunch,
-            'mid_day_departures': 0,  # Placeholder hasta implementar la funcionalidad
+            'absences': int(employee_summary['absences']),
             'special_schedule': employee_name.lower() in self.SPECIAL_SCHEDULES
         }
 

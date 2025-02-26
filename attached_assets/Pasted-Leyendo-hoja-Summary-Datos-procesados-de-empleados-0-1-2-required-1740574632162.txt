@@ -1,0 +1,162 @@
+Leyendo hoja Summary...
+
+Datos procesados de empleados:
+   0             1             2 required_hours actual_hours    5    6    7    8 13
+4  1        mili p     logistica          84.20        61.50  NaN  NaN  NaN  NaN  5
+5  2          ana   administraci          84.20        62.59    1    7    1   24  3
+6  3    stefania s  administraci          84.20        77.50  NaN  NaN  NaN  NaN  1
+7  4  angel gonzal     logistica          84.20        78.30  NaN  NaN  NaN  NaN  1
+8  5  ignacio ceba     logistica          84.20        77.29    1   21  NaN  NaN  1
+
+Empleados disponibles: ['mili p', 'ana', 'stefania s', 'angel gonzal', 'ignacio ceba', 'agustin taba', 'agustin manc', 'dario alfons', 'valentina al', 'antonella ra', 'german calde', 'diego ligorr', 'joana lampol', 'micaela arri', 'yohana llano', 'soledad silv', 'ma alejandra']
+Leyendo hoja Summary...
+
+Datos procesados de empleados:
+   0             1             2 required_hours actual_hours    5    6    7    8 13
+4  1        mili p     logistica          84.20        61.50  NaN  NaN  NaN  NaN  5
+5  2          ana   administraci          84.20        62.59    1    7    1   24  3
+6  3    stefania s  administraci          84.20        77.50  NaN  NaN  NaN  NaN  1
+7  4  angel gonzal     logistica          84.20        78.30  NaN  NaN  NaN  NaN  1
+8  5  ignacio ceba     logistica          84.20        77.29    1   21  NaN  NaN  1
+
+Empleados disponibles: ['mili p', 'ana', 'stefania s', 'angel gonzal', 'ignacio ceba', 'agustin taba', 'agustin manc', 'dario alfons', 'valentina al', 'antonella ra', 'german calde', 'diego ligorr', 'joana lampol', 'micaela arri', 'yohana llano', 'soledad silv', 'ma alejandra']
+Columns in summary: ['employee_id', 'employee_name', 'department', 'required_hours', 'actual_hours', 'late_count', 'late_minutes', 'early_departure_count', 'early_departure_minutes', 'absences']
+Number of records: 17
+Available employees: ['mili p', 'ana', 'stefania s', 'angel gonzal', 'ignacio ceba', 'agustin taba', 'agustin manc', 'dario alfons', 'valentina al', 'antonella ra', 'german calde', 'diego ligorr', 'joana lampol', 'micaela arri', 'yohana llano', 'soledad silv', 'ma alejandra']
+
+Procesando hoja: Exceptional
+Error procesando hoja Exceptional: index 24 is out of bounds for axis 0 with size 12
+
+Procesando hoja: 1.2.3
+Empleado encontrado en hoja 1.2.3, columna J
+Fila 12: No hay información completa de almuerzo
+Exceso de tiempo de almuerzo en fila 16: 30 minutos (total almuerzo: 50 minutos)
+Fila 18: No hay información completa de almuerzo
+Fila 19: No hay información completa de almuerzo
+Fila 22: No hay información completa de almuerzo
+Fila 24: No hay información completa de almuerzo
+Fila 25: No hay información completa de almuerzo
+Fila 26: No hay información completa de almuerzo
+Fila 27: No hay información completa de almuerzo
+Exceso de tiempo de almuerzo en fila 29: 10 minutos (total almuerzo: 30 minutos)
+Fila 30: No hay información completa de almuerzo
+Fila 31: No hay información completa de almuerzo
+Fila 32: No hay información completa de almuerzo
+Fila 33: No hay información completa de almuerzo
+Fila 34: No hay información completa de almuerzo
+Fila 35: No hay información completa de almuerzo
+Fila 36: No hay información completa de almuerzo
+Fila 39: No hay información completa de almuerzo
+Fila 40: No hay información completa de almuerzo
+Exceso de tiempo de almuerzo en fila 41: 9 minutos (total almuerzo: 29 minutos)
+Fila 42: No hay información completa de almuerzo
+
+Procesando hoja: 4.5.6
+
+Procesando hoja: 7.8.9
+
+Procesando hoja: 10.11.12
+
+Procesando hoja: 14.15.16
+
+Procesando hoja: 17.18
+Total días con exceso de tiempo de almuerzo: 3
+Total minutos excedidos: 49
+
+Procesando hoja: Exceptional
+Error procesando posición: index 24 is out of bounds for axis 0 with size 12
+Error procesando posición: index 39 is out of bounds for axis 0 with size 12
+
+Procesando hoja: 1.2.3
+Empleado encontrado en hoja 1.2.3, columna J
+Fila 12: Entrada=nan
+Sin registro de entrada en fila 12
+Fila 13: Entrada=07:49
+Fila 14: Entrada=07:48
+Fila 15: Entrada=07:48
+Fila 16: Entrada=07:46
+Fila 17: Entrada=07:50
+Fila 18: Entrada=nan
+Sin registro de entrada en fila 18
+Fila 19: Entrada=nan
+Sin registro de entrada en fila 19
+Fila 20: Entrada=07:47
+Fila 21: Entrada=07:48
+Fila 22: Entrada=07:47
+Fila 23: Entrada=07:49
+Fila 24: Entrada=07:46
+Fila 25: Entrada=nan
+Sin registro de entrada en fila 25
+Fila 26: Entrada=nan
+Sin registro de entrada en fila 26
+Fila 27: Entrada=07:48
+Fila 28: Entrada=07:50
+Fila 29: Entrada=07:49
+Fila 30: Entrada=07:48
+Fila 31: Entrada=07:45
+Fila 32: Entrada=nan
+Sin registro de entrada en fila 32
+Fila 33: Entrada=nan
+Sin registro de entrada en fila 33
+Fila 34: Entrada=07:47
+Fila 35: Entrada=07:46
+Fila 36: Entrada=nan
+Sin registro de entrada en fila 36
+Fila 37: Entrada=07:47
+Fila 38: Entrada=07:43
+Fila 39: Entrada=nan
+Sin registro de entrada en fila 39
+Fila 40: Entrada=nan
+Sin registro de entrada en fila 40
+Fila 41: Entrada=07:48
+Fila 42: Entrada=07:47
+
+Procesando hoja: 4.5.6
+
+Procesando hoja: 7.8.9
+
+Procesando hoja: 10.11.12
+
+Procesando hoja: 14.15.16
+
+Procesando hoja: 17.18
+Total días de llegada tarde: 0
+Total minutos de tardanza: 0
+
+Verificando registros en hoja Exceptional
+Error procesando posición: index 24 is out of bounds for axis 0 with size 12
+Error procesando posición: index 39 is out of bounds for axis 0 with size 12
+
+Verificando registros en hoja 1.2.3
+Empleado encontrado en hoja 1.2.3, columna J
+Fila 12: Fin de semana (01 Su), ignorando
+Fila 18: Fin de semana (07 Sa), ignorando
+Fila 19: Fin de semana (08 Su), ignorando
+Falta registro de regreso almuerzo en fila 22 (1.2.3)
+Falta registro de salida en fila 23 (1.2.3)
+Falta registro completo de almuerzo en fila 24 (1.2.3)
+Fila 25: Fin de semana (14 Sa), ignorando
+Fila 26: Fin de semana (15 Su), ignorando
+Falta registro completo de almuerzo en fila 27 (1.2.3)
+Falta registro de regreso almuerzo en fila 30 (1.2.3)
+Falta registro completo de almuerzo en fila 31 (1.2.3)
+Fila 32: Fin de semana (21 Sa), ignorando
+Fila 33: Fin de semana (22 Su), ignorando
+Falta registro completo de almuerzo en fila 34 (1.2.3)
+Falta registro de salida en fila 35 (1.2.3)
+Falta registro de entrada en fila 36 (1.2.3)
+Fila 39: Fin de semana (28 Sa), ignorando
+Fila 40: Fin de semana (29 Su), ignorando
+Falta registro de salida en fila 42 (1.2.3)
+Encontrado 'Absence' en fila 36, decrementando contador de entradas
+
+Verificando registros en hoja 4.5.6
+
+Verificando registros en hoja 7.8.9
+
+Verificando registros en hoja 10.11.12
+
+Verificando registros en hoja 14.15.16
+
+Verificando registros en hoja 17.18
+Total días sin registro - Entrada: 0, Salida: 3, Almuerzo: 6

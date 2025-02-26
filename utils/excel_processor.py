@@ -318,28 +318,28 @@ class ExcelProcessor:
 
                     positions = [
                         {
-                            'name_col': 'J', 
-                            'entry_col': 'B', 
-                            'exit_col': 'I', 
-                            'day_col': 'A', 
+                            'name_col': 'J',
+                            'entry_col': 'B',
+                            'exit_col': 'I',
+                            'day_col': 'A',
                             'absence_col': 'G',
                             'lunch_out': 'D',
                             'lunch_return': 'G'
                         },
                         {
-                            'name_col': 'Y', 
-                            'entry_col': 'Q', 
-                            'exit_col': 'X', 
-                            'day_col': 'P', 
+                            'name_col': 'Y',
+                            'entry_col': 'Q',
+                            'exit_col': 'X',
+                            'day_col': 'P',
                             'absence_col': 'V',
                             'lunch_out': 'S',
                             'lunch_return': 'V'
                         },
                         {
-                            'name_col': 'AN', 
-                            'entry_col': 'AF', 
-                            'exit_col': 'AM', 
-                            'day_col': 'AE', 
+                            'name_col': 'AN',
+                            'entry_col': 'AF',
+                            'exit_col': 'AM',
+                            'day_col': 'AE',
                             'absence_col': 'AK',
                             'lunch_out': 'AH',
                             'lunch_return': 'AK'
@@ -499,14 +499,14 @@ class ExcelProcessor:
             print(summary_df.head())
             print("\nColumnas en Summary:", summary_df.columns.tolist())
 
-            empleados_df = summary_df.iloc[4:23, [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 13]]
+            empleados_df = summary_df.iloc[4:23, [0, 1, 2, 3, 4, 5, 6, 7, 8, 13]]  # Remove column 11 (attendance_ratio)
             print("\nDatos procesados de empleados:")
             print(empleados_df.head())
 
             empleados_df.columns = [
                 'employee_id', 'employee_name', 'department', 'required_hours',
                 'actual_hours', 'late_count', 'late_minutes', 'early_departure_count',
-                'early_departure_minutes', 'attendance_ratio', 'absences'
+                'early_departure_minutes', 'absences'
             ]
 
             empleados_df = empleados_df.dropna(subset=['employee_name'])
@@ -531,17 +531,6 @@ class ExcelProcessor:
                     return 0
 
             empleados_df['absences'] = empleados_df['absences'].apply(process_absences)
-
-            def convert_ratio(value):
-                try:
-                    if isinstance(value, str) and '/' in value:
-                        required, actual = map(float, value.split('/'))
-                        return actual / required if required > 0 else 0
-                    return float(value)
-                except:
-                    return 0.0
-
-            empleados_df['attendance_ratio'] = empleados_df['attendance_ratio'].apply(convert_ratio)
             return empleados_df
 
         except Exception as e:
@@ -549,7 +538,7 @@ class ExcelProcessor:
             return pd.DataFrame(columns=[
                 'employee_id', 'employee_name', 'department', 'required_hours',
                 'actual_hours', 'late_count', 'late_minutes', 'early_departure_count',
-                'early_departure_minutes', 'attendance_ratio', 'absences'
+                'early_departure_minutes', 'absences'
             ])
 
     def get_employee_stats(self, employee_name):
@@ -620,7 +609,6 @@ class ExcelProcessor:
             'absences': int(employee_summary['absences']),
             'lunch_overtime_days': lunch_overtime_days,
             'total_lunch_minutes': total_lunch_minutes,
-            'attendance_ratio': float(employee_summary['attendance_ratio']),
             'missing_entry_days': missing_entry,
             'missing_exit_days': missing_exit,
             'missing_lunch_days': missing_lunch,

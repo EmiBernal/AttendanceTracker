@@ -699,19 +699,20 @@ class ExcelProcessor:
         return stats
 
     def calculate_valentina_absences(self, df):
-        """Calcula las ausencias de Valentina verificando solo la columna AK"""
-        absences = 0
+        """Calcula las ausencias de Valentina verificando solo la columna AK"""        absences = 0
         try:
+            absence_col = self.get_column_index('AK')
             for row in range(11, 42):  # Filas 12-42
                 try:
-                    absence_value = df.iloc[row, self.get_column_index('AK')]
+                    absence_value = df.iloc[row, absence_col]
                     if not pd.isna(absence_value) and str(absence_value).strip().lower() == 'absence':
                         absences += 1
                 except Exception as e:
                     continue
+            return absences
         except Exception as e:
             print(f"Error calculando ausencias de Valentina: {str(e)}")
-        return absences
+            return 0
 
     def calculate_soledad_absences(self, df):
         """Calcula las ausencias de Soledad verificando solo la columna G"""
@@ -995,4 +996,190 @@ class ExcelProcessor:
 
         except Exception as e:
             print(f"Error getting daily data: {str(e)}")
+            return []
+
+    def get_absence_days(self, employee_name):
+        """Returns a list of days when the employee was absent"""
+        try:
+            absence_days = []
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+
+            for sheet in attendance_sheets:
+                df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+
+                # Check all three possible positions
+                positions = [
+                    {'name_col': 'J', 'day_col': 'A', 'absence_col': 'G'},
+                    {'name_col': 'Y', 'day_col': 'P', 'absence_col': 'V'},
+                    {'name_col': 'AN', 'day_col': 'AE', 'absence_col': 'AK'}
+                ]
+
+                for position in positions:
+                    name_col_index = self.get_column_index(position['name_col'])
+                    name_cell = df.iloc[2, name_col_index]
+
+                    if pd.isna(name_cell):
+                        continue
+
+                    if str(name_cell).strip() == employee_name:
+                        day_col = self.get_column_index(position['day_col'])
+                        absence_col = self.get_column_index(position['absence_col'])
+
+                        for row in range(11, 42):  # A12 to A42
+                            try:
+                                day_value = df.iloc[row, day_col]
+                                absence_value = df.iloc[row, absence_col]
+
+                                if not pd.isna(day_value) and not pd.isna(absence_value):
+                                    if str(absence_value).strip().lower() == 'absence':
+                                        absence_days.append(str(day_value).strip())
+                            except Exception as e:
+                                print(f"Error processing row {row+1}: {str(e)}")
+                                continue
+
+            return absence_days
+        except Exception as e:
+            print(f"Error getting absence days: {str(e)}")
+            return []
+
+    def get_late_days(self, employee_name):
+        """Returns a list of days when the employee arrived late"""
+        try:
+            late_days = []
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+
+            for sheet in attendance_sheets:
+                df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+
+                positions = [
+                    {'name_col': 'J', 'day_col': 'A', 'entry_col': 'B'},
+                    {'name_col': 'Y', 'day_col': 'P', 'entry_col': 'Q'},
+                    {'name_col': 'AN', 'day_col': 'AE', 'entry_col': 'AF'}
+                ]
+
+                for position in positions:
+                    name_col_index = self.get_column_index(position['name_col'])
+                    name_cell = df.iloc[2, name_col_index]
+
+                    if pd.isna(name_cell):
+                        continue
+
+                    if str(name_cell).strip() == employee_name:
+                        day_col = self.get_column_index(position['day_col'])
+                        entry_col = self.get_column_index(position['entry_col'])
+
+                        for row in range(11, 42):
+                            try:
+                                day_value = df.iloc[row, day_col]
+                                entry_time = df.iloc[row, entry_col]
+
+                                if not pd.isna(day_value) and not pd.isna(entry_time):
+                                    entry_time = pd.to_datetime(entry_time).time()
+                                    if entry_time > self.WORK_START_TIME:
+                                        late_days.append(str(day_value).strip())
+                            except Exception as e:
+                                continue
+
+            return late_days
+        except Exception as e:
+            print(f"Error getting late days: {str(e)}")
+            return []
+
+    def get_early_departure_days(self, employee_name):
+        """Returns a list of days when the employee left early"""
+        try:
+            early_days = []
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+
+            for sheet in attendance_sheets:
+                df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+
+                positions = [
+                    {'name_col': 'J', 'day_col': 'A', 'exit_col': 'I'},
+                    {'name_col': 'Y', 'day_col': 'P', 'exit_col': 'X'},
+                    {'name_col': 'AN', 'day_col': 'AE', 'exit_col': 'AM'}
+                ]
+
+                for position in positions:
+                    name_col_index = self.get_column_index(position['name_col'])
+                    name_cell = df.iloc[2, name_col_index]
+
+                    if pd.isna(name_cell):
+                        continue
+
+                    if str(name_cell).strip() == employee_name:
+                        day_col = self.get_column_index(position['day_col'])
+                        exit_col = self.get_column_index(position['exit_col'])
+
+                        for row in range(11, 42):
+                            try:
+                                day_value = df.iloc[row, day_col]
+                                exit_time = df.iloc[row, exit_col]
+
+                                if not pd.isna(day_value) and not pd.isna(exit_time):
+                                    exit_time = pd.to_datetime(exit_time).time()
+                                    if self.is_early_departure(employee_name, exit_time):
+                                        early_days.append(str(day_value).strip())
+                            except Exception as e:
+                                continue
+
+            return early_days
+        except Exception as e:
+            print(f"Error getting early departure days: {str(e)}")
+            return []
+
+    def get_lunch_overtime_days(self, employee_name):
+        """Returns a list of days when the employee exceeded lunch time"""
+        try:
+            lunch_overtime_days = []
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+
+            for sheet in attendance_sheets:
+                df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+
+                positions = [
+                    {'name_col': 'J', 'day_col': 'A', 'lunch_out': 'D', 'lunch_return': 'G'},
+                    {'name_col': 'Y', 'day_col': 'P', 'lunch_out': 'S', 'lunch_return': 'V'},
+                    {'name_col': 'AN', 'day_col': 'AE', 'lunch_out': 'AH', 'lunch_return': 'AK'}
+                ]
+
+                for position in positions:
+                    name_col_index = self.get_column_index(position['name_col'])
+                    name_cell = df.iloc[2, name_col_index]
+
+                    if pd.isna(name_cell):
+                        continue
+
+                    if str(name_cell).strip() == employee_name:
+                        day_col = self.get_column_index(position['day_col'])
+                        lunch_out_col = self.get_column_index(position['lunch_out'])
+                        lunch_return_col = self.get_column_index(position['lunch_return'])
+
+                        for row in range(11, 42):
+                            try:
+                                day_value = df.iloc[row, day_col]
+                                lunch_out = df.iloc[row, lunch_out_col]
+                                lunch_return = df.iloc[row, lunch_return_col]
+
+                                if not pd.isna(day_value) and not pd.isna(lunch_out) and not pd.isna(lunch_return):
+                                    lunch_out_time = pd.to_datetime(lunch_out).time()
+                                    lunch_return_time = pd.to_datetime(lunch_return).time()
+
+                                    lunch_minutes = (
+                                        datetime.combine(datetime.min, lunch_return_time) -
+                                        datetime.combine(datetime.min, lunch_out_time)
+                                    ).total_seconds() / 60
+
+                                    if lunch_minutes > self.LUNCH_TIME_LIMIT:
+                                        lunch_overtime_days.append(str(day_value).strip())
+                            except Exception as e:
+                                continue
+
+            return lunch_overtime_days
+        except Exception as e:
+            print(f"Error getting lunch overtime days: {str(e)}")
             return []

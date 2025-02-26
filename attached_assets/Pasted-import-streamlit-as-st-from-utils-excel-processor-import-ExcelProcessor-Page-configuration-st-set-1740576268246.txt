@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Updated CSS with hover menu and animations
+# Updated CSS for premium look and animations
 st.markdown("""
 <style>
     /* Base transitions and animations */
@@ -194,118 +194,7 @@ st.markdown("""
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
     }
-
-    /* New hover menu styles */
-    .hover-menu {
-        display: none;
-        position: absolute;
-        left: 105%;
-        top: 0;
-        min-width: 300px;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 12px;
-        padding: 16px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        z-index: 1000;
-        animation: slideIn 0.3s ease-out;
-    }
-
-    @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateX(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
-
-    .stat-card:hover .hover-menu {
-        display: block;
-    }
-
-    /* Typewriter effect */
-    @keyframes typewriter {
-        from {
-            width: 0;
-        }
-        to {
-            width: 100%;
-        }
-    }
-
-    .typewriter {
-        overflow: hidden;
-        white-space: nowrap;
-        animation: typewriter 1s steps(40, end);
-    }
-
-    /* Pin button */
-    .pin-button {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        background: transparent;
-        border: none;
-        color: #6C757D;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .pin-button:hover {
-        color: #2196F3;
-        transform: scale(1.1);
-    }
-
-    /* Daily details table */
-    .daily-details {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 12px;
-        font-size: 0.9em;
-    }
-
-    .daily-details th,
-    .daily-details td {
-        padding: 8px;
-        text-align: left;
-        border-bottom: 1px solid rgba(108, 117, 125, 0.2);
-    }
-
-    .daily-details th {
-        font-weight: 600;
-        color: #2C3E50;
-    }
-
-    .daily-details tr:hover {
-        background: rgba(33, 150, 243, 0.05);
-    }
-
-    /* Enhanced info group */
-    .info-group {
-        position: relative;
-    }
-
-    /* Modern typography */
-    .stat-value {
-        font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-        letter-spacing: -0.5px;
-    }
 </style>
-
-<script>
-function togglePin(menuId) {
-    const menu = document.getElementById(menuId);
-    menu.classList.toggle('pinned');
-    if (menu.classList.contains('pinned')) {
-        menu.style.display = 'block';
-    } else {
-        menu.style.display = 'none';
-    }
-}
-</script>
 """, unsafe_allow_html=True)
 
 def create_missing_records_section(stats):
@@ -336,7 +225,6 @@ def create_missing_records_section(stats):
 def create_employee_dashboard(processor, employee_name):
     """Create a detailed dashboard for a single employee"""
     stats = processor.get_employee_stats(employee_name)
-    daily_data = processor.get_employee_daily_data(employee_name) #added line to get daily data
 
     # Header with employee info
     schedule_note = "📅 Horario Especial" if stats.get('special_schedule', False) else ""
@@ -349,8 +237,24 @@ def create_employee_dashboard(processor, employee_name):
     """, unsafe_allow_html=True)
 
     # Hours Summary - Full Width
-    create_hours_summary(stats, daily_data) #Calling new function
+    st.markdown("""
+        <div class="info-group">
+            <h3>📊 Resumen de Horas</h3>
+    """, unsafe_allow_html=True)
 
+    hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100) if stats['required_hours'] > 0 else 0
+    hours_status = 'success' if hours_ratio >= 95 else 'warning' if hours_ratio >= 85 else 'danger'
+
+    st.markdown(f"""
+        <div style="text-align: center; padding: 20px;">
+            <div class="metric-label">Horas Trabajadas</div>
+            <div class="metric-value {hours_status}" style="font-size: 32px;">
+                {stats['actual_hours']:.1f}/{stats['required_hours']:.1f}
+            </div>
+            <div class="metric-label">({hours_ratio:.1f}%)</div>
+        </div>
+    """, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
     # Regular Attendance Metrics
     st.markdown("""
@@ -407,58 +311,6 @@ def create_employee_dashboard(processor, employee_name):
 
 def get_status(value, warning_threshold=3, danger_threshold=5):
     return 'success' if value == 0 else 'warning' if value <= warning_threshold else 'danger'
-
-def create_hours_summary(stats, daily_data):
-    """Creates an enhanced hours summary card with hover details"""
-    hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100) if stats['required_hours'] > 0 else 0
-    hours_status = 'success' if hours_ratio >= 95 else 'warning' if hours_ratio >= 85 else 'danger'
-
-    st.markdown(f"""
-        <div class="info-group">
-            <h3>📊 Resumen de Horas</h3>
-            <div class="stat-card" style="position: relative;">
-                <div class="metric-label">Horas Trabajadas</div>
-                <div class="metric-value {hours_status} typewriter" style="font-size: 32px;">
-                    {stats['actual_hours']:.1f}/{stats['required_hours']:.1f}
-                </div>
-                <div class="metric-label">({hours_ratio:.1f}%)</div>
-
-                <div class="hover-menu" id="hoursMenu">
-                    <button class="pin-button" onclick="togglePin('hoursMenu')">
-                        📌
-                    </button>
-                    <h4>Detalles Diarios</h4>
-                    <table class="daily-details">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Horas</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-    """, unsafe_allow_html=True)
-
-    for day_data in daily_data:
-        date = day_data['date']
-        hours = day_data['hours']
-        status = 'success' if hours >= stats['required_hours'] else 'warning' if hours >= 0.8 * stats['required_hours'] else 'danger'
-        st.markdown(f"""
-                            <tr>
-                                <td>{date}</td>
-                                <td>{hours:.1f}</td>
-                                <td class="{status}">{status}</td>
-                            </tr>
-        """, unsafe_allow_html=True)
-
-    st.markdown("""
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
 
 def main():
     st.title("📊 Visualizador de Asistencia")

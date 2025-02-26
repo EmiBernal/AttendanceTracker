@@ -557,6 +557,7 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b1/59/93ce612fce25c274efc88ec4d65963ce80fce96b9048e9fc1e430d893a9e/justext-3.0.1.tar.gz", hash = "sha256:b6ed2fb6c5d21618e2e34b2295c4edfc0bcece3bd549ed5c8ef5a8d20f0b3451", size = 828398 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c4/30/2cd44d6cc7541d5a68848250bf2f12c588631f6ff4461421fee34f9b619e/jusText-3.0.1-py2.py3-none-any.whl", hash = "sha256:e0fb882dd7285415709f4b7466aed23d6b98b7b89404c36e8a2e730facfed02b", size = 837839 },
+    { url = "https://files.pythonhosted.org/packages/f4/b2/298d96f6b33fcb5ae7dbcbaea4e054601a575744de0e3edd98ae2a9d78e8/justext-3.0.1-py2.py3-none-any.whl", hash = "sha256:0a5225c5cd7c5a124fec7bfa9a55110a73135e8b58ce784470af67d051ac9fd3", size = 837939 },
 ]
 
 [[package]]
@@ -1271,6 +1272,7 @@ dependencies = [
     { name = "pandas" },
     { name = "plotly" },
     { name = "streamlit" },
+    { name = "streamlit-custom-notification-box" },
     { name = "trafilatura" },
     { name = "twilio" },
     { name = "xlrd" },
@@ -1285,6 +1287,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "plotly", specifier = ">=6.0.0" },
     { name = "streamlit", specifier = ">=1.42.1" },
+    { name = "streamlit-custom-notification-box", specifier = ">=0.1.2" },
     { name = "trafilatura", specifier = ">=2.0.0" },
     { name = "twilio", specifier = ">=9.4.5" },
     { name = "xlrd", specifier = ">=2.0.1" },
@@ -1433,6 +1436,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/29/73/6dd5d2fd3d03a37507cacbdd45908744ed1e7b7789a5593eb3fc5d503a2a/streamlit-1.42.1.tar.gz", hash = "sha256:4e13c47b0385bd633cc2777cb5da277129edb774db417ee77d8f349e9c7357ba", size = 9168865 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/94/b5/055141fb429cf3c34730612c48fc30c89aee9173300c20b01d73c7bf8d6d/streamlit-1.42.1-py2.py3-none-any.whl", hash = "sha256:f995642dfe14f5e93acf1956a909f17aa3c395d5aa0bc580461d7fc9a452bbb2", size = 9559714 },
+]
+
+[[package]]
+name = "streamlit-custom-notification-box"
+version = "0.1.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "streamlit" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8a/cc/9a4c6cf4e7f3a54905227b7faa549ab5816c5ce2845e3af99cb29ba206fc/streamlit-custom-notification-box-0.1.2.tar.gz", hash = "sha256:7055640647f53aad1d649807b58c5e69c4354a14e9aec97c44f27705de088ae0", size = 543451 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/19/d0/5c2b2925c58dfde238e3a16988d2c7daede3242f0ba1825e1a41e691f1bd/streamlit_custom_notification_box-0.1.2-py3-none-any.whl", hash = "sha256:9b44ab555588e9825d5c16e6cc1cb17e6e58453f2388d348c8420a1b0afb0cd2", size = 551646 },
 ]
 
 [[package]]

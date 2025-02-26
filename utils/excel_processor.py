@@ -690,7 +690,7 @@ class ExcelProcessor:
             'lunch_overtime_days': lunch_overtime_days,
             'total_lunch_minutes': total_lunch_minutes,
             'missing_entry_days': missing_entry,
-            'missing_exit_days': missing_exit,
+            'missing_exitdays': missing_exit,
             'missing_lunch_days': missing_lunch,
             'absences': int(employee_summary['absences']),
             'special_schedule': employee_name.lower() in self.SPECIAL_SCHEDULES
@@ -894,3 +894,97 @@ class ExcelProcessor:
         )
 
         return fig
+
+    def get_employee_daily_data(self, employee_name):
+        """Gets daily work hours data for an employee"""
+        try:
+            daily_data = []
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+
+            # Special handling for employees with different schedules
+            if employee_name.lower() in self.SPECIAL_SCHEDULES:
+                schedule = self.SPECIAL_SCHEDULES[employee_name.lower()]
+                if 'sheet_name' in schedule:
+                    attendance_sheets = [schedule['sheet_name']]
+
+            for sheet in attendance_sheets:
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+
+                    # Define positions to check for employee data
+                    positions = [
+                        {'name_col': 'J', 'entry_col': 'B', 'exit_col': 'I', 'day_col': 'A'},  # First person
+                        {'name_col': 'Y', 'entry_col': 'Q', 'exit_col': 'X', 'day_col': 'P'},  # Second person
+                        {'name_col': 'AN', 'entry_col': 'AF', 'exit_col': 'AM', 'day_col': 'AE'}  # Third person
+                    ]
+
+                    for position in positions:
+                        try:
+                            name_col = self.get_column_index(position['name_col'])
+                            name_cell = df.iloc[2, name_col]
+
+                            if pd.isna(name_cell):
+                                continue
+
+                            if str(name_cell).strip() == employee_name:
+                                # Found the employee in this position
+                                entry_col = self.get_column_index(position['entry_col'])
+                                exit_col = self.get_column_index(position['exit_col'])
+                                day_col = self.get_column_index(position['day_col'])
+
+                                # Process each row from 11 to 42 (rows 12-42 in Excel)
+                                for row in range(11, 42):
+                                    try:
+                                        day_value = df.iloc[row, day_col]
+                                        if pd.isna(day_value):
+                                            continue
+
+                                        day_str = str(day_value).strip()
+                                        if day_str == '' or day_str.lower() == 'absence':
+                                            continue
+
+                                        # Get entry and exit times
+                                        entry_time = df.iloc[row, entry_col]
+                                        exit_time = df.iloc[row, exit_col]
+
+                                        if not pd.isna(entry_time) and not pd.isna(exit_time):
+                                            try:
+                                                # Convert to datetime
+                                                entry_time = pd.to_datetime(entry_time).time()
+                                                exit_time = pd.to_datetime(exit_time).time()
+
+                                                # Calculate hours worked
+                                                hours = (
+                                                    datetime.combine(datetime.min, exit_time) -
+                                                    datetime.combine(datetime.min, entry_time)
+                                                ).total_seconds() / 3600
+
+                                                if hours > 0:
+                                                    daily_data.append({
+                                                        'date': day_str,
+                                                        'hours': hours,
+                                                        'entry': entry_time.strftime('%H:%M'),
+                                                        'exit': exit_time.strftime('%H:%M')
+                                                    })
+
+                                            except Exception as e:
+                                                print(f"Error processing times in row {row+1}: {str(e)}")
+                                    except Exception as e:
+                                        print(f"Error processing row {row+1}: {str(e)}")
+
+                        except Exception as e:
+                            print(f"Error processing position: {str(e)}")
+                            continue
+
+                except Exception as e:
+                    print(f"Error processing sheet {sheet}: {str(e)}")
+                    continue
+
+            # Sort data by date
+            daily_data.sort(key=lambda x: x['date'])
+            return daily_data
+
+        except Exception as e:
+            print(f"Error getting daily data: {str(e)}")
+            return []

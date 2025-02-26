@@ -347,88 +347,92 @@ class ExcelProcessor:
                     ]
 
                     for position in positions:
-                        name_col_index = self.get_column_index(position['name_col'])
-                        name_cell = df.iloc[2, name_col_index]
+                        try:
+                            name_col_index = self.get_column_index(position['name_col'])
+                            name_cell = df.iloc[2, name_col_index]
 
-                        if pd.isna(name_cell):
-                            continue
+                            if pd.isna(name_cell):
+                                continue
 
-                        employee_cell = str(name_cell).strip()
-                        if employee_cell == employee_name:
-                            print(f"Empleado encontrado en hoja {sheet}, columna {position['name_col']}")
+                            employee_cell = str(name_cell).strip()
+                            if employee_cell == employee_name:
+                                print(f"Empleado encontrado en hoja {sheet}, columna {position['name_col']}")
 
-                            entry_col = self.get_column_index(position['entry_col'])
-                            exit_col = self.get_column_index(position['exit_col'])
-                            day_col = self.get_column_index(position['day_col'])
-                            absence_col = self.get_column_index(position['absence_col'])
-                            lunch_out_col = self.get_column_index(position['lunch_out'])
-                            lunch_return_col = self.get_column_index(position['lunch_return'])
+                                entry_col = self.get_column_index(position['entry_col'])
+                                exit_col = self.get_column_index(position['exit_col'])
+                                day_col = self.get_column_index(position['day_col'])
+                                absence_col = self.get_column_index(position['absence_col'])
+                                lunch_out_col = self.get_column_index(position['lunch_out'])
+                                lunch_return_col = self.get_column_index(position['lunch_return'])
 
-                            for row in range(11, 42):  # Filas 12-42
-                                try:
-                                    day_value = df.iloc[row, day_col]
-                                    if pd.isna(day_value):
-                                        continue
-
+                                for row in range(11, 42):  # Filas 12-42
                                     try:
-                                        # Extraer el día y nombre del día de la cadena (e.g., "01 Mo")
-                                        day_parts = str(day_value).strip().lower().split()
-                                        if len(day_parts) >= 2:
-                                            day_abbr = day_parts[1].lower()
-                                            # Verificar si es fin de semana
-                                            if day_abbr in ['sa', 'su']:
-                                                print(f"Fila {row+1}: Fin de semana ({day_value}), ignorando")
-                                                continue
+                                        day_value = df.iloc[row, day_col]
+                                        if pd.isna(day_value):
+                                            continue
 
-                                            # Verificar ausencia
-                                            absence_value = df.iloc[row, absence_col]
-                                            is_absence = not pd.isna(absence_value) and str(absence_value).strip().lower() == 'absence'
+                                        try:
+                                            # Extraer el día y nombre del día de la cadena (e.g., "01 Mo")
+                                            day_parts = str(day_value).strip().lower().split()
+                                            if len(day_parts) >= 2:
+                                                day_abbr = day_parts[1].lower()
+                                                # Verificar si es fin de semana
+                                                if day_abbr in ['sa', 'su']:
+                                                    print(f"Fila {row+1}: Fin de semana ({day_value}), ignorando")
+                                                    continue
 
-                                            # Verificar entrada
-                                            entry_value = df.iloc[row, entry_col]
-                                            if pd.isna(entry_value) or str(entry_value).strip() == '':
-                                                missing_entry += 1
-                                                print(f"Falta registro de entrada en fila {row+1} ({sheet})")
+                                                # Verificar ausencia
+                                                absence_value = df.iloc[row, absence_col]
+                                                is_absence = not pd.isna(absence_value) and str(absence_value).strip().lower() == 'absence'
 
-                                            # Verificar salida solo si no es ausencia
-                                            if not is_absence:
-                                                exit_value = df.iloc[row, exit_col]
-                                                if pd.isna(exit_value) or str(exit_value).strip() == '':
-                                                    missing_exit += 1
-                                                    print(f"Falta registro de salida en fila {row+1} ({sheet})")
+                                                # Verificar entrada
+                                                entry_value = df.iloc[row, entry_col]
+                                                if pd.isna(entry_value) or str(entry_value).strip() == '':
+                                                    missing_entry += 1
+                                                    print(f"Falta registro de entrada en fila {row+1} ({sheet})")
 
-                                                # Verificar almuerzo solo si hay salida final
-                                                if not pd.isna(exit_value) and str(exit_value).strip() != '':
-                                                    lunch_out = df.iloc[row, lunch_out_col]
-                                                    lunch_return = df.iloc[row, lunch_return_col]
+                                                # Verificar salida solo si no es ausencia
+                                                if not is_absence:
+                                                    exit_value = df.iloc[row, exit_col]
+                                                    if pd.isna(exit_value) or str(exit_value).strip() == '':
+                                                        missing_exit += 1
+                                                        print(f"Falta registro de salida en fila {row+1} ({sheet})")
 
-                                                    # Caso 1: Hay salida almuerzo pero no regreso
-                                                    if (not pd.isna(lunch_out) and pd.isna(lunch_return)):
-                                                        missing_lunch += 1
-                                                        print(f"Falta registro de regreso almuerzo en fila {row+1} ({sheet})")
+                                                    # Verificar almuerzo solo si hay salida final
+                                                    if not pd.isna(exit_value) and str(exit_value).strip() != '':
+                                                        lunch_out = df.iloc[row, lunch_out_col]
+                                                        lunch_return = df.iloc[row, lunch_return_col]
 
-                                                    # Caso 2: No hay salida ni regreso almuerzo
-                                                    elif (pd.isna(lunch_out) and pd.isna(lunch_return)):
-                                                        missing_lunch += 1
-                                                        print(f"Falta registro completo de almuerzo en fila {row+1} ({sheet})")
+                                                        # Caso 1: Hay salida almuerzo pero no regreso
+                                                        if (not pd.isna(lunch_out) and pd.isna(lunch_return)):
+                                                            missing_lunch += 1
+                                                            print(f"Falta registro de regreso almuerzo en fila {row+1} ({sheet})")
+
+                                                        # Caso 2: No hay salida ni regreso almuerzo
+                                                        elif (pd.isna(lunch_out) and pd.isna(lunch_return)):
+                                                            missing_lunch += 1
+                                                            print(f"Falta registro completo de almuerzo en fila {row+1} ({sheet})")
+
+                                        except Exception as e:
+                                            print(f"Error procesando fecha en fila {row+1}: {str(e)}")
+                                            continue
 
                                     except Exception as e:
-                                        print(f"Error procesando fecha en fila {row+1}: {str(e)}")
+                                        print(f"Error en fila {row+1}: {str(e)}")
                                         continue
 
-                                except Exception as e:
-                                    print(f"Error en fila {row+1}: {str(e)}")
-                                    continue
+                                # Después de contar todos los registros faltantes, verificar si hay "Absence" y decrementar entradas
+                                for row in range(11, 42):
+                                    try:
+                                        absence_value = df.iloc[row, absence_col]
+                                        if not pd.isna(absence_value) and str(absence_value).strip().lower() == 'absence':
+                                            missing_entry -= 1
+                                            print(f"Encontrado 'Absence' en fila {row+1}, decrementando contador de entradas")
+                                    except Exception as e:
+                                        continue
 
-                            # Después de contar todos los registros faltantes, verificar si hay "Absence" y decrementar entradas
-                            for row in range(11, 42):
-                                try:
-                                    absence_value = df.iloc[row, absence_col]
-                                    if not pd.isna(absence_value) and str(absence_value).strip().lower() == 'absence':
-                                        missing_entry -= 1
-                                        print(f"Encontrado 'Absence' en fila {row+1}, decrementando contador de entradas")
-                                except Exception as e:
-                                    continue
+                        except Exception as e:
+                            print(f"Error procesando posición: {str(e)}")
 
                 except Exception as e:
                     print(f"Error procesando hoja {sheet}: {str(e)}")

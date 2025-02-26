@@ -124,6 +124,30 @@ st.markdown("""
     .warning { color: #FFC107; }
     .danger { color: #DC3545; }
     .success { color: #28A745; }
+
+    /* Info group styling */
+    .info-group {
+        background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0.1) 100%);
+        border-radius: 16px;
+        padding: 24px;
+        margin: 20px 0;
+        border: 1px solid rgba(33, 150, 243, 0.1);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Department label */
+    .department-label {
+        color: #6C757D;
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+
+    /* Special schedule */
+    .special-schedule {
+        color: #F59E0B;
+        font-size: 14px;
+        margin-top: 4px;
+    }
 </style>
 <script>
 function showDetailView(cardId) {
@@ -219,6 +243,34 @@ def create_employee_dashboard(processor, employee_name):
         </div>
     """, unsafe_allow_html=True)
 
+    # Missing Records Section
+    create_missing_records_section(stats)
+
+    # Metrics Requiring Authorization
+    st.markdown("""
+        <div class="stat-group">
+            <h3>🔒 Situaciones que Requieren Autorización</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+    """, unsafe_allow_html=True)
+
+    auth_metrics = [
+        ('Retiros Anticipados', stats['early_departures'], f"{stats['early_minutes']:.0f} minutos en total"),
+        ('Ingresos con Retraso', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total")
+    ]
+
+    for label, value, subtitle in auth_metrics:
+        status = 'success' if value == 0 else 'warning' if value <= 2 else 'danger'
+        st.markdown(f"""
+            <div class="stat-card auth-required">
+                <div class="metric-label">{label}</div>
+                <div class="metric-value {status}">{value}</div>
+                <div class="metric-label">{subtitle}</div>
+                <div class="metric-label warning">Requiere Autorización</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("</div></div>", unsafe_allow_html=True)
+
     st.markdown("</div>", unsafe_allow_html=True)  # Close main-view
 
     # Create detail view for hours
@@ -226,33 +278,35 @@ def create_employee_dashboard(processor, employee_name):
 
     st.markdown("</div>", unsafe_allow_html=True)  # Close view-container
 
-def create_missing_records_section(stats):
-    """Crea una sección expandible para mostrar los días sin registros"""
-    with st.expander("📋 Registros Faltantes", expanded=False):
-        st.markdown("""
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-        """, unsafe_allow_html=True)
-
-        missing_records = [
-            ('Sin Registro de Entrada', stats['missing_entry_days'], "Total días sin marcar"),
-            ('Sin Registro de Salida', stats['missing_exit_days'], "Total días sin marcar"),
-            ('Sin Registro de Almuerzo', stats['missing_lunch_days'], "Total días sin marcar")
-        ]
-
-        for label, value, subtitle in missing_records:
-            status = 'success' if value == 0 else 'warning' if value <= 3 else 'danger'
-            st.markdown(f"""
-                <div class="stat-card">
-                    <div class="metric-label">{label}</div>
-                    <div class="metric-value {status}">{value}</div>
-                    <div class="metric-label">{subtitle}</div>
-                </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("</div>", unsafe_allow_html=True)
 
 def get_status(value, warning_threshold=3, danger_threshold=5):
     return 'success' if value == 0 else 'warning' if value <= warning_threshold else 'danger'
+
+def create_missing_records_section(stats):
+    """Creates a section for displaying missing records"""
+    missing_records = [
+        ('Sin Registro de Entrada', stats['missing_entry_days'], "Total días sin marcar"),
+        ('Sin Registro de Salida', stats['missing_exit_days'], "Total días sin marcar"),
+        ('Sin Registro de Almuerzo', stats['missing_lunch_days'], "Total días sin marcar")
+    ]
+
+    st.markdown("""
+        <div class="stat-group">
+            <h3>📋 Registros Faltantes</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+    """, unsafe_allow_html=True)
+
+    for label, value, subtitle in missing_records:
+        status = get_status(value)
+        st.markdown(f"""
+            <div class="stat-card" onclick="showDetailView('missing-{label.lower()}')">
+                <div class="metric-label">{label}</div>
+                <div class="metric-value {status} typewriter">{value}</div>
+                <div class="metric-label">{subtitle}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("</div></div>", unsafe_allow_html=True)
 
 
 def main():

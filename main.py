@@ -1,7 +1,7 @@
 import streamlit as st
 from utils.excel_processor import ExcelProcessor
 
-# Page configuration
+# Page configuration and CSS with fixed animations
 st.set_page_config(
     page_title="Visualizador de Asistencia",
     page_icon="📊",
@@ -9,10 +9,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Updated CSS with futuristic animations and centered text
 st.markdown("""
 <style>
-    /* Base transitions and animations */
+    /* Base transitions */
     .stApp {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -46,36 +45,21 @@ st.markdown("""
         100% { box-shadow: 0 4px 20px rgba(33, 150, 243, 0.05); }
     }
 
-    /* Premium card styling with enhanced animations */
+    /* Premium card styling */
     .info-group {
         background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0.1) 100%);
         background-size: 200% 200%;
         border-radius: 16px;
         padding: 24px;
         margin: 20px 0;
-        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid rgba(33, 150, 243, 0.1);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        animation: fadeInUp 0.6s ease-out forwards, gradientShift 8s ease-in-out infinite;
+        animation: fadeInUp 0.6s ease-out forwards;
         text-align: center;
         position: relative;
         overflow: hidden;
-    }
-
-    .info-group::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-        transform: translateX(-100%);
-        transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .info-group:hover::before {
-        transform: translateX(100%);
     }
 
     .info-group:hover {
@@ -90,36 +74,21 @@ st.markdown("""
         border-radius: 10px;
         padding: 20px;
         margin: 12px;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                    border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid rgba(33, 150, 243, 0.1);
-        animation: fadeInUp 0.6s ease-out forwards, borderPulse 4s ease-in-out infinite;
+        animation: fadeInUp 0.6s ease-out forwards;
         text-align: center;
         position: relative;
         overflow: hidden;
         backdrop-filter: blur(10px);
     }
 
-    .stat-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-        transform: translateX(-100%);
-        transition: transform 0.6s;
-    }
-
-    .stat-card:hover::before {
-        transform: translateX(100%);
-    }
-
     .stat-card:hover {
         transform: translateY(-2px) scale(1.02);
         box-shadow: 0 8px 24px rgba(33, 150, 243, 0.15);
         border-color: rgba(33, 150, 243, 0.3);
-        animation: glowPulse 2s ease-in-out infinite;
     }
 
     /* Status colors with transitions */
@@ -144,7 +113,8 @@ st.markdown("""
         font-size: 24px;
         font-weight: bold;
         margin: 8px 0;
-        transition: all 0.3s ease;
+        transition: transform 0.3s ease,
+                    text-shadow 0.3s ease;
     }
 
     .stat-card:hover .metric-value {
@@ -155,7 +125,7 @@ st.markdown("""
     .metric-label {
         font-size: 14px;
         color: #6C757D;
-        transition: all 0.3s ease;
+        transition: color 0.3s ease;
     }
 
     .stat-card:hover .metric-label {
@@ -165,12 +135,11 @@ st.markdown("""
     /* Headers with glow effect */
     h1, h2, h3 {
         text-align: center;
-        opacity: 0;
         animation: fadeInUp 0.6s ease-out forwards;
         animation-delay: 0.2s;
         color: #2C3E50;
         text-shadow: 0 0 20px rgba(33, 150, 243, 0.1);
-        transition: all 0.3s ease;
+        transition: text-shadow 0.3s ease;
     }
 
     h1:hover, h2:hover, h3:hover {
@@ -182,7 +151,7 @@ st.markdown("""
         color: #6C757D;
         font-size: 14px;
         margin-bottom: 8px;
-        transition: all 0.3s ease;
+        transition: color 0.3s ease;
     }
 
     /* Special schedule with highlight effect */
@@ -196,7 +165,8 @@ st.markdown("""
 
     /* Streamlit component enhancements */
     .stSelectbox, .stFileUploader {
-        transition: all 0.3s ease;
+        transition: transform 0.3s ease,
+                    box-shadow 0.3s ease;
     }
 
     .stSelectbox:hover, .stFileUploader:hover {

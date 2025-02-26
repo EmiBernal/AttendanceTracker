@@ -12,6 +12,22 @@ st.set_page_config(
 # Updated CSS for layout with animations and transitions
 st.markdown("""
 <style>
+    /* Base transitions for all components */
+    .stApp {
+        transition: all 0.3s ease-in-out;
+    }
+
+    /* Fade in animation */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Add animation to main components */
+    .main, .stat-group, .stat-card {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
     .stat-group {
         background-color: rgba(33, 150, 243, 0.1);
         border-radius: 12px;
@@ -29,16 +45,17 @@ st.markdown("""
     }
 
     .stat-card {
-        background-color: white;
+        background-color: rgba(255, 255, 255, 0.05);
         border-radius: 10px;
         padding: 16px;
         margin: 8px;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid #E9ECEF;
+        border: 1px solid rgba(233, 236, 239, 0.2);
         position: relative;
         overflow: hidden;
     }
 
+    /* Enhanced hover effects with smooth transitions */
     .stat-card::before {
         content: '';
         position: absolute;
@@ -61,6 +78,7 @@ st.markdown("""
         transform: translateX(100%);
     }
 
+    /* Metric value animations */
     .metric-value {
         font-size: 24px;
         font-weight: bold;
@@ -73,6 +91,7 @@ st.markdown("""
         text-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
+    /* Metric label animations */
     .metric-label {
         font-size: 14px;
         color: #6C757D;
@@ -83,10 +102,12 @@ st.markdown("""
         color: #2196F3;
     }
 
+    /* Status colors with transitions */
     .warning { color: #FFC107; }
     .danger { color: #DC3545; }
     .success { color: #28A745; }
 
+    /* Authorization indicator */
     .auth-required {
         border-left: 4px solid #FFC107;
         transition: all 0.3s ease;
@@ -97,6 +118,7 @@ st.markdown("""
         background-color: rgba(255, 193, 7, 0.05);
     }
 
+    /* Pulse animation for warning indicators */
     @keyframes subtlePulse {
         0% { transform: scale(1); }
         50% { transform: scale(1.01); }
@@ -106,6 +128,39 @@ st.markdown("""
     .stat-card:hover .warning,
     .stat-card:hover .danger {
         animation: subtlePulse 1.5s infinite;
+    }
+
+    /* Sidebar transitions */
+    .css-1d391kg {  /* Streamlit's sidebar class */
+        transition: all 0.3s ease-in-out;
+    }
+
+    /* File uploader animations */
+    .stFileUploader {
+        transition: all 0.3s ease-in-out;
+    }
+
+    .stFileUploader:hover {
+        transform: translateY(-2px);
+    }
+
+    /* Button animations */
+    .stButton>button {
+        transition: all 0.3s ease-in-out;
+    }
+
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    /* Selectbox animations */
+    .stSelectbox {
+        transition: all 0.3s ease-in-out;
+    }
+
+    .stSelectbox:hover {
+        transform: translateY(-2px);
     }
 </style>
 """, unsafe_allow_html=True)

@@ -26,7 +26,15 @@ class ExcelProcessor:
             'valentina al': {
                 'half_day': True,
                 'end_time': datetime.strptime('12:40', '%H:%M').time(),
-                'can_work_afternoon': True
+                'no_lunch': True,  # No tiene almuerzo
+                'sheet_name': '7.8.9',  # Hoja específica
+                'position': {
+                    'name_col': 'AN',
+                    'entry_col': 'AF',
+                    'exit_col': 'AH',
+                    'day_col': 'AE',
+                    'absence_col': 'AK'
+                }
             }
         }
 
@@ -112,9 +120,9 @@ class ExcelProcessor:
 
     def count_lunch_overtime_days(self, employee_name):
         """Cuenta los días que el empleado excedió el tiempo de almuerzo"""
-        # Si es Agustín Tabasso, retornar 0 ya que no tiene almuerzo
-        if employee_name.lower() == 'agustin taba':
-            print("Agustín Tabasso no tiene horario de almuerzo")
+        # Si es Valentina o Agustín, retornar 0 ya que no tienen almuerzo
+        if employee_name.lower() in ['valentina al', 'agustin taba']:
+            print(f"{employee_name} no tiene horario de almuerzo")
             return 0, 0
 
         try:
@@ -312,26 +320,21 @@ class ExcelProcessor:
     def count_missing_records(self, employee_name):
         """Cuenta los días sin registros de entrada, salida y almuerzo"""
         try:
-            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
-            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
             missing_entry = 0
             missing_exit = 0
             missing_lunch = 0
 
-            # Para Agustín Tabasso, siempre retornar 0 en missing_lunch
-            is_agustin = employee_name.lower() == 'agustin taba'
-            if is_agustin:
-                missing_lunch = 0
-
-            # Procesamiento especial para Agustín Tabasso
-            if is_agustin:
+            # Procesamiento especial para Valentina
+            if employee_name.lower() == 'valentina al':
                 try:
-                    df = pd.read_excel(self.excel_file, sheet_name="4.5.6", header=None)
+                    schedule = self.SPECIAL_SCHEDULES['valentina al']
+                    df = pd.read_excel(self.excel_file, sheet_name=schedule['sheet_name'], header=None)
 
                     # Verificar registros de entrada y salida
                     for row in range(11, 42):  # Filas 12-42
                         try:
-                            day_value = df.iloc[row, self.get_column_index('AE')]
+                            pos = schedule['position']
+                            day_value = df.iloc[row, self.get_column_index(pos['day_col'])]
                             if pd.isna(day_value):
                                 continue
 
@@ -345,16 +348,16 @@ class ExcelProcessor:
                                     continue
 
                                 # Verificar entrada
-                                entry_value = df.iloc[row, self.get_column_index('AF')]
+                                entry_value = df.iloc[row, self.get_column_index(pos['entry_col'])]
                                 if pd.isna(entry_value) or str(entry_value).strip() == '':
                                     missing_entry += 1
-                                    print(f"Falta registro de entrada en fila {row+1} (4.5.6)")
+                                    print(f"Falta registro de entrada en fila {row+1} ({schedule['sheet_name']})")
 
-                                # Verificar salida en columna AH
-                                exit_value = df.iloc[row, self.get_column_index('AH')]
+                                # Verificar salida
+                                exit_value = df.iloc[row, self.get_column_index(pos['exit_col'])]
                                 if pd.isna(exit_value) or str(exit_value).strip() == '':
                                     missing_exit += 1
-                                    print(f"Falta registro de salida en fila {row+1} (4.5.6)")
+                                    print(f"Falta registro de salida en fila {row+1} ({schedule['sheet_name']})")
 
                         except Exception as e:
                             print(f"Error en fila {row+1}: {str(e)}")
@@ -363,7 +366,7 @@ class ExcelProcessor:
                     # Verificar ausencias y decrementar contadores
                     for row in range(11, 42):
                         try:
-                            absence_value = df.iloc[row, self.get_column_index('AK')]
+                            absence_value = df.iloc[row, self.get_column_index(pos['absence_col'])]
                             if not pd.isna(absence_value) and str(absence_value).strip().lower() == 'absence':
                                 missing_entry -= 1
                                 missing_exit -= 1
@@ -371,13 +374,15 @@ class ExcelProcessor:
                         except Exception as e:
                             continue
 
-                except Exception as e:
-                    print(f"Error procesando hoja 4.5.6: {str(e)}")
+                    print(f"Total días sin registro - Entrada: {missing_entry}, Salida: {missing_exit}, Almuerzo: 0 (No aplica)")
+                    return missing_entry, missing_exit, 0
 
-                print(f"Total días sin registro - Entrada: {missing_entry}, Salida: {missing_exit}, Almuerzo: 0 (No aplica)")
-                return missing_entry, missing_exit, 0
+                except Exception as e:
+                    print(f"Error procesando hoja {schedule['sheet_name']}: {str(e)}")
 
             # Procesamiento normal para otros empleados
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
             for sheet in attendance_sheets:
                 try:
                     print(f"\nVerificando registros en hoja {sheet}")
@@ -679,6 +684,21 @@ class ExcelProcessor:
         }
 
         return stats
+
+    def calculate_valentina_absences(self, df):
+        """Calcula las ausencias de Valentina verificando la columna AK"""
+        absences = 0
+        try:
+            for row in range(11, 42):  # Filas 12-42
+                try:
+                    absence_value = df.iloc[row, self.get_column_index('AK')]
+                    if not pd.isna(absence_value) and str(absence_value).strip().lower() == 'absence':
+                        absences += 1
+                except Exception as e:
+                    continue
+        except Exception as e:
+            print(f"Error calculando ausencias de Valentina: {str(e)}")
+        return absences
 
 
     def get_weekly_attendance_data(self, employee_name):

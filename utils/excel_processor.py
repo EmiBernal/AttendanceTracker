@@ -690,9 +690,8 @@ class ExcelProcessor:
             'lunch_overtime_days': lunch_overtime_days,
             'total_lunch_minutes': total_lunch_minutes,
             'missing_entry_days': missing_entry,
-            'missing_exitdays': missing_exit,
-            'missing_lunch_days': missing_lunch,
-            'absences': int(employee_summary['absences']),
+            'missing_exit_days': missing_exit,  # Fixed the key name
+            'missing_lunch_days': missing_lunch,            'absences': int(employee_summary['absences']),
             'special_schedule': employee_name.lower() in self.SPECIAL_SCHEDULES
         }
 

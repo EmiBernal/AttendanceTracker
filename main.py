@@ -9,231 +9,64 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Updated CSS with hover menu and animations
+# Updated CSS with sliding transitions and animations
 st.markdown("""
 <style>
-    /* Base transitions and animations */
+    /* Base transitions */
     .stApp {
         transition: all 0.3s ease-in-out;
     }
 
-    @keyframes slideInFade {
-        from { 
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to { 
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @keyframes gradientShift {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-
-    /* Premium info cards with advanced animations */
-    .info-group {
-        background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0.1) 100%);
-        background-size: 200% 200%;
-        border-radius: 16px;
-        padding: 24px;
-        margin: 20px 0;
-        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Container for all views */
+    .view-container {
         position: relative;
-        overflow: hidden;
-        border: 1px solid rgba(33, 150, 243, 0.1);
-        animation: slideInFade 0.8s ease-out, gradientShift 8s ease-in-out infinite;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    }
-
-    .info-group:hover {
-        transform: translateY(-4px) scale(1.01);
-        box-shadow: 0 8px 30px rgba(33, 150, 243, 0.15);
-        background-position: right center;
-    }
-
-    .info-group::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
         width: 100%;
-        height: 100%;
-        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
-        transform: translateX(-100%);
-        transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
     }
 
-    .info-group:hover::before {
+    /* Main view and detail view styling */
+    .main-view, .detail-view {
+        width: 100%;
+        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Slide animations */
+    .slide-out-left {
+        transform: translateX(-100%);
+    }
+
+    .slide-in-right {
+        transform: translateX(0);
+    }
+
+    .slide-out-right {
         transform: translateX(100%);
     }
 
-    /* Regular stat cards with hover effects */
-    .stat-group {
-        background-color: rgba(33, 150, 243, 0.1);
-        border-radius: 12px;
-        padding: 20px;
-        margin: 15px 0;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
+    .slide-in-left {
+        transform: translateX(0);
     }
 
+    /* Card styling */
     .stat-card {
         background-color: rgba(255, 255, 255, 0.05);
         border-radius: 10px;
-        padding: 16px;
-        margin: 8px;
+        padding: 20px;
+        margin: 12px;
+        cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid rgba(233, 236, 239, 0.2);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .stat-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
-        transform: translateX(-100%);
-        transition: transform 0.6s;
     }
 
     .stat-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-        border-color: #2196F3;
-    }
-
-    .stat-card:hover::before {
-        transform: translateX(100%);
-    }
-
-    /* Status colors with transitions */
-    .warning { color: #FFC107; transition: all 0.3s ease; }
-    .danger { color: #DC3545; transition: all 0.3s ease; }
-    .success { color: #28A745; transition: all 0.3s ease; }
-
-    /* Metrics styling with animations */
-    .metric-value {
-        font-size: 24px;
-        font-weight: bold;
-        margin: 8px 0;
-        transition: all 0.3s ease;
-    }
-
-    .stat-card:hover .metric-value {
-        transform: scale(1.02);
-        text-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-
-    .metric-label {
-        font-size: 14px;
-        color: #6C757D;
-        transition: color 0.3s ease;
-    }
-
-    .stat-card:hover .metric-label {
-        color: #2196F3;
-    }
-
-    /* Pulse animation for warning indicators */
-    @keyframes subtlePulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.01); }
-        100% { transform: scale(1); }
-    }
-
-    .stat-card:hover .warning,
-    .stat-card:hover .danger {
-        animation: subtlePulse 1.5s infinite;
-    }
-
-    /* Header text styling */
-    h1, h2, h3 {
-        color: #2C3E50;
-        margin-bottom: 16px;
-    }
-
-    /* Department label */
-    .department-label {
-        color: #6C757D;
-        font-size: 14px;
-        margin-bottom: 8px;
-    }
-
-    /* Special schedule indicator */
-    .special-schedule {
-        color: #F59E0B;
-        font-size: 14px;
-        margin-top: 4px;
-    }
-
-    /* Interactive element animations */
-    .stFileUploader, .stButton>button, .stSelectbox {
-        transition: all 0.3s ease-in-out;
-    }
-
-    .stFileUploader:hover, .stButton>button:hover, .stSelectbox:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    /* Main content fade in */
-    .main {
-        animation: fadeIn 0.5s ease-in-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* New hover menu styles */
-    .hover-menu {
-        display: none;
-        position: absolute;
-        left: 105%;
-        top: 0;
-        min-width: 300px;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 12px;
-        padding: 16px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        z-index: 1000;
-        animation: slideIn 0.3s ease-out;
-    }
-
-    @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateX(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
-
-    .stat-card:hover .hover-menu {
-        display: block;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
     }
 
     /* Typewriter effect */
     @keyframes typewriter {
-        from {
-            width: 0;
-        }
-        to {
-            width: 100%;
-        }
+        from { width: 0; }
+        to { width: 100%; }
     }
 
     .typewriter {
@@ -242,71 +75,156 @@ st.markdown("""
         animation: typewriter 1s steps(40, end);
     }
 
-    /* Pin button */
-    .pin-button {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        background: transparent;
-        border: none;
-        color: #6C757D;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .pin-button:hover {
-        color: #2196F3;
-        transform: scale(1.1);
-    }
-
-    /* Daily details table */
-    .daily-details {
+    /* Detail view table */
+    .detail-table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 12px;
-        font-size: 0.9em;
+        margin-top: 20px;
+        font-family: 'SF Pro Display', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
-    .daily-details th,
-    .daily-details td {
-        padding: 8px;
+    .detail-table th,
+    .detail-table td {
+        padding: 12px;
         text-align: left;
-        border-bottom: 1px solid rgba(108, 117, 125, 0.2);
+        border-bottom: 1px solid rgba(233, 236, 239, 0.2);
     }
 
-    .daily-details th {
-        font-weight: 600;
-        color: #2C3E50;
+    .detail-table th {
+        background-color: rgba(33, 150, 243, 0.1);
+        font-weight: 500;
     }
 
-    .daily-details tr:hover {
-        background: rgba(33, 150, 243, 0.05);
+    .detail-table tr:hover {
+        background-color: rgba(33, 150, 243, 0.05);
     }
 
-    /* Enhanced info group */
-    .info-group {
-        position: relative;
+    /* Back button */
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        background: rgba(33, 150, 243, 0.1);
+        color: #2196F3;
+        font-family: 'SF Pro Display', system-ui;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
     }
 
-    /* Modern typography */
-    .stat-value {
-        font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-        letter-spacing: -0.5px;
+    .back-button:hover {
+        background: rgba(33, 150, 243, 0.2);
+        transform: translateX(-4px);
     }
+
+    /* Status colors */
+    .warning { color: #FFC107; }
+    .danger { color: #DC3545; }
+    .success { color: #28A745; }
 </style>
-
 <script>
-function togglePin(menuId) {
-    const menu = document.getElementById(menuId);
-    menu.classList.toggle('pinned');
-    if (menu.classList.contains('pinned')) {
-        menu.style.display = 'block';
-    } else {
-        menu.style.display = 'none';
-    }
+function showDetailView(cardId) {
+    const mainView = document.querySelector('.main-view');
+    const detailView = document.querySelector('.detail-view-' + cardId);
+
+    mainView.classList.add('slide-out-left');
+    detailView.classList.remove('slide-out-right');
+    detailView.classList.add('slide-in-right');
+}
+
+function hideDetailView(cardId) {
+    const mainView = document.querySelector('.main-view');
+    const detailView = document.querySelector('.detail-view-' + cardId);
+
+    mainView.classList.remove('slide-out-left');
+    detailView.classList.remove('slide-in-right');
+    detailView.classList.add('slide-out-right');
 }
 </script>
 """, unsafe_allow_html=True)
+
+def create_hours_detail_view(stats, daily_data):
+    """Creates a detailed view for hours worked"""
+    st.markdown("""
+        <div class="detail-view detail-view-hours slide-out-right">
+            <button class="back-button" onclick="hideDetailView('hours')">
+                ← Volver
+            </button>
+            <h2>Detalle de Horas Trabajadas</h2>
+            <table class="detail-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Horas</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+    """, unsafe_allow_html=True)
+
+    for day in daily_data:
+        status = 'success' if day['hours'] >= stats['required_hours']/20 else 'warning' if day['hours'] >= stats['required_hours']/25 else 'danger'
+        st.markdown(f"""
+            <tr>
+                <td>{day['date']}</td>
+                <td>{day['entry']}</td>
+                <td>{day['exit']}</td>
+                <td>{day['hours']:.1f}</td>
+                <td class="{status}">{status}</td>
+            </tr>
+        """, unsafe_allow_html=True)
+
+    st.markdown("""
+                </tbody>
+            </table>
+        </div>
+    """, unsafe_allow_html=True)
+
+def create_employee_dashboard(processor, employee_name):
+    """Create a detailed dashboard for a single employee"""
+    stats = processor.get_employee_stats(employee_name)
+    daily_data = processor.get_employee_daily_data(employee_name)
+
+    # Main view container
+    st.markdown("""
+        <div class="view-container">
+            <div class="main-view">
+    """, unsafe_allow_html=True)
+
+    # Header with employee info
+    st.markdown(f"""
+        <div class="info-group">
+            <h2>{stats['name']}</h2>
+            <div class="department-label">Departamento: {stats['department']}</div>
+            {f'<div class="special-schedule">Horario Especial</div>' if stats.get('special_schedule', False) else ''}
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Hours Summary Card
+    hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100) if stats['required_hours'] > 0 else 0
+    hours_status = 'success' if hours_ratio >= 95 else 'warning' if hours_ratio >= 85 else 'danger'
+
+    st.markdown(f"""
+        <div class="stat-card" onclick="showDetailView('hours')">
+            <div class="metric-label">Horas Trabajadas</div>
+            <div class="metric-value {hours_status} typewriter">
+                {stats['actual_hours']:.1f}/{stats['required_hours']:.1f}
+            </div>
+            <div class="metric-label">({hours_ratio:.1f}%)</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)  # Close main-view
+
+    # Create detail view for hours
+    create_hours_detail_view(stats, daily_data)
+
+    st.markdown("</div>", unsafe_allow_html=True)  # Close view-container
 
 def create_missing_records_section(stats):
     """Crea una sección expandible para mostrar los días sin registros"""
@@ -333,131 +251,8 @@ def create_missing_records_section(stats):
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-def create_employee_dashboard(processor, employee_name):
-    """Create a detailed dashboard for a single employee"""
-    stats = processor.get_employee_stats(employee_name)
-    daily_data = processor.get_employee_daily_data(employee_name) #added line to get daily data
-
-    # Header with employee info
-    schedule_note = "📅 Horario Especial" if stats.get('special_schedule', False) else ""
-    st.markdown(f"""
-        <div class="info-group">
-            <h2>{stats['name']} {schedule_note}</h2>
-            <div class="department-label">Departamento: {stats['department']}</div>
-            {f'<div class="special-schedule">Empleado con horario especial</div>' if stats.get('special_schedule', False) else ''}
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Hours Summary - Full Width
-    create_hours_summary(stats, daily_data) #Calling new function
-
-
-    # Regular Attendance Metrics
-    st.markdown("""
-        <div class="stat-group">
-            <h3>📈 Métricas de Asistencia Regular</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-    """, unsafe_allow_html=True)
-
-    regular_metrics = [
-        ('Inasistencias', stats['absences'], "Total días"),
-        ('Días con Llegada Tarde', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total"),
-        ('Días con Exceso en Almuerzo', stats['lunch_overtime_days'], f"{stats['total_lunch_minutes']:.0f} minutos en total"),
-    ]
-
-    for label, value, subtitle in regular_metrics:
-        status = 'success' if value == 0 else 'warning' if value <= 3 else 'danger'
-        st.markdown(f"""
-            <div class="stat-card">
-                <div class="metric-label">{label}</div>
-                <div class="metric-value {status}">{value}</div>
-                <div class="metric-label">{subtitle}</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("</div></div>", unsafe_allow_html=True)
-
-    # Missing Records Section
-    create_missing_records_section(stats)
-
-    # Metrics Requiring Authorization
-    st.markdown("""
-        <div class="stat-group">
-            <h3>🔒 Situaciones que Requieren Autorización</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-    """, unsafe_allow_html=True)
-
-    auth_metrics = [
-        ('Retiros Anticipados', stats['early_departures'], f"{stats['early_minutes']:.0f} minutos en total"),
-        ('Ingresos con Retraso', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total")
-    ]
-
-    for label, value, subtitle in auth_metrics:
-        status = 'success' if value == 0 else 'warning' if value <= 2 else 'danger'
-        st.markdown(f"""
-            <div class="stat-card auth-required">
-                <div class="metric-label">{label}</div>
-                <div class="metric-value {status}">{value}</div>
-                <div class="metric-label">{subtitle}</div>
-                <div class="metric-label warning">Requiere Autorización</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("</div></div>", unsafe_allow_html=True)
-
 def get_status(value, warning_threshold=3, danger_threshold=5):
     return 'success' if value == 0 else 'warning' if value <= warning_threshold else 'danger'
-
-def create_hours_summary(stats, daily_data):
-    """Creates an enhanced hours summary card with hover details"""
-    hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100) if stats['required_hours'] > 0 else 0
-    hours_status = 'success' if hours_ratio >= 95 else 'warning' if hours_ratio >= 85 else 'danger'
-
-    st.markdown(f"""
-        <div class="info-group">
-            <h3>📊 Resumen de Horas</h3>
-            <div class="stat-card" style="position: relative;">
-                <div class="metric-label">Horas Trabajadas</div>
-                <div class="metric-value {hours_status} typewriter" style="font-size: 32px;">
-                    {stats['actual_hours']:.1f}/{stats['required_hours']:.1f}
-                </div>
-                <div class="metric-label">({hours_ratio:.1f}%)</div>
-
-                <div class="hover-menu" id="hoursMenu">
-                    <button class="pin-button" onclick="togglePin('hoursMenu')">
-                        📌
-                    </button>
-                    <h4>Detalles Diarios</h4>
-                    <table class="daily-details">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Horas</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-    """, unsafe_allow_html=True)
-
-    for day_data in daily_data:
-        date = day_data['date']
-        hours = day_data['hours']
-        status = 'success' if hours >= stats['required_hours'] else 'warning' if hours >= 0.8 * stats['required_hours'] else 'danger'
-        st.markdown(f"""
-                            <tr>
-                                <td>{date}</td>
-                                <td>{hours:.1f}</td>
-                                <td class="{status}">{status}</td>
-                            </tr>
-        """, unsafe_allow_html=True)
-
-    st.markdown("""
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
 
 
 def main():
@@ -469,7 +264,7 @@ def main():
         uploaded_file = st.file_uploader(
             "Sube el archivo Excel",
             type=['xlsx', 'xls'],
-            help="Sube el archivo Excel de asistencia con las hojas necesarias"
+            help="Sube el archivo Excel de asistencia"
         )
 
     if uploaded_file:
@@ -481,9 +276,8 @@ def main():
             with st.sidebar:
                 st.subheader("👤 Selección de Empleado")
                 selected_employee = st.selectbox(
-                    "Selecciona un empleado para ver sus detalles",
-                    attendance_summary['employee_name'].unique(),
-                    format_func=lambda x: x
+                    "Selecciona un empleado",
+                    attendance_summary['employee_name'].unique()
                 )
 
             # Create dashboard for selected employee

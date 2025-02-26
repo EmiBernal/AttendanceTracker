@@ -611,15 +611,15 @@ class ExcelProcessor:
             except Exception as e:
                 print(f"Error processing Soledad's special absences: {str(e)}")
 
-            # Extraer datos directamente de las celdas específicas (filas 5-18)
-            empleados_df = summary_df.iloc[4:18, [0, 1, 2]]  # ID, Nombre, Departamento
+            # Extraer datos directamente de las celdas específicas (filas 5-21)
+            empleados_df = summary_df.iloc[4:21, [0, 1, 2]]  # ID, Nombre, Departamento
             # Agregar horas requeridas y trabajadas de las columnas D y E
-            empleados_df['required_hours'] = summary_df.iloc[4:18, 3]  # Columna D
-            empleados_df['actual_hours'] = summary_df.iloc[4:18, 4]    # Columna E
+            empleados_df['required_hours'] = summary_df.iloc[4:21, 3]  # Columna D
+            empleados_df['actual_hours'] = summary_df.iloc[4:21, 4]    # Columna E
             # Agregar el resto de las columnas
             empleados_df = pd.concat([
                 empleados_df,
-                summary_df.iloc[4:18, [5, 6, 7, 8, 13]]  # late_count hasta absences
+                summary_df.iloc[4:21, [5, 6, 7, 8, 13]]  # late_count hasta absences
             ], axis=1)
 
             print("\nDatos procesados de empleados:")
@@ -632,10 +632,8 @@ class ExcelProcessor:
             ]
 
             empleados_df = empleados_df.dropna(subset=['employee_name'])
-            empleados_df = empleados_df.fillna(0)
-
-            empleados_df['department'] = empleados_df['department'].apply(
-                lambda x: 'administracion' if str(x).strip().lower() == 'administri' else str(x).strip()
+            empleados_df['employee_name'] = empleados_df['employee_name'].astype(str).apply(
+                lambda x: x.strip()
             )
 
             numeric_cols = ['required_hours', 'actual_hours', 'late_count', 'late_minutes',
@@ -643,7 +641,8 @@ class ExcelProcessor:
             for col in numeric_cols:
                 empleados_df[col] = pd.to_numeric(empleados_df[col], errors='coerce').fillna(0)
 
-            def process_absences(absence_str):
+            # Convert absences to numeric, handling potential string values
+            def parse_absence(absence_str):
                 try:
                     if pd.isna(absence_str) or str(absence_str).strip() == '':
                         return 0
@@ -651,7 +650,9 @@ class ExcelProcessor:
                 except:
                     return 0
 
-            empleados_df['absences'] = empleados_df['absences'].apply(process_absences)
+            empleados_df['absences'] = empleados_df['absences'].apply(parse_absence)
+
+            print("\nEmpleados disponibles:", empleados_df['employee_name'].tolist())
             return empleados_df
 
         except Exception as e:
@@ -694,7 +695,7 @@ class ExcelProcessor:
         stats = {'name': employee_name,
             'department': str(employee_summary['department']),
             'required_hours': float(employee_summary['required_hours']),
-            'actual_hours': float(employee_summary['actual_hours']),
+            'actual_hours': float(employee_summary['actualhours']),
             'late_days': late_days,
             'late_minutes': late_minutes,
             'early_departures': int(employee_summary['early_departure_count']),

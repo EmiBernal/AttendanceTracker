@@ -1,7 +1,7 @@
 import streamlit as st
 from utils.excel_processor import ExcelProcessor
 
-# Page configuration and CSS with fixed animations
+# Page configuration
 st.set_page_config(
     page_title="Visualizador de Asistencia",
     page_icon="📊",
@@ -9,6 +9,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Updated CSS with animations and slide transitions
 st.markdown("""
 <style>
     /* Base transitions */
@@ -27,22 +28,35 @@ st.markdown("""
         }
     }
 
-    @keyframes gradientShift {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
+    /* Container for slide transitions */
+    .view-container {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
     }
 
-    @keyframes borderPulse {
-        0% { border-color: rgba(33, 150, 243, 0.1); }
-        50% { border-color: rgba(33, 150, 243, 0.3); }
-        100% { border-color: rgba(33, 150, 243, 0.1); }
+    .main-view, .detail-view {
+        width: 100%;
+        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    @keyframes glowPulse {
-        0% { box-shadow: 0 4px 20px rgba(33, 150, 243, 0.05); }
-        50% { box-shadow: 0 4px 30px rgba(33, 150, 243, 0.15); }
-        100% { box-shadow: 0 4px 20px rgba(33, 150, 243, 0.05); }
+    .main-view.slide-out {
+        transform: translateX(-100%);
+    }
+
+    .detail-view {
+        position: absolute;
+        top: 0;
+        left: 100%;
+        transform: translateX(0);
+        background: linear-gradient(135deg, rgba(33, 150, 243, 0.02) 0%, rgba(33, 150, 243, 0.05) 100%);
+        padding: 20px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    .detail-view.slide-in {
+        transform: translateX(0);
     }
 
     /* Premium card styling */
@@ -60,6 +74,7 @@ st.markdown("""
         text-align: center;
         position: relative;
         overflow: hidden;
+        cursor: pointer;
     }
 
     .info-group:hover {
@@ -68,7 +83,53 @@ st.markdown("""
         background-position: right center;
     }
 
-    /* Card styling with futuristic effects */
+    /* Back button styling */
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 16px;
+        margin-bottom: 20px;
+        border: none;
+        border-radius: 8px;
+        background: rgba(33, 150, 243, 0.1);
+        color: #2196F3;
+        font-family: 'SF Pro Display', system-ui;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .back-button:hover {
+        background: rgba(33, 150, 243, 0.2);
+        transform: translateX(-4px);
+    }
+
+    /* Detail view table */
+    .detail-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        font-family: 'SF Pro Display', system-ui;
+    }
+
+    .detail-table th,
+    .detail-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid rgba(33, 150, 243, 0.1);
+    }
+
+    .detail-table th {
+        background: rgba(33, 150, 243, 0.05);
+        font-weight: 500;
+        color: #2C3E50;
+    }
+
+    .detail-table tr:hover {
+        background: rgba(33, 150, 243, 0.05);
+    }
+
+    /* Rest of your existing styles remain unchanged */
     .stat-card {
         background-color: rgba(255, 255, 255, 0.05);
         border-radius: 10px;
@@ -91,7 +152,6 @@ st.markdown("""
         border-color: rgba(33, 150, 243, 0.3);
     }
 
-    /* Status colors with transitions */
     .warning { 
         color: #FFC107;
         transition: color 0.3s ease;
@@ -108,7 +168,6 @@ st.markdown("""
         text-shadow: 0 0 10px rgba(40, 167, 69, 0.2);
     }
 
-    /* Metrics styling with glow effect */
     .metric-value {
         font-size: 24px;
         font-weight: bold;
@@ -132,7 +191,6 @@ st.markdown("""
         color: #2196F3;
     }
 
-    /* Headers with glow effect */
     h1, h2, h3 {
         text-align: center;
         animation: fadeInUp 0.6s ease-out forwards;
@@ -146,7 +204,6 @@ st.markdown("""
         text-shadow: 0 0 30px rgba(33, 150, 243, 0.2);
     }
 
-    /* Department label with smooth transition */
     .department-label {
         color: #6C757D;
         font-size: 14px;
@@ -154,7 +211,6 @@ st.markdown("""
         transition: color 0.3s ease;
     }
 
-    /* Special schedule with highlight effect */
     .special-schedule {
         color: #F59E0B;
         font-size: 14px;
@@ -163,7 +219,6 @@ st.markdown("""
         text-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
     }
 
-    /* Streamlit component enhancements */
     .stSelectbox, .stFileUploader {
         transition: transform 0.3s ease,
                     box-shadow 0.3s ease;
@@ -174,37 +229,80 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 </style>
+
+<script>
+function showDetailView(viewId) {
+    const mainView = document.querySelector('.main-view');
+    const detailView = document.querySelector('.detail-view-' + viewId);
+
+    mainView.classList.add('slide-out');
+    detailView.classList.add('slide-in');
+}
+
+function hideDetailView(viewId) {
+    const mainView = document.querySelector('.main-view');
+    const detailView = document.querySelector('.detail-view-' + viewId);
+
+    mainView.classList.remove('slide-out');
+    detailView.classList.remove('slide-in');
+}
+</script>
 """, unsafe_allow_html=True)
 
-def create_missing_records_section(stats):
-    """Creates a section for displaying missing records"""
-    missing_records = [
-        ('Sin Registro de Entrada', stats['missing_entry_days'], "Total días sin marcar"),
-        ('Sin Registro de Salida', stats['missing_exit_days'], "Total días sin marcar"),
-        ('Sin Registro de Almuerzo', stats['missing_lunch_days'], "Total días sin marcar")
-    ]
-
-    st.markdown("""
-        <div class="stat-group">
-            <h3>📋 Registros Faltantes</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+def create_hours_detail_view(stats, daily_data):
+    """Creates a detailed view for hours worked"""
+    st.markdown(f"""
+        <div class="detail-view detail-view-hours">
+            <button class="back-button" onclick="hideDetailView('hours')">
+                ← Volver
+            </button>
+            <h2>Detalle de Horas Trabajadas</h2>
+            <div class="info-group">
+                <div class="metric-label">Total de Horas</div>
+                <div class="metric-value">{stats['actual_hours']:.1f}/{stats['required_hours']:.1f}</div>
+            </div>
+            <table class="detail-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Horas</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
     """, unsafe_allow_html=True)
 
-    for label, value, subtitle in missing_records:
-        status = get_status(value)
+    for day in daily_data:
+        hours_ratio = day['hours'] / stats['required_hours'] * 100 if stats['required_hours'] >0 else 0
+        status = 'success' if hours_ratio >= 95 else 'warning' if hours_ratio >= 85 else 'danger'
         st.markdown(f"""
-            <div class="stat-card">
-                <div class="metric-label">{label}</div>
-                <div class="metric-value {status}">{value}</div>
-                <div class="metric-label">{subtitle}</div>
-            </div>
+            <tr>
+                <td>{day['date']}</td>
+                <td>{day['entry']}</td>
+                <td>{day['exit']}</td>
+                <td>{day['hours']:.1f}</td>
+                <td class="{status}">{status}</td>
+            </tr>
         """, unsafe_allow_html=True)
 
-    st.markdown("</div></div>", unsafe_allow_html=True)
+    st.markdown("""
+                </tbody>
+            </table>
+        </div>
+    """, unsafe_allow_html=True)
 
 def create_employee_dashboard(processor, employee_name):
     """Create a detailed dashboard for a single employee"""
     stats = processor.get_employee_stats(employee_name)
+    daily_data = processor.get_employee_daily_data(employee_name)
+
+    # Container for all views
+    st.markdown("""
+        <div class="view-container">
+            <div class="main-view">
+    """, unsafe_allow_html=True)
 
     # Header with employee info
     st.markdown(f"""
@@ -215,12 +313,12 @@ def create_employee_dashboard(processor, employee_name):
         </div>
     """, unsafe_allow_html=True)
 
-    # Hours Summary - Full Width
+    # Hours Summary Card - Clickable
     hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100) if stats['required_hours'] > 0 else 0
     hours_status = 'success' if hours_ratio >= 95 else 'warning' if hours_ratio >= 85 else 'danger'
 
     st.markdown(f"""
-        <div class="info-group">
+        <div class="info-group" onclick="showDetailView('hours')">
             <h3>📊 Resumen de Horas</h3>
             <div class="metric-label">Horas Trabajadas</div>
             <div class="metric-value {hours_status}" style="font-size: 32px;">
@@ -278,6 +376,40 @@ def create_employee_dashboard(processor, employee_name):
                 <div class="metric-value {status}">{value}</div>
                 <div class="metric-label">{subtitle}</div>
                 <div class="metric-label warning">Requiere Autorización</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("</div></div>", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)  # Close main-view
+
+    # Create detail view for hours
+    create_hours_detail_view(stats, daily_data)
+
+    st.markdown("</div>", unsafe_allow_html=True)  # Close view-container
+
+
+def create_missing_records_section(stats):
+    """Creates a section for displaying missing records"""
+    missing_records = [
+        ('Sin Registro de Entrada', stats['missing_entry_days'], "Total días sin marcar"),
+        ('Sin Registro de Salida', stats['missing_exit_days'], "Total días sin marcar"),
+        ('Sin Registro de Almuerzo', stats['missing_lunch_days'], "Total días sin marcar")
+    ]
+
+    st.markdown("""
+        <div class="stat-group">
+            <h3>📋 Registros Faltantes</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+    """, unsafe_allow_html=True)
+
+    for label, value, subtitle in missing_records:
+        status = get_status(value)
+        st.markdown(f"""
+            <div class="stat-card">
+                <div class="metric-label">{label}</div>
+                <div class="metric-value {status}">{value}</div>
+                <div class="metric-label">{subtitle}</div>
             </div>
         """, unsafe_allow_html=True)
 

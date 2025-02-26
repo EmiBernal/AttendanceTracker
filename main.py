@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Updated CSS with enhanced animations and transitions
+# Updated CSS with enhanced animations and JavaScript for typewriter effect
 st.markdown("""
 <style>
     /* Base transitions and animations */
@@ -28,11 +28,6 @@ st.markdown("""
         }
     }
 
-    @keyframes shimmer {
-        0% { background-position: -1000px 0; }
-        100% { background-position: 1000px 0; }
-    }
-
     /* Premium card styling with enhanced animations */
     .info-group {
         background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0.1) 100%);
@@ -43,24 +38,6 @@ st.markdown("""
         border: 1px solid rgba(33, 150, 243, 0.1);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
         animation: fadeInUp 0.6s ease-out forwards;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .info-group::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-        transform: translateX(-100%);
-        transition: transform 0.6s;
-    }
-
-    .info-group:hover::before {
-        transform: translateX(100%);
     }
 
     .info-group:hover {
@@ -68,7 +45,7 @@ st.markdown("""
         box-shadow: 0 8px 30px rgba(33, 150, 243, 0.15);
     }
 
-    /* Card styling with loading animation */
+    /* Card styling */
     .stat-card {
         background-color: rgba(255, 255, 255, 0.05);
         border-radius: 10px;
@@ -77,54 +54,11 @@ st.markdown("""
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid rgba(233, 236, 239, 0.2);
         animation: fadeInUp 0.6s ease-out forwards;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .stat-card.loading {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 1000px 100%;
-        animation: shimmer 2s infinite linear;
     }
 
     .stat-card:hover {
         transform: translateY(-2px) scale(1.02);
         box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-    }
-
-    .stat-card::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, #2196F3, transparent);
-        transform: scaleX(0);
-        transition: transform 0.3s ease;
-    }
-
-    .stat-card:hover::after {
-        transform: scaleX(1);
-    }
-
-    /* Enhanced typewriter effect */
-    @keyframes typewriter {
-        from { width: 0; }
-        to { width: 100%; }
-    }
-
-    @keyframes blink {
-        50% { border-color: transparent; }
-    }
-
-    .typewriter {
-        overflow: hidden;
-        white-space: nowrap;
-        border-right: 2px solid;
-        animation: 
-            typewriter 1s steps(40, end),
-            blink 0.75s step-end infinite;
     }
 
     /* Status colors with transitions */
@@ -141,17 +75,17 @@ st.markdown("""
         transition: color 0.3s ease;
     }
 
-    /* Enhanced metrics styling */
+    /* Metrics styling */
     .metric-value {
         font-size: 24px;
         font-weight: bold;
         margin: 8px 0;
         transition: all 0.3s ease;
+        visibility: hidden; /* Hide initially */
     }
 
-    .stat-card:hover .metric-value {
-        transform: scale(1.05);
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    .metric-value.typed {
+        visibility: visible; /* Show when typing is complete */
     }
 
     .metric-label {
@@ -160,51 +94,61 @@ st.markdown("""
         transition: color 0.3s ease;
     }
 
-    .stat-card:hover .metric-label {
-        color: #2196F3;
-    }
-
-    /* Navigation transitions */
-    .stSelectbox {
-        transition: all 0.3s ease;
-    }
-
-    .stSelectbox:hover {
-        transform: translateY(-2px);
-    }
-
-    /* File uploader animations */
-    .stFileUploader {
-        transition: all 0.3s ease;
-    }
-
-    .stFileUploader:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    /* Department and special schedule labels */
+    /* Other styles remain unchanged */
     .department-label {
         color: #6C757D;
         font-size: 14px;
         margin-bottom: 8px;
-        transition: all 0.3s ease;
     }
 
     .special-schedule {
         color: #F59E0B;
         font-size: 14px;
         margin-top: 4px;
-        animation: fadeInUp 0.6s ease-out forwards;
     }
 
-    /* Section headers with gradual reveal */
     h1, h2, h3 {
         opacity: 0;
         animation: fadeInUp 0.6s ease-out forwards;
         animation-delay: 0.2s;
     }
 </style>
+
+<script>
+function typeValue(element, text, speed = 50) {
+    element.style.visibility = 'visible';
+    element.textContent = '';
+    let i = 0;
+
+    function type() {
+        if (i < text.length) {
+            element.textContent += text.charAt(i);
+            i++;
+            setTimeout(type, speed);
+        } else {
+            element.classList.add('typed');
+        }
+    }
+
+    type();
+}
+
+// Function to start typing all metric values
+function startTyping() {
+    const metricValues = document.querySelectorAll('.metric-value');
+    metricValues.forEach((element, index) => {
+        const text = element.getAttribute('data-value');
+        setTimeout(() => {
+            typeValue(element, text);
+        }, index * 500); // Stagger the start of each typing animation
+    });
+}
+
+// Start typing when the page is ready
+document.addEventListener('DOMContentLoaded', () => {
+    startTyping();
+});
+</script>
 """, unsafe_allow_html=True)
 
 def create_missing_records_section(stats):
@@ -226,7 +170,7 @@ def create_missing_records_section(stats):
         st.markdown(f"""
             <div class="stat-card">
                 <div class="metric-label">{label}</div>
-                <div class="metric-value {status} typewriter">{value}</div>
+                <div class="metric-value {status}" data-value="{value}">{value}</div>
                 <div class="metric-label">{subtitle}</div>
             </div>
         """, unsafe_allow_html=True)
@@ -255,7 +199,7 @@ def create_employee_dashboard(processor, employee_name):
             <h3>📊 Resumen de Horas</h3>
             <div style="text-align: center; padding: 20px;">
                 <div class="metric-label">Horas Trabajadas</div>
-                <div class="metric-value {hours_status} typewriter" style="font-size: 32px;">
+                <div class="metric-value {hours_status}" style="font-size: 32px;" data-value="{stats['actual_hours']:.1f}/{stats['required_hours']:.1f}">
                     {stats['actual_hours']:.1f}/{stats['required_hours']:.1f}
                 </div>
                 <div class="metric-label">({hours_ratio:.1f}%)</div>
@@ -281,7 +225,7 @@ def create_employee_dashboard(processor, employee_name):
         st.markdown(f"""
             <div class="stat-card">
                 <div class="metric-label">{label}</div>
-                <div class="metric-value {status}">{value}</div>
+                <div class="metric-value {status}" data-value="{value}">{value}</div>
                 <div class="metric-label">{subtitle}</div>
             </div>
         """, unsafe_allow_html=True)
@@ -304,11 +248,11 @@ def create_employee_dashboard(processor, employee_name):
     ]
 
     for label, value, subtitle in auth_metrics:
-        status = 'success' if value == 0 else 'warning' if value <= 2 else 'danger'
+        status = get_status(value)
         st.markdown(f"""
-            <div class="stat-card auth-required">
+            <div class="stat-card">
                 <div class="metric-label">{label}</div>
-                <div class="metric-value {status}">{value}</div>
+                <div class="metric-value {status}" data-value="{value}">{value}</div>
                 <div class="metric-label">{subtitle}</div>
                 <div class="metric-label warning">Requiere Autorización</div>
             </div>
@@ -346,6 +290,13 @@ def main():
 
             # Create dashboard for selected employee
             create_employee_dashboard(processor, selected_employee)
+
+            # Trigger typewriter effect after data is loaded
+            st.markdown("""
+                <script>
+                    startTyping();
+                </script>
+            """, unsafe_allow_html=True)
 
         except Exception as e:
             st.error(f"Error procesando el archivo: {str(e)}")

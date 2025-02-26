@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Updated CSS with animations and slide transitions
+# Updated CSS with blur effects
 st.markdown("""
 <style>
     /* Base transitions */
@@ -51,7 +51,7 @@ st.markdown("""
         background-position: right center;
     }
 
-    /* Stat card styling */
+    /* Stat card styling with blur effects */
     .stat-card {
         background-color: rgba(255, 255, 255, 0.05);
         border-radius: 10px;
@@ -72,6 +72,34 @@ st.markdown("""
         transform: translateY(-2px) scale(1.02);
         box-shadow: 0 8px 24px rgba(33, 150, 243, 0.15);
         border-color: rgba(33, 150, 243, 0.3);
+    }
+
+    /* Hover blur effect */
+    .stat-card .content {
+        transition: filter 0.3s ease, opacity 0.3s ease;
+    }
+
+    .stat-card:hover .content {
+        filter: blur(4px);
+        opacity: 0.3;
+    }
+
+    .stat-card .hover-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        font-size: 16px;
+        font-weight: 500;
+        color: #2196F3;
+        pointer-events: none;
+        white-space: nowrap;
+    }
+
+    .stat-card:hover .hover-text {
+        opacity: 1;
     }
 
     .metric-value {
@@ -166,18 +194,21 @@ def create_employee_dashboard(processor, employee_name):
     """, unsafe_allow_html=True)
 
     regular_metrics = [
-        ('Inasistencias', stats['absences'], "Total días"),
-        ('Días con Llegada Tarde', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total"),
-        ('Días con Exceso en Almuerzo', stats['lunch_overtime_days'], f"{stats['total_lunch_minutes']:.0f} minutos en total")
+        ('Inasistencias', stats['absences'], "Total días", "Días sin asistir al trabajo"),
+        ('Días con Llegada Tarde', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total", "Días con retraso en la entrada"),
+        ('Días con Exceso en Almuerzo', stats['lunch_overtime_days'], f"{stats['total_lunch_minutes']:.0f} minutos en total", "Excedido en tiempo de almuerzo")
     ]
 
-    for label, value, subtitle in regular_metrics:
+    for label, value, subtitle, hover_text in regular_metrics:
         status = get_status(value)
         st.markdown(f"""
             <div class="stat-card">
-                <div class="metric-label">{label}</div>
-                <div class="metric-value {status}">{value}</div>
-                <div class="metric-label">{subtitle}</div>
+                <div class="content">
+                    <div class="metric-label">{label}</div>
+                    <div class="metric-value {status}">{value}</div>
+                    <div class="metric-label">{subtitle}</div>
+                </div>
+                <div class="hover-text">{hover_text}</div>
             </div>
         """, unsafe_allow_html=True)
 
@@ -186,37 +217,12 @@ def create_employee_dashboard(processor, employee_name):
     # Missing Records Section
     create_missing_records_section(stats)
 
-    # Metrics Requiring Authorization
-    st.markdown("""
-        <div class="stat-group">
-            <h3>🔒 Situaciones que Requieren Autorización</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-    """, unsafe_allow_html=True)
-
-    auth_metrics = [
-        ('Retiros Anticipados', stats['early_departures'], f"{stats['early_minutes']:.0f} minutos en total"),
-        ('Ingresos con Retraso', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total")
-    ]
-
-    for label, value, subtitle in auth_metrics:
-        status = get_status(value)
-        st.markdown(f"""
-            <div class="stat-card">
-                <div class="metric-label">{label}</div>
-                <div class="metric-value {status}">{value}</div>
-                <div class="metric-label">{subtitle}</div>
-                <div class="metric-label warning">Requiere Autorización</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("</div></div>", unsafe_allow_html=True)
-
 def create_missing_records_section(stats):
     """Creates a section for displaying missing records"""
     missing_records = [
-        ('Sin Registro de Entrada', stats['missing_entry_days'], "Total días sin marcar"),
-        ('Sin Registro de Salida', stats['missing_exit_days'], "Total días sin marcar"),
-        ('Sin Registro de Almuerzo', stats['missing_lunch_days'], "Total días sin marcar")
+        ('Sin Registro de Entrada', stats['missing_entry_days'], "Total días sin marcar", "Días sin registro de entrada"),
+        ('Sin Registro de Salida', stats['missing_exit_days'], "Total días sin marcar", "Días sin registro de salida"),
+        ('Sin Registro de Almuerzo', stats['missing_lunch_days'], "Total días sin marcar", "Días sin marcar almuerzo")
     ]
 
     st.markdown("""
@@ -225,13 +231,16 @@ def create_missing_records_section(stats):
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
     """, unsafe_allow_html=True)
 
-    for label, value, subtitle in missing_records:
+    for label, value, subtitle, hover_text in missing_records:
         status = get_status(value)
         st.markdown(f"""
             <div class="stat-card">
-                <div class="metric-label">{label}</div>
-                <div class="metric-value {status}">{value}</div>
-                <div class="metric-label">{subtitle}</div>
+                <div class="content">
+                    <div class="metric-label">{label}</div>
+                    <div class="metric-value {status}">{value}</div>
+                    <div class="metric-label">{subtitle}</div>
+                </div>
+                <div class="hover-text">{hover_text}</div>
             </div>
         """, unsafe_allow_html=True)
 

@@ -198,9 +198,9 @@ def create_employee_dashboard(processor, employee_name):
     lunch_days_text = "\n".join([f"• {day}" for day in lunch_overtime_days]) if lunch_overtime_days else "No hay días registrados"
 
     regular_metrics = [
-        ('Inasistencias', stats['absences'], "Total días", f"Días sin asistir al trabajo:\n{absence_days_text}"),
-        ('Días con Llegada Tarde', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total", f"Días con retraso:\n{late_days_text}"),
-        ('Días con Exceso en Almuerzo', stats['lunch_overtime_days'], f"{stats['total_lunch_minutes']:.0f} minutos en total", f"Días con exceso:\n{lunch_days_text}")
+        ('Inasistencias', len(absence_days), "Total días", f"Días sin asistir al trabajo:\n{absence_days_text}"),
+        ('Días con Llegada Tarde', len(late_days), f"{stats['late_minutes']:.0f} minutos en total", f"Días con retraso:\n{late_days_text}"),
+        ('Días con Exceso en Almuerzo', len(lunch_overtime_days), f"{stats['total_lunch_minutes']:.0f} minutos en total", f"Días con exceso:\n{lunch_days_text}")
     ]
 
     for label, value, subtitle, hover_text in regular_metrics:
@@ -229,8 +229,8 @@ def create_employee_dashboard(processor, employee_name):
     early_departure_days_text = "\n".join([f"• {day}" for day in early_departure_days]) if early_departure_days else "No hay días registrados"
 
     auth_metrics = [
-        ('Retiros Anticipados', stats['early_departures'], f"{stats['early_minutes']:.0f} minutos en total", f"Días con salida anticipada:\n{early_departure_days_text}"),
-        ('Ingresos con Retraso', stats['late_days'], f"{stats['late_minutes']:.0f} minutos en total", f"Días con llegada tarde:\n{late_days_text}"),
+        ('Retiros Anticipados', len(early_departure_days), f"{stats['early_minutes']:.0f} minutos en total", f"Días con salida anticipada:\n{early_departure_days_text}"),
+        ('Ingresos con Retraso', len(late_days), f"{stats['late_minutes']:.0f} minutos en total", f"Días con llegada tarde:\n{late_days_text}"),
         ('Retiros Durante Horario', stats.get('mid_day_departures', 0), "Total salidas", "Salidas durante horario laboral")
     ]
 
@@ -256,9 +256,9 @@ def create_employee_dashboard(processor, employee_name):
 def create_missing_records_section(stats):
     """Creates a section for displaying missing records"""
     missing_records = [
-        ('Sin Registro de Entrada', stats['missing_entry_days'], "Total días sin marcar", "Días sin registro de entrada"),
-        ('Sin Registro de Salida', stats['missing_exit_days'], "Total días sin marcar", "Días sin registro de salida"),
-        ('Sin Registro de Almuerzo', stats['missing_lunch_days'], "Total días sin marcar", "Días sin marcar almuerzo")
+        ('Sin Registro de Entrada', len(stats['missing_entry_days']), "Total días sin marcar", "Días sin registro de entrada"),
+        ('Sin Registro de Salida', len(stats['missing_exit_days']), "Total días sin marcar", "Días sin registro de salida"),
+        ('Sin Registro de Almuerzo', len(stats['missing_lunch_days']), "Total días sin marcar", "Días sin marcar almuerzo")
     ]
 
     st.markdown("""
@@ -283,7 +283,17 @@ def create_missing_records_section(stats):
     st.markdown("</div></div>", unsafe_allow_html=True)
 
 def get_status(value, warning_threshold=3, danger_threshold=5):
-    return 'success' if value == 0 else 'warning' if value <= warning_threshold else 'danger'
+    """Determina el estado (success, warning, danger) basado en el valor"""
+    # Si el valor es una lista, usar su longitud
+    if isinstance(value, list):
+        value = len(value)
+    # Si el valor es un número o puede ser convertido a número
+    try:
+        value = float(value) if not isinstance(value, (int, float)) else value
+        return 'success' if value == 0 else 'warning' if value <= warning_threshold else 'danger'
+    except (ValueError, TypeError):
+        # Si no se puede convertir a número, retornar 'warning' por defecto
+        return 'warning'
 
 def main():
     st.title("📊 Visualizador de Asistencia")

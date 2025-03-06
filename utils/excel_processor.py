@@ -322,7 +322,6 @@ class ExcelProcessor:
             print(f"Total días de llegada tarde: {late_days}")
             print(f"Total minutos de tardanza: {total_late_minutes:.0f}")
             return late_days, total_late_minutes
-
         except Exception as e:
             print(f"Error general: {str(e)}")
             return 0, 0
@@ -694,9 +693,8 @@ class ExcelProcessor:
             'missing_exit_days': missing_exit,
             'missing_lunch_days': missing_lunch,
             'absences': int(employee_summary['absences']),
-            'special_schedule': employee_name.lower() in self.SPECIAL_SCHEDULES
+            'special_schedule': employeename.lower() in self.SPECIAL_SCHEDULES
                 }
-
         return stats
 
     def calculate_valentina_absences(self, df):
@@ -1003,7 +1001,6 @@ class ExcelProcessor:
             # Sort data by date
             daily_data.sort(key=lambda x: x['date'])
             return daily_data
-
         except Exception as e:
             print(f"Error getting daily data: {str(e)}")
             return []
@@ -1099,41 +1096,66 @@ class ExcelProcessor:
         try:
             late_days = []
             exceptional_index = self.excel_file.sheet_names.index('Exceptional')
-            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index+1:]  # Start after Exceptional
+
+            # Define the three possible positions
+            positions = [
+                {'name_col': 'J', 'day_col': 'A', 'entry_col': 'B'},
+                {'name_col': 'Y', 'day_col': 'P', 'entry_col': 'Q'},
+                {'name_col': 'AN', 'day_col': 'AE', 'entry_col': 'AF'}
+            ]
 
             for sheet in attendance_sheets:
-                df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
 
-                positions = [
-                    {'name_col': 'J', 'day_col': 'A', 'entry_col': 'B'},
-                    {'name_col': 'Y', 'day_col': 'P', 'entry_col': 'Q'},
-                    {'name_col': 'AN', 'day_col': 'AE', 'entry_col': 'AF'}
-                ]
+                    # Check each possible position
+                    for position in positions:
+                        try:
+                            # Check if employee name matches in the correct position (row 3)
+                            name_col_index = self.get_column_index(position['name_col'])
+                            name_cell = df.iloc[2, name_col_index]
 
-                for position in positions:
-                    name_col_index = self.get_column_index(position['name_col'])
-                    name_cell = df.iloc[2, name_col_index]
-
-                    if pd.isna(name_cell):
-                        continue
-
-                    if str(name_cell).strip() == employee_name:
-                        day_col = self.get_column_index(position['day_col'])
-                        entry_col = self.get_column_index(position['entry_col'])
-
-                        for row in range(11, 42):
-                            try:
-                                day_value = df.iloc[row, day_col]
-                                entry_time = df.iloc[row, entry_col]
-
-                                if not pd.isna(day_value) and not pd.isna(entry_time):
-                                    entry_time = pd.to_datetime(entry_time).time()
-                                    if entry_time > self.WORK_START_TIME:
-                                        late_days.append(str(day_value).strip())
-                            except Exception as e:
+                            if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
                                 continue
 
+                            # If name matches, check for late arrivals
+                            day_col = self.get_column_index(position['day_col'])
+                            entry_col = self.get_column_index(position['entry_col'])
+
+                            for row in range(11, 42):  # Check rows 12-42
+                                try:
+                                    day_value = df.iloc[row, day_col]
+                                    entry_time = df.iloc[row, entry_col]
+
+                                    if not pd.isna(day_value) and not pd.isna(entry_time):
+                                        # Skip weekends
+                                        day_str = str(day_value).strip()
+                                        if any(abbr in day_str.lower() for abbr in ['sa', 'su']):
+                                            continue
+
+                                        entry_time = pd.to_datetime(entry_time).time()
+                                        if entry_time > self.WORK_START_TIME:
+                                            # Translate the day to Spanish format
+                                            formatted_day = self.translate_day_abbreviation(day_str)
+                                            print(f"Llegada tarde en hoja {sheet}, fila {row+1}, día: {formatted_day}")
+                                            late_days.append(formatted_day)
+
+                                except Exception as e:
+                                    print(f"Error processing row {row+1}: {str(e)}")
+                                    continue
+
+                        except Exception as e:
+                            print(f"Error checking position {position['name_col']}: {str(e)}")
+                            continue
+
+                except Exception as e:
+                    print(f"Error processing sheet {sheet}: {str(e)}")
+                    continue
+
+            print(f"Total días con llegada tarde: {len(late_days)}")
             return late_days
+
         except Exception as e:
             print(f"Error getting late days: {str(e)}")
             return []

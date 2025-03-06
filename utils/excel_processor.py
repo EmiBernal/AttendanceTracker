@@ -700,7 +700,7 @@ class ExcelProcessor:
         return stats
 
     def calculate_valentina_absences(self, df):
-        """Calcula las ausencias de Valentinaverificando solo la columna AK"""
+        """Calcula las ausencias de Valentinaverificandosolo la columna AK"""
         absences =0
         try:
             absence_col = self.get_column_index('AK')
@@ -1046,7 +1046,8 @@ class ExcelProcessor:
                                     if not pd.isna(absence_value) and str(absence_value).strip().lower() == 'absence':
                                         day_value = df.iloc[row, day_col]
                                         if not pd.isna(day_value):
-                                            day_str = str(day_value).strip()
+                                            # Translate the day abbreviation to Spanish full name
+                                            day_str = self.translate_day_abbreviation(str(day_value))
                                             print(f"Ausencia encontrada en hoja {sheet}, fila {row+1}, día: {day_str}")
                                             absence_days.append(day_str)
                                 except Exception as e:
@@ -1067,6 +1068,31 @@ class ExcelProcessor:
         except Exception as e:
             print(f"Error getting absence days: {str(e)}")
             return []
+
+    def translate_day_abbreviation(self, day_str):
+        """Translate day abbreviations to Spanish full names"""
+        # First clean the day string to get just the day abbreviation
+        parts = day_str.strip().split()
+        if len(parts) >= 2:
+            day_num = parts[0]
+            day_abbr = parts[1].lower()
+
+            # Translation dictionary
+            translations = {
+                'su': 'Domingo',
+                'mo': 'Lunes',
+                'tu': 'Martes',
+                'we': 'Miércoles',
+                'th': 'Jueves',
+                'fr': 'Viernes',
+                'sa': 'Sábado'
+            }
+
+            # Return formatted string with number and translated day
+            if day_abbr in translations:
+                return f"{day_num} {translations[day_abbr]}"
+
+        return day_str  # Return original if can't translate
 
     def get_late_days(self, employee_name):
         """Returns a list of days when the employee arrived late"""

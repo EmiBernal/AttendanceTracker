@@ -662,39 +662,42 @@ class ExcelProcessor:
                 'actual_hours', 'late_count', 'late_minutes', 'early_departure_count',
                 'early_departure_minutes', 'absences'
             ])
+    
+    def get_employee_summary(self, employee_name):
+        """Extracts summary data for a specific employee."""
+        attendance_summary = self.process_attendance_summary()
+        try:
+            employee_summary = attendance_summary[attendance_summary['employee_name'].str.strip() == employee_name].iloc[0]
+            return employee_summary.to_dict()
+        except IndexError:
+            return {'department': None, 'required_hours': 0, 'actual_hours': 0, 'absences': 0}
 
     def get_employee_stats(self, employee_name):
-        """Obtiene las estadísticas completas de un empleado"""
-        # Obtener datos del resumen
-        attendance_summary = self.process_attendance_summary()
-        employee_summary = attendance_summary[attendance_summary['employee_name'].str.strip() == employee_name].iloc[0]
-
-        # Calcular días con llegada tarde y minutos totales
-        late_days, late_minutes = self.count_late_days(employee_name)
-
-        # Calcular días con exceso de almuerzo y minutos totales
-        lunch_overtime_days, total_lunch_minutes = self.count_lunch_overtime_days(employee_name)
-
-        # Calcular días sin registros
+        """Get comprehensive statistics for an employee"""
+        employee_summary = self.get_employee_summary(employee_name)
         missing_entry, missing_exit, missing_lunch = self.count_missing_records(employee_name)
+        late_days, late_minutes = self.count_late_days(employee_name)
+        lunch_overtime_days, total_lunch_minutes = self.count_lunch_overtime_days(employee_name)
+        early_departures, early_minutes = self.count_early_departures(employee_name)
 
         stats = {
             'name': employee_name,
-            'department': str(employee_summary['department']),
+            'department': employee_summary['department'],
             'required_hours': float(employee_summary['required_hours']),
             'actual_hours': float(employee_summary['actual_hours']),
             'late_days': late_days,
-            'late_minutes': late_minutes,
-            'early_departures': int(employee_summary['early_departure_count']),
-            'early_minutes': float(employee_summary['early_departure_minutes']),
+'late_minutes': late_minutes,
             'lunch_overtime_days': lunch_overtime_days,
             'total_lunch_minutes': total_lunch_minutes,
+            'early_departures': early_departures,
+            'early_minutes': early_minutes,
             'missing_entry_days': missing_entry,
             'missing_exit_days': missing_exit,
             'missing_lunch_days': missing_lunch,
             'absences': int(employee_summary['absences']),
-            'special_schedule': employeename.lower() in self.SPECIAL_SCHEDULES
-                }
+            'special_schedule': employee_name.lower() in self.SPECIAL_SCHEDULES
+        }
+
         return stats
 
     def calculate_valentina_absences(self, df):

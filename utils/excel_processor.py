@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
+from fpdf import FPDF
 
 class ExcelProcessor:
     def __init__(self, file):
@@ -1193,3 +1194,116 @@ class ExcelProcessor:
         except Exception as e:
             print(f"Error getting lunch overtime days: {str(e)}")
             return []
+
+    def export_to_csv(self, employee_name, filepath):
+        """Export employee performance data to CSV"""
+        try:
+            stats = self.get_employee_stats(employee_name)
+            # Get specific days information
+            absence_days = self.get_absence_days(employee_name)
+            late_days = self.get_late_days(employee_name)
+            early_departure_days = self.get_early_departure_days(employee_name)
+            lunch_overtime_days = self.get_lunch_overtime_days(employee_name)
+
+            data = {
+                'Nombre': [stats['name']],
+                'Departamento': [stats['department']],
+                'Horas Requeridas': [f"{stats['required_hours']:.1f}"],
+                'Horas Trabajadas': [f"{stats['actual_hours']:.1f}"],
+                'Porcentaje Completado': [f"{(stats['actual_hours'] / stats['required_hours'] * 100):.1f}%"],
+                'Inasistencias': [stats['absences']],
+                'Días con Llegada Tarde': [stats['late_days']],
+                'Minutos Totales de Retraso': [f"{stats['late_minutes']:.0f}"],
+                'Días con Exceso en Almuerzo': [stats['lunch_overtime_days']],
+                'Minutos Totales Excedidos en Almuerzo': [f"{stats['total_lunch_minutes']:.0f}"],
+                'Retiros Anticipados': [stats['early_departures']],
+                'Minutos Totales de Salida Anticipada': [f"{stats['early_minutes']:.0f}"],
+                'Días sin Registro de Entrada': [stats['missing_entry_days']],
+                'Días sin Registro de Salida': [stats['missing_exit_days']],
+                'Días sin Registro de Almuerzo': [stats['missing_lunch_days']]
+            }
+
+            # Add specific days to the data
+            data['Días de Ausencia'] = [', '.join(absence_days) if absence_days else 'Ninguno']
+            data['Días de Llegada Tarde'] = [', '.join(late_days) if late_days else 'Ninguno']
+            data['Días de Salida Anticipada'] = [', '.join(early_departure_days) if early_departure_days else 'Ninguno']
+            data['Días con Exceso de Almuerzo'] = [', '.join(lunch_overtime_days) if lunch_overtime_days else 'Ninguno']
+
+            df = pd.DataFrame(data)
+            df.to_csv(filepath, index=False, encoding='utf-8-sig')
+            return True
+        except Exception as e:
+            print(f"Error exporting to CSV: {str(e)}")
+            return False
+
+    def export_to_pdf(self, employee_name, filepath):
+        """Export employee performance data to PDF"""
+        try:
+            from fpdf import FPDF
+            stats = self.get_employee_stats(employee_name)
+
+            # Get specific days information
+            absence_days = self.get_absence_days(employee_name)
+            late_days = self.get_late_days(employee_name)
+            early_departure_days = self.get_early_departure_days(employee_name)
+            lunch_overtime_days = self.get_lunch_overtime_days(employee_name)
+
+            # Create PDF
+            pdf = FPDF()
+            pdf.add_page()
+
+            # Set font
+            pdf.add_font('DejaVu', '', 'DejaVuSansCondensed.ttf', uni=True)
+            pdf.set_font('DejaVu', '', 12)
+
+            # Title
+            pdf.set_font('DejaVu', '', 16)
+            pdf.cell(0, 10, 'Reporte de Desempeño', 0, 1, 'C')
+            pdf.ln(10)
+
+            # Employee Info
+            pdf.set_font('DejaVu', '', 14)
+            pdf.cell(0, 10, f"Empleado: {stats['name']}", 0, 1)
+            pdf.cell(0, 10, f"Departamento: {stats['department']}", 0, 1)
+            pdf.ln(5)
+
+            # Hours Summary
+            pdf.set_font('DejaVu', '', 12)
+            hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100)
+            pdf.cell(0, 10, f"Horas Trabajadas: {stats['actual_hours']:.1f}/{stats['required_hours']:.1f} ({hours_ratio:.1f}%)", 0, 1)
+            pdf.ln(5)
+
+            # Attendance Metrics
+            pdf.cell(0, 10, 'Métricas de Asistencia:', 0, 1)
+            metrics = [
+                ('Inasistencias', stats['absences'], 'días'),
+                ('Llegadas Tarde', stats['late_days'], f"días ({stats['late_minutes']:.0f} min)"),
+                ('Exceso en Almuerzo', stats['lunch_overtime_days'], f"días ({stats['total_lunch_minutes']:.0f} min)"),
+                ('Retiros Anticipados', stats['early_departures'], f"días ({stats['early_minutes']:.0f} min)"),
+                ('Sin Registro de Entrada', stats['missing_entry_days'], 'días'),
+                ('Sin Registro de Salida', stats['missing_exit_days'], 'días'),
+                ('Sin Registro de Almuerzo', stats['missing_lunch_days'], 'días')
+            ]
+
+            for metric, value, unit in metrics:
+                pdf.cell(0, 8, f"{metric}: {value} {unit}", 0, 1)
+
+            pdf.ln(5)
+
+            # Detailed Days
+            pdf.cell(0, 10, 'Detalle de Días:', 0, 1)
+            if absence_days:
+                pdf.multi_cell(0, 8, f"Días de Ausencia: {', '.join(absence_days)}")
+            if late_days:
+                pdf.multi_cell(0, 8, f"Días de Llegada Tarde: {', '.join(late_days)}")
+            if early_departure_days:
+                pdf.multi_cell(0, 8, f"Días de Salida Anticipada: {', '.join(early_departure_days)}")
+            if lunch_overtime_days:
+                pdf.multi_cell(0, 8, f"Días con Exceso de Almuerzo: {', '.join(lunch_overtime_days)}")
+
+            # Save PDF
+            pdf.output(filepath)
+            return True
+        except Exception as e:
+            print(f"Error exporting to PDF: {str(e)}")
+            return False

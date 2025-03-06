@@ -689,10 +689,10 @@ class ExcelProcessor:
         return stats
 
     def calculate_valentina_absences(self, df):
-        """Calcula las ausencias de Valentina verificando solo lacolumna AK"""
+        """Calcula lasausencias de Valentina verificando solo lacolumna AK"""
         absences = 0
         try:
-            absence_col = self.getcolumn_index('AK')
+            absence_col = self.get_columnindex('AK')
             day_col = self.get_column_index('AE')
 
             for row in range(11, 42):  # AK12 hasta AK42 (índices 11-41)
@@ -1560,20 +1560,54 @@ class ExcelProcessor:
         return weeks
 
     def format_lunch_overtime_text(self, lunch_overtime_days):
-        """Formats lunch overtime days by week for display"""
+        """Formats lunch overtime days by week in a horizontal layout matching the design sketch"""
         if not lunch_overtime_days:
             return "No hay días registrados"
 
-        weeks = self.organize_days_by_week(lunch_overtime_days)
-        formatted_text = []
+        # Initialize weeks dictionary
+        weeks = {
+            'Semana 1': [],
+            'Semana 2': [],
+            'Semana 3': [],
+            'Semana 4': []
+        }
 
-        # Header
-        formatted_text.append("Dias con exceso")
+        # Sort days into weeks
+        for day in lunch_overtime_days:
+            try:
+                # Extract day number and validate format
+                day_parts = day.split()
+                if len(day_parts) >= 2:
+                    day_num = int(day_parts[0])
+                    if 1 <= day_num <= 7:
+                        weeks['Semana 1'].append(day)
+                    elif 8 <= day_num <= 14:
+                        weeks['Semana 2'].append(day)
+                    elif 15 <= day_num <= 21:
+                        weeks['Semana 3'].append(day)
+                    elif 22 <= day_num <= 31:
+                        weeks['Semana 4'].append(day)
+            except (ValueError, IndexError):
+                continue
 
-        # Format each week in a new line
-        for week_name, days in weeks.items():
-            if days:  # Only include weeks that have days
-                days_text = " ".join(days)  # Join days with spaces
-                formatted_text.append(f"{week_name}  {days_text}")  # Two spaces for alignment
+        # Sort days within each week by day number
+        for week in weeks.values():
+            week.sort(key=lambda x: int(x.split()[0]))
 
-        return "\n".join(formatted_text) if formatted_text else "No hay días registrados"
+        # Format output
+        formatted_text = ["Dias con exceso"]
+
+        # Add weeks and their days horizontally with bullet points
+        week_lines = []
+        for i in range(1, 5):
+            week_key = f'Semana {i}'
+            if weeks[week_key]:  # Only include weeks that have days
+                days = weeks[week_key]
+                days_text = " • ".join(days)  # Use bullet points between days
+                week_lines.append(f"{week_key}  {days_text}")
+
+        # Add weeks to formatted text
+        formatted_text.extend(week_lines)
+
+        # Return the formatted text with proper line breaks
+        return "\n".join(formatted_text)

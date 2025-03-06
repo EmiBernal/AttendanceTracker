@@ -1570,7 +1570,7 @@ class ExcelProcessor:
 
         for week_name, days in weeks.items():
             if days:  # Only include weeks that have days
-                days_text = "\n  • " + "\n  • ".join(days)
-                formatted_text.append(f"{week_name}:{days_text}")
+                days_text = ", ".join(days)  # Changed from newlines to commas
+                formatted_text.append(f"{week_name}: {days_text}")  # Removed bullet points
 
-        return "\n\n".join(formatted_text) if formatted_text else "No hay días registrados"
+        return "\n".join(formatted_text) if formatted_text else "No hay días registrados"

@@ -701,7 +701,7 @@ class ExcelProcessor:
 
     def calculate_valentina_absences(self, df):
         """Calcula las ausencias de Valentinaverificando solo la columna AK"""
-        absences = 0
+        absences =0
         try:
             absence_col = self.get_column_index('AK')
             day_col = self.get_column_index('AE')
@@ -1015,30 +1015,46 @@ class ExcelProcessor:
             exceptional_index = self.excel_file.sheet_names.index('Exceptional')
             attendance_sheets = self.excel_file.sheet_names[exceptional_index+1:]  # Start after Exceptional
 
+            # Define the three possible positions
+            positions = [
+                {'name_col': 'J', 'day_col': 'A', 'absence_col': 'G'},
+                {'name_col': 'Y', 'day_col': 'P', 'absence_col': 'V'},
+                {'name_col': 'AN', 'day_col': 'AE', 'absence_col': 'AK'}
+            ]
+
             for sheet in attendance_sheets:
                 try:
                     df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
 
-                    # Check if employee name matches in J3
-                    name_cell = df.iloc[2, self.get_column_index('J')]
-                    if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
-                        continue
-
-                    # If name matches, check G12-G42 for absences
-                    day_col = self.get_column_index('A')
-                    absence_col = self.get_column_index('G')
-
-                    for row in range(11, 42):  # G12 to G42
+                    # Check each possible position
+                    for position in positions:
                         try:
-                            absence_value = df.iloc[row, absence_col]
-                            if not pd.isna(absence_value) and str(absence_value).strip().lower() == 'absence':
-                                day_value = df.iloc[row, day_col]
-                                if not pd.isna(day_value):
-                                    day_str = str(day_value).strip()
-                                    print(f"Ausencia encontrada en fila {row+1}, día: {day_str}")
-                                    absence_days.append(day_str)
+                            # Check if employee name matches in the correct position (row 3)
+                            name_col_index = self.get_column_index(position['name_col'])
+                            name_cell = df.iloc[2, name_col_index]  # Row 3 (index 2)
+
+                            if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
+                                continue
+
+                            # If name matches, check for absences
+                            day_col = self.get_column_index(position['day_col'])
+                            absence_col = self.get_column_index(position['absence_col'])
+
+                            for row in range(11, 42):  # Check rows 12-42
+                                try:
+                                    absence_value = df.iloc[row, absence_col]
+                                    if not pd.isna(absence_value) and str(absence_value).strip().lower() == 'absence':
+                                        day_value = df.iloc[row, day_col]
+                                        if not pd.isna(day_value):
+                                            day_str = str(day_value).strip()
+                                            print(f"Ausencia encontrada en hoja {sheet}, fila {row+1}, día: {day_str}")
+                                            absence_days.append(day_str)
+                                except Exception as e:
+                                    print(f"Error processing row {row+1}: {str(e)}")
+                                    continue
+
                         except Exception as e:
-                            print(f"Error processing row {row+1}: {str(e)}")
+                            print(f"Error checking position {position['name_col']}: {str(e)}")
                             continue
 
                 except Exception as e:

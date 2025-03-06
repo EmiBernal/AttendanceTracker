@@ -188,7 +188,7 @@ def create_employee_dashboard(processor, employee_name):
     # Format days lists for hover text
     absence_days_text = "\n".join([f"• {day}" for day in absence_days]) if absence_days else "No hay días registrados"
     late_days_text = "\n".join([f"• {day}" for day in late_days]) if late_days else "No hay días registrados"
-    lunch_days_text = "\n".join([f"• {day}" for day in lunch_overtime_days]) if lunch_overtime_days else "No hay días registrados"
+    lunch_days_text = processor.format_lunch_overtime_text(lunch_overtime_days)
 
     # Regular Attendance Metrics
     st.markdown("""

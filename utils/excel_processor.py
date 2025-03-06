@@ -1447,7 +1447,7 @@ class ExcelProcessor:
             data['Días de Ausencia'] = [', '.join(absence_days) if absence_days else 'Ninguno']
             data['Días de Llegada Tarde'] = [', '.join(late_days) if late_days else 'Ninguno']
             data['Días de Salida Anticipada'] = [', '.join(early_departure_days) if early_departure_days else 'Ninguno']
-            data['Días con Exceso de Almuerzo'] = [', '.join(lunch_overtime_days) if lunch_overtime_days else 'Ninguno']
+            data['Días con Exceso de Almuerzo'] = [self.format_lunch_overtime_text(lunch_overtime_days)]
 
             # Create DataFrame and export
             df = pd.DataFrame(data)
@@ -1516,8 +1516,7 @@ class ExcelProcessor:
                 pdf.multi_cell(0, 8, f"Días de Llegada Tarde: {', '.join(late_days)}")
             if early_departure_days:
                 pdf.multi_cell(0, 8, f"Días de Salida Anticipada: {', '.join(early_departure_days)}")
-            if lunch_overtime_days:
-                pdf.multi_cell(0, 8, f"Días con Exceso de Almuerzo: {', '.join(lunch_overtime_days)}")
+            pdf.multi_cell(0, 8, f"Días con Exceso de Almuerzo: {self.format_lunch_overtime_text(lunch_overtime_days)}")
 
             pdf.output(filepath)
             return True
@@ -1525,3 +1524,53 @@ class ExcelProcessor:
         except Exception as e:
             print(f"Error exporting to PDF: {str(e)}")
             return False
+
+    def organize_days_by_week(self, days):
+        """Organizes a list of days into weeks of the month"""
+        # Initialize weeks dictionary
+        weeks = {
+            'Semana 1 (1-7)': [],
+            'Semana 2 (8-14)': [],
+            'Semana 3 (15-21)': [],
+            'Semana 4 (22-31)': []
+        }
+
+        for day in days:
+            try:
+                # Extract day number from string (e.g. "15 Martes" -> 15)
+                day_num = int(day.split()[0])
+
+                # Determine which week the day belongs to
+                if 1 <= day_num <= 7:
+                    weeks['Semana 1 (1-7)'].append(day)
+                elif 8 <= day_num <= 14:
+                    weeks['Semana 2 (8-14)'].append(day)
+                elif 15 <= day_num <= 21:
+                    weeks['Semana 3 (15-21)'].append(day)
+                elif 22 <= day_num <= 31:
+                    weeks['Semana 4 (22-31)'].append(day)
+
+                # Sort days within each week
+                for week in weeks.values():
+                    week.sort(key=lambda x: int(x.split()[0]))
+
+            except (ValueError, IndexError) as e:
+                print(f"Error processing day {day}: {str(e)}")
+                continue
+
+        return weeks
+
+    def format_lunch_overtime_text(self, lunch_overtime_days):
+        """Formats lunch overtime days by week for display"""
+        if not lunch_overtime_days:
+            return "No hay días registrados"
+
+        weeks = self.organize_days_by_week(lunch_overtime_days)
+        formatted_text = []
+
+        for week_name, days in weeks.items():
+            if days:  # Only include weeks that have days
+                days_text = "\n  • " + "\n  • ".join(days)
+                formatted_text.append(f"{week_name}:{days_text}")
+
+        return "\n\n".join(formatted_text) if formatted_text else "No hay días registrados"

@@ -244,7 +244,7 @@ class ExcelProcessor:
         try:
             exceptional_index = self.excel_file.sheet_names.index('Exceptional')
             attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
-            late_days = 0
+            late_days = []
             total_late_minutes = 0
 
             for sheet in attendance_sheets:
@@ -302,13 +302,16 @@ class ExcelProcessor:
 
                                                     # Verificar si llegó tarde
                                                     if entry_time > self.WORK_START_TIME:
-                                                        late_days += 1
+
                                                         late_minutes = (
                                                             datetime.combine(datetime.min, entry_time) -
                                                             datetime.combine(datetime.min, self.WORK_START_TIME)
                                                         ).total_seconds() / 60
                                                         total_late_minutes += late_minutes
-                                                        print(f"Llegada tarde en fila {row+1}: {late_minutes:.0f} minutos (hora: {entry_time})")
+
+                                                        formatted_day = self.translate_day_abbreviation(day_str)
+                                                        late_days.append(formatted_day)
+                                                        print(f"Llegada tarde en fila {row+1}: {late_minutes:.0f} minutos (hora: {entry_time}), Dia: {formatted_day}")
 
                                                 except Exception as e:
                                                     print(f"Error procesando hora de entrada en fila {row+1}: {str(e)}")
@@ -324,12 +327,12 @@ class ExcelProcessor:
                 except Exception as e:
                     print(f"Error procesando hoja {sheet}: {str(e)}")
 
-            print(f"Total días de llegada tarde: {late_days}")
+            print(f"Total días de llegada tarde: {len(late_days)}")
             print(f"Total minutos de tardanza: {total_late_minutes:.0f}")
             return late_days, total_late_minutes
         except Exception as e:
             print(f"Error general: {str(e)}")
-            return 0, 0
+            return [], 0
 
     def count_missing_records(self, employee_name):
         """Cuenta los días sin registros de entrada, salida y almuerzo"""
@@ -661,7 +664,8 @@ class ExcelProcessor:
         missing_entry, missing_exit, missing_lunch = self.count_missing_records(employee_name)
         late_days, late_minutes = self.count_late_days(employee_name)
         lunch_overtime_days, total_lunch_minutes = self.count_lunch_overtime_days(employee_name)
-        early_departures, early_minutes = self.count_early_departures(employee_name)
+        early_departure_days, early_minutes = self.get_early_departure_days(employee_name)
+        mid_day_departures = self.get_mid_day_departures(employee_name)
 
         stats = {
             'name': employee_name,
@@ -672,8 +676,9 @@ class ExcelProcessor:
             'late_minutes': late_minutes,
             'lunch_overtime_days': lunch_overtime_days,
             'total_lunch_minutes': total_lunch_minutes,
-            'early_departures': early_departures,
+            'early_departure_days': early_departure_days,
             'early_minutes': early_minutes,
+            'mid_day_departures': mid_day_departures,
             'missing_entry_days': missing_entry,
             'missing_exit_days': missing_exit,
             'missing_lunch_days': missing_lunch,
@@ -684,8 +689,8 @@ class ExcelProcessor:
         return stats
 
     def calculate_valentina_absences(self, df):
-        """Calcula lasausencias de Valentinaverificandosolo la columna AK"""
-        absences =0
+        """Calcula las ausencias de Valentina verificando solo lacolumna AK"""
+        absences = 0
         try:
             absence_col = self.get_column_index('AK')
             day_col = self.get_column_index('AE')
@@ -694,16 +699,12 @@ class ExcelProcessor:
                 try:
                     absence_value = df.iloc[row, absence_col]
                     if not pd.isna(absence_value) and str(absence_value).strip().lower() == 'absence':
-                        # Obtener el día correspondiente de la columna A
-                        day_value = df.iloc[row, day_col]
-                        print(f"Ausencia encontrada en fila {row+1}, día: {day_value}")
                         absences += 1
                 except Exception as e:
-                    print(f"Error procesando fila {row+1}: {str(e)}")
                     continue
 
-            print(f"Total de ausencias encontradas: {absences}")
             return absences
+
         except Exception as e:
             print(f"Error calculando ausencias de Valentina: {str(e)}")
             return 0
@@ -1081,51 +1082,143 @@ class ExcelProcessor:
         """Returns a list of days when the employee arrived late"""
         try:
             late_days = []
+            total_late_minutes = 0
             exceptional_index = self.excel_file.sheet_names.index('Exceptional')
-            attendance_sheets = self.excel_file.sheet_names[exceptional_index+1:]  # Start after Exceptional
-
-            # Define the three possible positions
-            positions = [
-                {'name_col': 'J', 'day_col': 'A', 'entry_col': 'B'},
-                {'name_col': 'Y', 'day_col': 'P', 'entry_col': 'Q'},
-                {'name_col': 'AN', 'day_col': 'AE', 'entry_col': 'AF'}
-            ]
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
 
             for sheet in attendance_sheets:
                 try:
                     df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
 
-                    # Check each possible position
+                    # Definir las tres posibles posiciones del empleado
+                    positions = [
+                        {'name_col': 'J', 'entry_col': 'B', 'day_col': 'A'},  # Primera persona
+                        {'name_col': 'Y', 'entry_col': 'Q', 'day_col': 'P'},  # Segunda persona
+                        {'name_col': 'AN', 'entry_col': 'AF', 'day_col': 'AE'}  # Tercera persona
+                    ]
+
                     for position in positions:
                         try:
-                            # Check if employee name matches in the correct position (row 3)
                             name_col_index = self.get_column_index(position['name_col'])
                             name_cell = df.iloc[2, name_col_index]
 
                             if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
                                 continue
 
-                            # If name matches, check for late arrivals
-                            day_col = self.get_column_index(position['day_col'])
+                            print(f"Empleado encontrado en hoja {sheet}, columna {position['name_col']}")
+
                             entry_col = self.get_column_index(position['entry_col'])
+                            day_col = self.get_column_index(position['day_col'])
+
+                            for row in range(11, 42):  # Filas 12 a 42
+                                try:
+                                    day_value = df.iloc[row, day_col]
+                                    if pd.isna(day_value):
+                                        continue
+
+                                    day_str = str(day_value).strip()
+                                    if day_str == '' or any(abbr in day_str.lower() for abbr in ['sa', 'su']):
+                                        continue
+
+                                    entry_time = df.iloc[row, entry_col]
+                                    if not pd.isna(entry_time):
+                                        try:
+                                            # Convertir a datetime
+                                            if isinstance(entry_time, str):
+                                                entry_time = pd.to_datetime(entry_time).time()
+                                            elif isinstance(entry_time, datetime):
+                                                entry_time = entry_time.time()
+                                            else:
+                                                print(f"Formato de hora no reconocido en fila {row+1}")
+                                                continue
+
+                                            # Verificar si llegó tarde
+                                            if entry_time > self.WORK_START_TIME:
+                                                late_minutes = (
+                                                    datetime.combine(datetime.min, entry_time) -
+                                                    datetime.combine(datetime.min, self.WORK_START_TIME)
+                                                ).total_seconds() / 60
+                                                total_late_minutes += late_minutes
+
+                                                formatted_day = self.translate_day_abbreviation(day_str)
+                                                late_days.append(formatted_day)
+                                                print(f"Llegada tarde en fila {row+1}: {late_minutes:.0f} minutos (hora: {entry_time}), Dia: {formatted_day}")
+
+                                        except Exception as e:
+                                            print(f"Error procesando hora de entrada en fila {row+1}: {str(e)}")
+                                    else:
+                                        print(f"Sin registro de entrada en fila {row+1}")
+
+                                except Exception as e:
+                                    print(f"Error en fila {row+1}: {str(e)}")
+
+                        except Exception as e:
+                            print(f"Error procesando posición: {str(e)}")
+
+                except Exception as e:
+                    print(f"Error procesando hoja {sheet}: {str(e)}")
+
+            print(f"Total días de llegada tarde: {len(late_days)}")
+            print(f"Total minutos de tardanza: {total_late_minutes:.0f}")
+            return late_days, total_late_minutes
+
+        except Exception as e:
+            print(f"Error general: {str(e)}")
+            return [], 0
+
+    def get_early_departure_days(self, employee_name):
+        """Returns a list of days when the employee left early"""
+        try:
+            early_departure_days = []
+            total_early_minutes = 0
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index+1:]
+
+            positions = [
+                {'name_col': 'J', 'day_col': 'A', 'exit_col': 'I'},
+                {'name_col': 'Y', 'day_col': 'P', 'exit_col': 'X'},
+                {'name_col': 'AN', 'day_col': 'AE', 'exit_col': 'AM'}
+            ]
+
+            for sheet in attendance_sheets:
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+
+                    for position in positions:
+                        try:
+                            name_col_index = self.get_column_index(position['name_col'])
+                            name_cell = df.iloc[2, name_col_index]
+
+                            if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
+                                continue
+
+                            day_col = self.get_column_index(position['day_col'])
+                            exit_col = self.get_column_index(position['exit_col'])
 
                             for row in range(11, 42):  # Check rows 12-42
                                 try:
                                     day_value = df.iloc[row, day_col]
-                                    entry_time = df.iloc[row, entry_col]
+                                    exit_time = df.iloc[row, exit_col]
 
-                                    if not pd.isna(day_value) and not pd.isna(entry_time):
+                                    if not pd.isna(day_value) and not pd.isna(exit_time):
                                         # Skip weekends
                                         day_str = str(day_value).strip()
                                         if any(abbr in day_str.lower() for abbr in ['sa', 'su']):
                                             continue
 
-                                        entry_time = pd.to_datetime(entry_time).time()
-                                        if entry_time > self.WORK_START_TIME:
+                                        exit_time = pd.to_datetime(exit_time).time()
+                                        if self.is_early_departure(employee_name, exit_time):
+                                            # Calculate early minutes
+                                            early_minutes = (
+                                                datetime.combine(datetime.min, self.WORK_END_TIME) -
+                                                datetime.combine(datetime.min, exit_time)
+                                            ).total_seconds() / 60
+                                            total_early_minutes += early_minutes
+
                                             # Translate the day to Spanish format
                                             formatted_day = self.translate_day_abbreviation(day_str)
-                                            print(f"Llegada tarde en hoja {sheet}, fila {row+1}, día: {formatted_day}")
-                                            late_days.append(formatted_day)
+                                            print(f"Salida temprana en hoja {sheet}, fila {row+1}, día: {formatted_day} ({early_minutes:.0f} minutos)")
+                                            early_departure_days.append(formatted_day)
 
                                 except Exception as e:
                                     print(f"Error processing row {row+1}: {str(e)}")
@@ -1139,56 +1232,79 @@ class ExcelProcessor:
                     print(f"Error processing sheet {sheet}: {str(e)}")
                     continue
 
-            print(f"Total días con llegada tarde: {len(late_days)}")
-            return late_days
+            print(f"Total días con salida temprana: {len(early_departure_days)}")
+            print(f"Total minutos de salida temprana: {total_early_minutes:.0f}")
+            return early_departure_days, total_early_minutes
 
-        except Exception as e:
-            print(f"Error getting late days: {str(e)}")
-            return []
-
-    def get_early_departure_days(self, employee_name):
-        """Returns a list of days when the employee left early"""
-        try:
-            early_days = []
-            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
-            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
-
-            for sheet in attendance_sheets:
-                df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
-
-                positions = [
-                    {'name_col': 'J', 'day_col': 'A', 'exit_col': 'I'},
-                    {'name_col': 'Y', 'day_col': 'P', 'exit_col': 'X'},
-                    {'name_col': 'AN', 'day_col': 'AE', 'exit_col': 'AM'}
-                ]
-
-                for position in positions:
-                    name_col_index = self.get_column_index(position['name_col'])
-                    name_cell = df.iloc[2, name_col_index]
-
-                    if pd.isna(name_cell):
-                        continue
-
-                    if str(name_cell).strip() == employee_name:
-                        day_col = self.get_column_index(position['day_col'])
-                        exit_col = self.get_column_index(position['exit_col'])
-
-                        for row in range(11, 42):
-                            try:
-                                day_value = df.iloc[row, day_col]
-                                exit_time = df.iloc[row, exit_col]
-
-                                if not pd.isna(day_value) and not pd.isna(exit_time):
-                                    exit_time = pd.to_datetime(exit_time).time()
-                                    if self.is_early_departure(employee_name, exit_time):
-                                        early_days.append(str(day_value).strip())
-                            except Exception as e:
-                                continue
-
-            return early_days
         except Exception as e:
             print(f"Error getting early departure days: {str(e)}")
-            return []
+            return [], 0
+
+    def get_mid_day_departures(self, employee_name):
+        """Returns count of mid-day departures"""
+        try:
+            mid_day_departures = 0
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index+1:]
+
+            positions = [
+                {'name_col': 'J', 'day_col': 'A', 'exit_col': 'I', 'entry_col': 'B'},
+                {'name_col': 'Y', 'day_col': 'P', 'exit_col': 'X', 'entry_col': 'Q'},
+                {'name_col': 'AN', 'day_col': 'AE', 'exit_col': 'AM', 'entry_col': 'AF'}
+            ]
+
+            for sheet in attendance_sheets:
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+
+                    for position in positions:
+                        try:
+                            name_col_index = self.get_column_index(position['name_col'])
+                            name_cell = df.iloc[2, name_col_index]
+
+                            if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
+                                continue
+
+                            # If name matches, check for mid-day departures
+                            day_col = self.get_column_index(position['day_col'])
+                            exit_col = self.get_column_index(position['exit_col'])
+                            entry_col = self.get_column_index(position['entry_col'])
+
+                            for row in range(11, 42):  # Check rows 12-42
+                                try:
+                                    day_value = df.iloc[row, day_col]
+                                    entry_time = df.iloc[row, entry_col]
+                                    exit_time = df.iloc[row, exit_col]
+
+                                    if not pd.isna(day_value):
+                                        # Skip weekends
+                                        day_str = str(day_value).strip()
+                                        if any(abbr in day_str.lower() for abbr in ['sa', 'su']):
+                                            continue
+
+                                        # Check if there's an entry but no exit
+                                        if not pd.isna(entry_time) and pd.isna(exit_time):
+                                            mid_day_departures += 1
+                                            print(f"Salida durante horario en hoja {sheet}, fila {row+1}, día: {self.translate_day_abbreviation(day_str)}")
+
+                                except Exception as e:
+                                    print(f"Error processing row {row+1}: {str(e)}")
+                                    continue
+
+                        except Exception as e:
+                            print(f"Error checking position {position['name_col']}: {str(e)}")
+                            continue
+
+                except Exception as e:
+                    print(f"Error processing sheet {sheet}: {str(e)}")
+                    continue
+
+            print(f"Total salidas durante horario: {mid_day_departures}")
+            return mid_day_departures
+
+        except Exception as e:
+            print(f"Error getting mid-day departures: {str(e)}")
+            return 0
 
     def get_lunch_overtime_days(self, employee_name):
         """Returns a list of days when the employee exceeded lunch time"""
@@ -1298,12 +1414,15 @@ class ExcelProcessor:
     def export_to_csv(self, employee_name, filepath):
         """Export employee performance data to CSV"""
         try:
+            # Get employee stats
             stats = self.get_employee_stats(employee_name)
+
             # Get specific days information
             absence_days = self.get_absence_days(employee_name)
-            late_days = self.get_late_days(employee_name)
-            early_departure_days = self.get_early_departure_days(employee_name)
+            late_days, _ = self.get_late_days(employee_name)  # Get just the list of days
+            early_departure_days, early_minutes = self.get_early_departure_days(employee_name)
             lunch_overtime_days = self.get_lunch_overtime_days(employee_name)
+            mid_day_departures = self.get_mid_day_departures(employee_name)
 
             data = {
                 'Nombre': [stats['name']],
@@ -1312,26 +1431,29 @@ class ExcelProcessor:
                 'Horas Trabajadas': [f"{stats['actual_hours']:.1f}"],
                 'Porcentaje Completado': [f"{(stats['actual_hours'] / stats['required_hours'] * 100):.1f}%"],
                 'Inasistencias': [stats['absences']],
-                'Días con Llegada Tarde': [stats['late_days']],
+                'Días con Llegada Tarde': [len(late_days)],
                 'Minutos Totales de Retraso': [f"{stats['late_minutes']:.0f}"],
-                'Días con Exceso en Almuerzo': [stats['lunch_overtime_days']],
+                'Días con Exceso en Almuerzo': [len(lunch_overtime_days)],
                 'Minutos Totales Excedidos en Almuerzo': [f"{stats['total_lunch_minutes']:.0f}"],
-                'Retiros Anticipados': [stats['early_departures']],
-                'Minutos Totales de Salida Anticipada': [f"{stats['early_minutes']:.0f}"],
-                'Días sin Registro de Entrada': [stats['missing_entry_days']],
-                'Días sin Registro de Salida': [stats['missing_exit_days']],
-                'Días sin Registro de Almuerzo': [stats['missing_lunch_days']]
+                'Retiros Anticipados': [len(early_departure_days)],
+                'Minutos Totales de Salida Anticipada': [f"{early_minutes:.0f}"],
+                'Días sin Registro de Entrada': [len(stats['missing_entry_days'])],
+                'Días sin Registro de Salida': [len(stats['missing_exit_days'])],
+                'Días sin Registro de Almuerzo': [len(stats['missing_lunch_days'])],
+                'Salidas durante horario laboral': [mid_day_departures]
             }
 
-            # Add specific days to the data
+            # Add specific days
             data['Días de Ausencia'] = [', '.join(absence_days) if absence_days else 'Ninguno']
             data['Días de Llegada Tarde'] = [', '.join(late_days) if late_days else 'Ninguno']
             data['Días de Salida Anticipada'] = [', '.join(early_departure_days) if early_departure_days else 'Ninguno']
             data['Días con Exceso de Almuerzo'] = [', '.join(lunch_overtime_days) if lunch_overtime_days else 'Ninguno']
 
+            # Create DataFrame and export
             df = pd.DataFrame(data)
             df.to_csv(filepath, index=False, encoding='utf-8-sig')
             return True
+
         except Exception as e:
             print(f"Error exporting to CSV: {str(e)}")
             return False
@@ -1339,59 +1461,55 @@ class ExcelProcessor:
     def export_to_pdf(self, employee_name, filepath):
         """Export employee performance data to PDF"""
         try:
-            from fpdf import FPDF
+            # Get employee stats
             stats = self.get_employee_stats(employee_name)
 
             # Get specific days information
             absence_days = self.get_absence_days(employee_name)
-            late_days = self.get_late_days(employee_name)
-            early_departure_days = self.get_early_departure_days(employee_name)
+            late_days, _ = self.get_late_days(employee_name)  # Get just the list of days
+            early_departure_days, early_minutes = self.get_early_departure_days(employee_name)
             lunch_overtime_days = self.get_lunch_overtime_days(employee_name)
+            mid_day_departures = self.get_mid_day_departures(employee_name)
 
             # Create PDF
             pdf = FPDF()
             pdf.add_page()
+            pdf.set_font('Arial', 'B', 16)
+            pdf.cell(0, 10, 'Reporte de Asistencia', 0, 1, 'C')
 
-            # Set font
-            pdf.add_font('DejaVu', '', 'DejaVuSansCondensed.ttf', uni=True)
-            pdf.set_font('DejaVu', '', 12)
-
-            # Title
-            pdf.set_font('DejaVu', '', 16)
-            pdf.cell(0, 10, 'Reporte de Desempeño', 0, 1, 'C')
-            pdf.ln(10)
-
-            # Employee Info
-            pdf.set_font('DejaVu', '', 14)
+            pdf.set_font('Arial', 'B', 12)
             pdf.cell(0, 10, f"Empleado: {stats['name']}", 0, 1)
             pdf.cell(0, 10, f"Departamento: {stats['department']}", 0, 1)
             pdf.ln(5)
 
-            # Hours Summary
-            pdf.set_font('DejaVu', '', 12)
-            hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100)
-            pdf.cell(0, 10, f"Horas Trabajadas: {stats['actual_hours']:.1f}/{stats['required_hours']:.1f} ({hours_ratio:.1f}%)", 0, 1)
+            pdf.cell(0, 10, 'Resumen de Horas:', 0, 1)
+            pdf.set_font('Arial', '', 12)
+            pdf.cell(0, 10, f"Horas Requeridas: {stats['required_hours']:.1f}", 0, 1)
+            pdf.cell(0, 10, f"Horas Trabajadas: {stats['actual_hours']:.1f}", 0, 1)
+            pdf.cell(0, 10, f"Porcentaje Completado: {(stats['actual_hours'] / stats['required_hours'] * 100):.1f}%", 0, 1)
             pdf.ln(5)
 
-            # Attendance Metrics
+            pdf.set_font('Arial', 'B', 12)
             pdf.cell(0, 10, 'Métricas de Asistencia:', 0, 1)
             metrics = [
                 ('Inasistencias', stats['absences'], 'días'),
-                ('Llegadas Tarde', stats['late_days'], f"días ({stats['late_minutes']:.0f} min)"),
-                ('Exceso en Almuerzo', stats['lunch_overtime_days'], f"días ({stats['total_lunch_minutes']:.0f} min)"),
-                ('Retiros Anticipados', stats['early_departures'], f"días ({stats['early_minutes']:.0f} min)"),
-                ('Sin Registro de Entrada', stats['missing_entry_days'], 'días'),
-                ('Sin Registro de Salida', stats['missing_exit_days'], 'días'),
-                ('Sin Registro de Almuerzo', stats['missing_lunch_days'], 'días')
+                ('Llegadas Tarde', len(late_days), f"días ({stats['late_minutes']:.0f} min)"),
+                ('Exceso en Almuerzo', len(lunch_overtime_days), f"días ({stats['total_lunch_minutes']:.0f} min)"),
+                ('Retiros Anticipados', len(early_departure_days), f"días ({early_minutes:.0f} min)"),
+                ('Sin Registro de Entrada', len(stats['missing_entry_days']), 'días'),
+                ('Sin Registro de Salida', len(stats['missing_exit_days']), 'días'),
+                ('Sin Registro de Almuerzo', len(stats['missing_lunch_days']), 'días'),
+                ('Salidas durante horario laboral', mid_day_departures, 'veces')
             ]
 
             for metric, value, unit in metrics:
-                pdf.cell(0, 8, f"{metric}: {value} {unit}", 0, 1)
+                pdf.multi_cell(0, 8, f"{metric}: {value} {unit}")
 
             pdf.ln(5)
-
-            # Detailed Days
+            pdf.set_font('Arial', 'B', 12)
             pdf.cell(0, 10, 'Detalle de Días:', 0, 1)
+            pdf.set_font('Arial', '', 12)
+
             if absence_days:
                 pdf.multi_cell(0, 8, f"Días de Ausencia: {', '.join(absence_days)}")
             if late_days:
@@ -1401,9 +1519,9 @@ class ExcelProcessor:
             if lunch_overtime_days:
                 pdf.multi_cell(0, 8, f"Días con Exceso de Almuerzo: {', '.join(lunch_overtime_days)}")
 
-            # Save PDF
             pdf.output(filepath)
             return True
+
         except Exception as e:
             print(f"Error exporting to PDF: {str(e)}")
             return False

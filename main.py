@@ -159,9 +159,9 @@ def create_employee_dashboard(processor, employee_name):
 
     # Get specific days information
     absence_days = processor.get_absence_days(employee_name)
-    late_days = processor.get_late_days(employee_name)
-    early_departure_days = processor.get_early_departure_days(employee_name)
-    lunch_overtime_days = processor.get_lunch_overtime_days(employee_name)
+    late_days = processor.get_late_days(employee_name)[0]  # Get just the list of days
+    early_departure_days = stats['early_departure_days']
+    lunch_overtime_days = stats['lunch_overtime_days']
 
     # Header with employee info
     st.markdown(f"""
@@ -185,17 +185,17 @@ def create_employee_dashboard(processor, employee_name):
         </div>
     """, unsafe_allow_html=True)
 
+    # Format days lists for hover text
+    absence_days_text = "\n".join([f"• {day}" for day in absence_days]) if absence_days else "No hay días registrados"
+    late_days_text = "\n".join([f"• {day}" for day in late_days]) if late_days else "No hay días registrados"
+    lunch_days_text = "\n".join([f"• {day}" for day in lunch_overtime_days]) if lunch_overtime_days else "No hay días registrados"
+
     # Regular Attendance Metrics
     st.markdown("""
         <div class="stat-group">
             <h3>📈 Métricas de Asistencia Regular</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
     """, unsafe_allow_html=True)
-
-    # Format days lists for hover text
-    absence_days_text = "\n".join([f"• {day}" for day in absence_days]) if absence_days else "No hay días registrados"
-    late_days_text = "\n".join([f"• {day}" for day in late_days]) if late_days else "No hay días registrados"
-    lunch_days_text = "\n".join([f"• {day}" for day in lunch_overtime_days]) if lunch_overtime_days else "No hay días registrados"
 
     regular_metrics = [
         ('Inasistencias', len(absence_days), "Total días", f"Días sin asistir al trabajo:\n{absence_days_text}"),
@@ -218,6 +218,9 @@ def create_employee_dashboard(processor, employee_name):
 
     st.markdown("</div></div>", unsafe_allow_html=True)
 
+    # Format early departure days text
+    early_departure_days_text = "\n".join([f"• {day}" for day in early_departure_days]) if early_departure_days else "No hay días registrados"
+
     # Metrics Requiring Authorization
     st.markdown("""
         <div class="stat-group">
@@ -225,13 +228,10 @@ def create_employee_dashboard(processor, employee_name):
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
     """, unsafe_allow_html=True)
 
-    # Format early departure days for hover text
-    early_departure_days_text = "\n".join([f"• {day}" for day in early_departure_days]) if early_departure_days else "No hay días registrados"
-
     auth_metrics = [
         ('Retiros Anticipados', len(early_departure_days), f"{stats['early_minutes']:.0f} minutos en total", f"Días con salida anticipada:\n{early_departure_days_text}"),
         ('Ingresos con Retraso', len(late_days), f"{stats['late_minutes']:.0f} minutos en total", f"Días con llegada tarde:\n{late_days_text}"),
-        ('Retiros Durante Horario', stats.get('mid_day_departures', 0), "Total salidas", "Salidas durante horario laboral")
+        ('Retiros Durante Horario', stats['mid_day_departures'], "Total salidas", "Salidas durante horario laboral")
     ]
 
     for label, value, subtitle, hover_text in auth_metrics:

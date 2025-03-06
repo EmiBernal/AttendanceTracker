@@ -692,7 +692,7 @@ class ExcelProcessor:
         """Calcula las ausencias de Valentina verificando solo lacolumna AK"""
         absences = 0
         try:
-            absence_col = self.get_column_index('AK')
+            absence_col = self.getcolumn_index('AK')
             day_col = self.get_column_index('AE')
 
             for row in range(11, 42):  # AK12 hasta AK42 (índices 11-41)
@@ -1434,8 +1434,7 @@ class ExcelProcessor:
                 'Días con Llegada Tarde': [len(late_days)],
                 'Minutos Totales de Retraso': [f"{stats['late_minutes']:.0f}"],
                 'Días con Exceso en Almuerzo': [len(lunch_overtime_days)],
-                'Minutos Totales Excedidos en Almuerzo': [f"{stats['total_lunch_minutes']:.0f}"],
-                'Retiros Anticipados': [len(early_departure_days)],
+                'Minutos Totales Excedidos en Almuerzo': [f"{stats['total_lunch_minutes']:.0f}"],'Retiros Anticipados': [len(early_departure_days)],
                 'Minutos Totales de Salida Anticipada': [f"{early_minutes:.0f}"],
                 'Días sin Registro de Entrada': [len(stats['missing_entry_days'])],
                 'Días sin Registro de Salida': [len(stats['missing_exit_days'])],
@@ -1529,10 +1528,10 @@ class ExcelProcessor:
         """Organizes a list of days into weeks of the month"""
         # Initialize weeks dictionary
         weeks = {
-            'Semana 1 (1-7)': [],
-            'Semana 2 (8-14)': [],
-            'Semana 3 (15-21)': [],
-            'Semana 4 (22-31)': []
+            'Semana 1': [],
+            'Semana 2': [],
+            'Semana 3': [],
+            'Semana 4': []
         }
 
         for day in days:
@@ -1542,13 +1541,13 @@ class ExcelProcessor:
 
                 # Determine which week the day belongs to
                 if 1 <= day_num <= 7:
-                    weeks['Semana 1 (1-7)'].append(day)
+                    weeks['Semana 1'].append(day)
                 elif 8 <= day_num <= 14:
-                    weeks['Semana 2 (8-14)'].append(day)
+                    weeks['Semana 2'].append(day)
                 elif 15 <= day_num <= 21:
-                    weeks['Semana 3 (15-21)'].append(day)
+                    weeks['Semana 3'].append(day)
                 elif 22 <= day_num <= 31:
-                    weeks['Semana 4 (22-31)'].append(day)
+                    weeks['Semana 4'].append(day)
 
                 # Sort days within each week
                 for week in weeks.values():
@@ -1568,9 +1567,13 @@ class ExcelProcessor:
         weeks = self.organize_days_by_week(lunch_overtime_days)
         formatted_text = []
 
+        # Header
+        formatted_text.append("Dias con exceso")
+
+        # Format each week in a new line
         for week_name, days in weeks.items():
             if days:  # Only include weeks that have days
-                days_text = ", ".join(days)  # Changed from newlines to commas
-                formatted_text.append(f"{week_name}: {days_text}")  # Removed bullet points
+                days_text = " ".join(days)  # Join days with spaces
+                formatted_text.append(f"{week_name}  {days_text}")  # Two spaces for alignment
 
         return "\n".join(formatted_text) if formatted_text else "No hay días registrados"

@@ -129,16 +129,17 @@ class ExcelProcessor:
         return result - 1
 
     def count_lunch_overtime_days(self, employee_name):
-        """Returns a list of days when the employee exceeded lunch time"""
+        """Returns a list of days and total minutes when the employee exceeded lunch time"""
         try:
             lunch_overtime_days = []
+            total_lunch_minutes = 0
             exceptional_index = self.excel_file.sheet_names.index('Exceptional')
             attendance_sheets = self.excel_file.sheet_names[exceptional_index+1:]  # Start after Exceptional
 
             # Si es Valentina, Agustín o Soledad, retornar lista vacía ya que no tienen almuerzo
             if employee_name.lower() in ['valentina al', 'agustin taba', 'soledad silv']:
                 print(f"{employee_name} no tiene horario de almuerzo")
-                return lunch_overtime_days
+                return [], 0
 
             # Define the three possible positions
             positions = [
@@ -205,9 +206,13 @@ class ExcelProcessor:
                                                 ).total_seconds() / 60
 
                                                 if lunch_minutes > self.LUNCH_TIME_LIMIT:
+                                                    # Calculate excess minutes
+                                                    excess_minutes = lunch_minutes - self.LUNCH_TIME_LIMIT
+                                                    total_lunch_minutes += excess_minutes
+
                                                     # Translate the day to Spanish format
                                                     formatted_day = self.translate_day_abbreviation(day_str)
-                                                    print(f"Exceso de almuerzo en hoja {sheet}, fila {row+1}, día: {formatted_day} ({lunch_minutes:.0f} minutos)")
+                                                    print(f"Exceso de almuerzo en hoja {sheet}, fila {row+1}, día: {formatted_day} ({excess_minutes:.0f} minutos extra)")
                                                     lunch_overtime_days.append(formatted_day)
 
                                             except Exception as e:
@@ -227,11 +232,12 @@ class ExcelProcessor:
                     continue
 
             print(f"Total días con exceso de almuerzo: {len(lunch_overtime_days)}")
-            return lunch_overtime_days
+            print(f"Total minutos excedidos: {total_lunch_minutes:.0f}")
+            return lunch_overtime_days, total_lunch_minutes
 
         except Exception as e:
             print(f"Error getting lunch overtime days: {str(e)}")
-            return []
+            return [], 0
 
     def count_late_days(self, employee_name):
         """Cuenta los días que el empleado llegó tarde (después de 7:50)"""

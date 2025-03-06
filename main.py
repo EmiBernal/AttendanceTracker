@@ -53,35 +53,30 @@ st.markdown("""
 
     /* Stat card styling with blur effects */
     .stat-card {
-        background-color: rgba(255, 255, 255, 0.05);
-        border-radius: 10px;
-        padding: 20px;
+        background-color: rgba(17, 25, 40, 0.75);
+        border-radius: 12px;
+        padding: 24px;
         margin: 12px;
-        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                    border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid rgba(33, 150, 243, 0.1);
-        animation: fadeInUp 0.6s ease-out forwards;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         backdrop-filter: blur(10px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
     .stat-card:hover {
-        transform: translateY(-2px) scale(1.02);
-        box-shadow: 0 8px 24px rgba(33, 150, 243, 0.15);
-        border-color: rgba(33, 150, 243, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        border-color: rgba(255, 255, 255, 0.2);
     }
 
     /* Hover blur effect */
     .stat-card .content {
-        transition: filter 0.3s ease, opacity 0.3s ease;
+        transition: all 0.3s ease;
     }
 
     .stat-card:hover .content {
-        filter: blur(4px);
-        opacity: 0.3;
+        filter: blur(3px);
+        opacity: 0.15;
     }
 
     .stat-card .hover-text {
@@ -90,19 +85,19 @@ st.markdown("""
         left: 50%;
         transform: translate(-50%, -50%);
         opacity: 0;
-        transition: opacity 0.3s ease;
-        font-size: 18px;
-        font-weight: 600;
-        color: #1565C0;
-        background: rgba(255, 255, 255, 0.95);
-        padding: 10px 15px;
+        transition: all 0.3s ease;
+        font-size: 15px;
+        font-weight: 500;
+        color: #E2E8F0;
+        background: rgba(17, 25, 40, 0.95);
+        padding: 12px 18px;
         border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         pointer-events: none;
         white-space: pre-line;
         text-align: center;
         max-width: 90%;
-        line-height: 1.4;
+        line-height: 1.5;
     }
 
     .stat-card:hover .hover-text {
@@ -110,36 +105,27 @@ st.markdown("""
     }
 
     .metric-value {
-        font-size: 32px;
-        font-weight: bold;
+        font-size: 28px;
+        font-weight: 600;
         margin: 8px 0;
-        transition: transform 0.3s ease,
-                    text-shadow 0.3s ease;
-    }
-
-    .stat-card:hover .metric-value {
-        transform: scale(1.05);
-        text-shadow: 0 0 15px rgba(33, 150, 243, 0.3);
+        transition: all 0.3s ease;
+        color: #E2E8F0;
     }
 
     .metric-label {
         font-size: 14px;
-        color: #6C757D;
+        color: #94A3B8;
         transition: color 0.3s ease;
     }
 
-    .stat-card:hover .metric-label {
-        color: #2196F3;
-    }
-
-    .warning { color: #FFC107; }
-    .danger { color: #DC3545; }
-    .success { color: #28A745; }
+    .warning { color: #FBBF24; }
+    .danger { color: #EF4444; }
+    .success { color: #10B981; }
 
     h1, h2, h3 {
         text-align: center;
         animation: fadeInUp 0.6s ease-out forwards;
-        color: #2C3E50;
+        color: #E2E8F0;
         text-shadow: 0 0 20px rgba(33, 150, 243, 0.1);
         transition: text-shadow 0.3s ease;
     }
@@ -149,7 +135,7 @@ st.markdown("""
     }
 
     .department-label {
-        color: #6C757D;
+        color: #94A3B8;
         font-size: 14px;
         margin-bottom: 8px;
         transition: color 0.3s ease;

@@ -695,7 +695,7 @@ class ExcelProcessor:
             'missing_lunch_days': missing_lunch,
             'absences': int(employee_summary['absences']),
             'special_schedule': employee_name.lower() in self.SPECIAL_SCHEDULES
-        }
+                }
 
         return stats
 
@@ -1019,16 +1019,20 @@ class ExcelProcessor:
                 try:
                     df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
 
-                    # Only check column A for absences
+                    # Check if employee name matches in J3
+                    name_cell = df.iloc[2, self.get_column_index('J')]
+                    if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
+                        continue
+
+                    # If name matches, check G12-G42 for absences
                     day_col = self.get_column_index('A')
-                    absence_col = self.get_column_index('G')  # Column G typically contains 'Absence'
+                    absence_col = self.get_column_index('G')
 
-                    for row in range(11, 42):  # A12 to A42
+                    for row in range(11, 42):  # G12 to G42
                         try:
-                            day_value = df.iloc[row, day_col]
                             absence_value = df.iloc[row, absence_col]
-
                             if not pd.isna(absence_value) and str(absence_value).strip().lower() == 'absence':
+                                day_value = df.iloc[row, day_col]
                                 if not pd.isna(day_value):
                                     day_str = str(day_value).strip()
                                     print(f"Ausencia encontrada en fila {row+1}, día: {day_str}")

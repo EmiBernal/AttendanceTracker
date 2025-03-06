@@ -720,7 +720,6 @@ class ExcelProcessor:
 
             print(f"Total de ausencias encontradas: {absences}")
             return absences
-
         except Exception as e:
             print(f"Error calculando ausencias de Valentina: {str(e)}")
             return 0
@@ -1014,42 +1013,37 @@ class ExcelProcessor:
         try:
             absence_days = []
             exceptional_index = self.excel_file.sheet_names.index('Exceptional')
-            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index+1:]  # Start after Exceptional
 
             for sheet in attendance_sheets:
-                df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
 
-                # Check all three possible positions
-                positions = [
-                    {'name_col': 'J', 'day_col': 'A', 'absence_col': 'G'},
-                    {'name_col': 'Y', 'day_col': 'P', 'absence_col': 'V'},
-                    {'name_col': 'AN', 'day_col': 'AE', 'absence_col': 'AK'}
-                ]
+                    # Only check column A for absences
+                    day_col = self.get_column_index('A')
+                    absence_col = self.get_column_index('G')  # Column G typically contains 'Absence'
 
-                for position in positions:
-                    name_col_index = self.get_column_index(position['name_col'])
-                    name_cell = df.iloc[2, name_col_index]
+                    for row in range(11, 42):  # A12 to A42
+                        try:
+                            day_value = df.iloc[row, day_col]
+                            absence_value = df.iloc[row, absence_col]
 
-                    if pd.isna(name_cell):
-                        continue
+                            if not pd.isna(absence_value) and str(absence_value).strip().lower() == 'absence':
+                                if not pd.isna(day_value):
+                                    day_str = str(day_value).strip()
+                                    print(f"Ausencia encontrada en fila {row+1}, día: {day_str}")
+                                    absence_days.append(day_str)
+                        except Exception as e:
+                            print(f"Error processing row {row+1}: {str(e)}")
+                            continue
 
-                    if str(name_cell).strip() == employee_name:
-                        day_col = self.get_column_index(position['day_col'])
-                        absence_col = self.get_column_index(position['absence_col'])
+                except Exception as e:
+                    print(f"Error processing sheet {sheet}: {str(e)}")
+                    continue
 
-                        for row in range(11, 42):  # A12 to A42
-                            try:
-                                day_value = df.iloc[row, day_col]
-                                absence_value = df.iloc[row, absence_col]
-
-                                if not pd.isna(day_value) and not pd.isna(absence_value):
-                                    if str(absence_value).strip().lower() == 'absence':
-                                        absence_days.append(str(day_value).strip())
-                            except Exception as e:
-                                print(f"Error processing row {row+1}: {str(e)}")
-                                continue
-
+            print(f"Total ausencias encontradas: {len(absence_days)}")
             return absence_days
+
         except Exception as e:
             print(f"Error getting absence days: {str(e)}")
             return []

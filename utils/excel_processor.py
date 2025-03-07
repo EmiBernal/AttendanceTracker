@@ -30,21 +30,19 @@ class ExcelProcessor:
                 'half_day': True,
                 'end_time': datetime.strptime('12:40', '%H:%M').time(),
                 'no_lunch': True,
-                'absence_cell': 'AE7',
-                'sheet_name': '4.5.6'
+                'check_special_exit': True,
+                'exit_col': 'AH',
+                'start_row': 11,  # corresponde a fila 12
+                'end_row': 40
             },
             'valentina al': {
                 'half_day': True,
                 'end_time': datetime.strptime('12:40', '%H:%M').time(),
                 'no_lunch': True,
-                'sheet_name': '7.8.9',
-                'position': {
-                    'name_col': 'AN',
-                    'entry_col': 'AF',
-                    'exit_col': 'AH',
-                    'day_col': 'AE',
-                    'absence_col': 'AK'
-                }
+                'check_special_exit': True,
+                'exit_col': 'AH',
+                'start_row': 11,  # corresponde a fila 12
+                'end_row': 40
             }
         }
 
@@ -647,8 +645,10 @@ class ExcelProcessor:
             attendance_sheets = self.excel_file.sheet_names[exceptional_index + 1:]
 
             is_ppp_employee = 'ppp' in employee_name.lower()
+            is_special_employee = employee_name.lower() in self.SPECIAL_SCHEDULES and \
+                                self.SPECIAL_SCHEDULES[employee_name.lower()].get('check_special_exit', False)
 
-            # Configuración especial para empleados PPP
+            # Configuración para empleados PPP
             ppp_positions = [
                 {
                     'name_col': 'J',
@@ -698,64 +698,118 @@ class ExcelProcessor:
                 }
             ]
 
-            positions = ppp_positions if is_ppp_employee else regular_positions
+            # Configuración para empleados regulares
+            regular_positions = [
+                {
+                    'name_col': 'J',
+                    'entry_col': 'B',
+                    'exit_col': 'I',
+                    'day_col': 'A',
+                    'lunch_out': 'D',
+                    'lunch_return': 'G'
+                },
+                {
+                    'name_col': 'Y',
+                    'entry_col': 'Q',
+                    'exit_col': 'X',
+                    'day_col': 'P',
+                    'lunch_out': 'S',
+                    'lunch_return': 'V'
+                },
+                {
+                    'name_col': 'AN',
+                    'entry_col': 'AF',
+                    'exit_col': 'AM',
+                    'day_col': 'AE',
+                    'lunch_out': 'AH',
+                    'lunch_return': 'AK'
+                }
+            ]
 
             for sheet in attendance_sheets:
                 try:
                     df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
 
-                    for position in positions:
-                        try:
-                            name_col_index = self.get_column_index(position['name_col'])
-                            name_cell = df.iloc[2, name_col_index]
+                    if is_special_employee:
+                        # Procesar empleados especiales (valentina y agustin)
+                        special_config = self.SPECIAL_SCHEDULES[employee_name.lower()]
+                        exit_col = self.get_column_index(special_config['exit_col'])
+                        start_row = special_config['start_row']
+                        end_row = special_config['end_row']
 
-                            if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
-                                continue
-
-                            day_col = self.get_column_index(position['day_col'])
-                            exit_col = self.get_column_index(position['exit_col'])
-
-                            # Solo obtener columnas adicionales para empleados no PPP
-                            if not is_ppp_employee:
-                                entry_col = self.get_column_index(position['entry_col'])
-                                lunch_out_col = self.get_column_index(position['lunch_out'])
-                                lunch_return_col = self.get_column_index(position['lunch_return'])
-
-                            for row in range(11, 42):
-                                try:
-                                    day_value = df.iloc[row, day_col]
-                                    if pd.isna(day_value):
-                                        continue
-
-                                    day_str = str(day_value).strip()
-                                    if any(abbr in day_str.lower() for abbr in ['sa', 'su']):
-                                        continue
-
-                                    if is_ppp_employee:
-                                        # Para empleados PPP, cualquier salida es considerada como retiro durante horario
-                                        exit_time = df.iloc[row, exit_col]
-                                        if not pd.isna(exit_time):
-                                            week_num = (int(day_str.split()[0]) - 1) // 7 + 1
-                                            formatted_day = self.translate_day_abbreviation(day_str)
-                                            weeks_dict[f'Semana {week_num}'].append(formatted_day)
-                                            total_days += 1
-                                    else:
-                                        # Para empleados regulares, solo contar salidas sin retorno
-                                        lunch_return = df.iloc[row, lunch_return_col]
-                                        exit_time = df.iloc[row, exit_col]
-                                        if pd.isna(lunch_return) and pd.isna(exit_time):
-                                            week_num = (int(day_str.split()[0]) - 1) // 7 + 1
-                                            formatted_day = self.translate_day_abbreviation(day_str)
-                                            weeks_dict[f'Semana {week_num}'].append(formatted_day)
-                                            total_days += 1
-
-                                except Exception as e:
-                                    print(f"Error processing row {row+1}: {e}")
+                        # Verificar las columnas específicas
+                        for row in range(start_row, end_row + 1):
+                            try:
+                                day_value = df.iloc[row, self.get_column_index('A')]  # Columna A para días
+                                if pd.isna(day_value):
                                     continue
 
-                        except Exception as e:
-                            print(f"Error checking position {position['name_col']}: {e}")
-                            continue
+                                day_str = str(day_value).strip()
+                                if any(abbr in day_str.lower() for abbr in ['sa', 'su', 'absence']):
+                                    continue
+
+                                exit_time = df.iloc[row, exit_col]
+                                if not pd.isna(exit_time):
+                                    week_num = (int(day_str.split()[0]) - 1) // 7 + 1
+                                    formatted_day = self.translate_day_abbreviation(day_str)
+                                    weeks_dict[f'Semana {week_num}'].append(formatted_day)
+                                    total_days += 1
+
+                            except Exception as e:
+                                print(f"Error processing special employee row {row+1}: {e}")
+                                continue
+
+                    else:
+                        # Procesar empleados PPP o regulares
+                        positions = ppp_positions if is_ppp_employee else regular_positions
+                        for position in positions:
+                            try:
+                                name_col_index = self.get_column_index(position['name_col'])
+                                name_cell = df.iloc[2, name_col_index]
+
+                                if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
+                                    continue
+
+                                day_col = self.get_column_index(position['day_col'])
+                                exit_col = self.get_column_index(position['exit_col'])
+                                
+                                start_row = position.get('start_row', 11)
+                                end_row = 42
+
+                                for row in range(start_row, end_row):
+                                    try:
+                                        day_value = df.iloc[row, day_col]
+                                        if pd.isna(day_value):
+                                            continue
+
+                                        day_str = str(day_value).strip()
+                                        if any(abbr in day_str.lower() for abbr in ['sa', 'su', 'absence']):
+                                            continue
+
+                                        if is_ppp_employee:
+                                            exit_time = df.iloc[row, exit_col]
+                                            if not pd.isna(exit_time):
+                                                week_num = (int(day_str.split()[0]) - 1) // 7 + 1
+                                                formatted_day = self.translate_day_abbreviation(day_str)
+                                                weeks_dict[f'Semana {week_num}'].append(formatted_day)
+                                                total_days += 1
+                                        else:
+                                            lunch_return_col = self.get_column_index(position['lunch_return'])
+                                            lunch_return = df.iloc[row, lunch_return_col]
+                                            exit_time = df.iloc[row, exit_col]
+                                            if pd.isna(lunch_return) and pd.isna(exit_time):
+                                                week_num = (int(day_str.split()[0]) - 1) // 7 + 1
+                                                formatted_day = self.translate_day_abbreviation(day_str)
+                                                weeks_dict[f'Semana {week_num}'].append(formatted_day)
+                                                total_days += 1
+
+                                    except Exception as e:
+                                        print(f"Error processing row {row+1}: {e}")
+                                        continue
+
+                            except Exception as e:
+                                print(f"Error checking position {position['name_col']}: {e}")
+                                continue
 
                 except Exception as e:
                     print(f"Error processing sheet {sheet}: {e}")

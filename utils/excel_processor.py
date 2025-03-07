@@ -529,15 +529,19 @@ class ExcelProcessor:
         columns = []
         current_column = []
         
-        for i, item in enumerate(items):
+        for item in items:
             current_column.append(f"• {item}")
             
-            # When we reach 8 items or it's the last item, add the column
-            if len(current_column) == items_per_column or i == len(items) - 1:
+            # When we reach 8 items, start a new column
+            if len(current_column) == items_per_column:
                 columns.append("\n".join(current_column))
                 current_column = []
 
-        # Join columns with sufficient spacing to prevent overlap
+        # Add any remaining items in the last column
+        if current_column:
+            columns.append("\n".join(current_column))
+
+        # Join columns with sufficient spacing
         return "          ".join(columns)  # 10 spaces between columns
 
     def format_lunch_overtime_text(self, lunch_overtime_days):

@@ -357,6 +357,13 @@ class ExcelProcessor:
 
                             # Extraer el día y nombre del día
                             day_str = str(day_value).strip()
+                            # Get special schedule configuration
+                            schedule = self.SPECIAL_SCHEDULES[employee_name.lower()]
+                            if 'position' in schedule:
+                                pos = schedule['position']
+                            else:
+                                continue
+
                             # Skip weekends
                             if any(abbr in day_str.lower() for abbr in ['sa', 'su']):
                                 continue
@@ -639,6 +646,7 @@ class ExcelProcessor:
             empleados_df['absences'] = empleados_df['absences'].apply(parse_absence)
 
             print("\nEmpleados disponibles:", empleados_df['employee_name'].tolist())
+
             return empleados_df
 
         except Exception as e:
@@ -689,7 +697,7 @@ class ExcelProcessor:
         return stats
 
     def calculate_valentina_absences(self, df):
-        """Calcula lasausencias de Valentina verificando solo lacolumna AK"""
+        """Calcula las ausencias de Valentina verificandosolo la columna AK"""
         absences = 0
         try:
             absence_col = self.get_column_index('AK')
@@ -1434,7 +1442,8 @@ class ExcelProcessor:
                 'Días con Llegada Tarde': [len(late_days)],
                 'Minutos Totales de Retraso': [f"{stats['late_minutes']:.0f}"],
                 'Días con Exceso en Almuerzo': [len(lunch_overtime_days)],
-                'Minutos Totales Excedidos enAlmuerzo': [f"{stats['total_lunch_minutes']:.0f}"],'Retiros Anticipados': [len(early_departure_days)],
+                'Minutos Totales Excedidos en Almuerzo': [f"{stats['total_lunch_minutes']:.0f}"],
+                'Retiros Anticipados': [len(early_departure_days)],
                 'Minutos Totales de Salida Anticipada': [f"{early_minutes:.0f}"],
                 'Días sin Registro de Entrada': [len(stats['missing_entry_days'])],
                 'Días sin Registro de Salida': [len(stats['missing_exit_days'])],
@@ -1541,13 +1550,13 @@ class ExcelProcessor:
 
                 # Determine which week the day belongs to
                 if 1 <= day_num <= 7:
-                    weeks['Semana 1'].append(day)
+                    weeks['Semana 1:'].append(day)
                 elif 8 <= day_num <= 14:
-                    weeks['Semana 2'].append(day)
+                    weeks['Semana 2:'].append(day)
                 elif 15 <= day_num <= 21:
-                    weeks['Semana 3'].append(day)
+                    weeks['Semana 3:'].append(day)
                 elif 22 <= day_num <= 31:
-                    weeks['Semana 4'].append(day)
+                    weeks['Semana 4:'].append(day)
 
                 # Sort days within each week
                 for week in weeks.values():
@@ -1560,7 +1569,7 @@ class ExcelProcessor:
         return weeks
 
     def format_lunch_overtime_text(self, lunch_overtime_days):
-        """Formats lunch overtime days by week in a horizontal layout matching the design sketch"""
+        """Formats lunch overtime days by week in a vertical bullet point layout"""
         if not lunch_overtime_days:
             return "No hay días registrados"
 
@@ -1570,7 +1579,6 @@ class ExcelProcessor:
         # Sort days into weeks
         for day in lunch_overtime_days:
             try:
-                # Extract day number and validate format
                 day_parts = day.split()
                 if len(day_parts) >= 2:
                     day_num = int(day_parts[0])
@@ -1591,16 +1599,14 @@ class ExcelProcessor:
         for week_days in weeks_dict.values():
             week_days.sort(key=lambda x: int(x.split()[0]))
 
-        # Format output starting with title
-        formatted_text = ["Dias con exceso"]
-
-        # Add weeks with days in horizontal format with bullet points
+        # Format output with bullet points
+        days_text = []
         for week_num in range(1, 5):
             week_key = f'Semana {week_num}'
             days = weeks_dict[week_key]
             if days:  # Only include weeks that have days
-                days_text = " • ".join(days)
-                formatted_text.append(f"{week_key}  {days_text}")
+                days_text.extend([f"• {day}" for day in days])
 
-        # Return the formatted text with proper line breaks
-        return "\n".join(formatted_text)
+        # Join all days with newlines, same format as absence days
+        return "\n".join(days_text) if days_text else "No hay días registrados"
+

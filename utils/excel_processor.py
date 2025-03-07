@@ -607,9 +607,12 @@ class ExcelProcessor:
             start_time = datetime.strptime('7:50', '%H:%M').time()
             end_time = datetime.strptime('12:00', '%H:%M').time()
 
+            # Encontrar el índice de la hoja "Exceptional"
             exceptional_index = self.excel_file.sheet_names.index('Exceptional')
-            attendance_sheets = self.excel_file.sheet_names[exceptional_index+1:]
+            # Solo procesar las hojas después de "Exceptional"
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index + 1:]
 
+            # Definir las posiciones de las columnas según la ubicación del nombre
             positions = [
                 {
                     'name_col': 'J',
@@ -672,14 +675,14 @@ class ExcelProcessor:
                                     if any(abbr in day_str.lower() for abbr in ['sa', 'su', 'absence']):
                                         continue
 
-                                    # Check if it's a valid day with all required records
+                                    # Verificar que hay entrada y almuerzo pero NO hay salida
                                     has_entry = not pd.isna(entry_time)
-                                    has_exit = not pd.isna(exit_time)
                                     has_lunch_out = not pd.isna(lunch_out)
                                     has_lunch_return = not pd.isna(lunch_return)
+                                    has_exit = pd.isna(exit_time)  # Verificamos que NO haya salida
 
-                                    # Only proceed if we have all records
-                                    if has_entry and has_exit and has_lunch_out and has_lunch_return:
+                                    # Solo proceder si tenemos entrada y almuerzo pero NO salida
+                                    if has_entry and not has_exit and has_lunch_out and has_lunch_return:
                                         try:
                                             # Convert lunch times to datetime.time objects
                                             lunch_out_time = pd.to_datetime(lunch_out).time()
@@ -734,7 +737,7 @@ class ExcelProcessor:
                     lines.append(f"\n{week_key}")
                     lines.append(self.format_list_in_columns(days))
 
-            hover_text = "\n".join(lines) if lines else "No hay días registrados"
+            hover_text = "\n".join(lines) if any(weeks_dict[week] for week in weeks_dict) else "No hay días registrados"
             return total_days, hover_text
 
         except Exception as e:

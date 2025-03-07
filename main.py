@@ -194,9 +194,9 @@ def create_employee_dashboard(processor, employee_name):
     """, unsafe_allow_html=True)
 
     regular_metrics = [
-        ('Inasistencias', len(absence_days), "Total días", f"Días sin asistir al trabajo:\n{absence_days_text}"),
-        ('Días con Llegada Tarde', len(late_days), f"{stats['late_minutes']:.0f} minutos en total", f"Días con llegada tarde:\n{late_days_text}"),
-        ('Días con Exceso en Almuerzo', len(lunch_overtime_days), f"{stats['total_lunch_minutes']:.0f} minutos en total", f"Días con exceso:\n{lunch_days_text}")
+        ('Inasistencias', len(absence_days) if absence_days else 0, "Total días", f"Días sin asistir al trabajo:\n{absence_days_text}"),
+        ('Días con Llegada Tarde', len(late_days) if late_days else 0, f"{stats['late_minutes']:.0f} minutos en total", f"Días con llegada tarde:\n{late_days_text}"),
+        ('Días con Exceso en Almuerzo', len(lunch_overtime_days) if lunch_overtime_days else 0, f"{stats['total_lunch_minutes']:.0f} minutos en total", f"Días con exceso:\n{lunch_days_text}")
     ]
 
     for label, value, subtitle, hover_text in regular_metrics:
@@ -222,8 +222,8 @@ def create_employee_dashboard(processor, employee_name):
     """, unsafe_allow_html=True)
 
     auth_metrics = [
-        ('Retiros Anticipados', len(early_departure_days), f"{stats['early_minutes']:.0f} minutos en total", f"Días con salida anticipada:\n{early_departure_days_text}"),
-        ('Ingresos con Retraso', len(late_days), f"{stats['late_minutes']:.0f} minutos en total", f"Días con llegada tarde:\n{late_days_text}"),
+        ('Retiros Anticipados', len(early_departure_days) if early_departure_days else 0, f"{stats['early_minutes']:.0f} minutos en total", f"Días con salida anticipada:\n{early_departure_days_text}"),
+        ('Ingresos con Retraso', len(late_days) if late_days else 0, f"{stats['late_minutes']:.0f} minutos en total", f"Días con llegada tarde:\n{late_days_text}"),
         ('Retiros Durante Horario', mid_day_departures_count, "Total salidas", f"Salidas durante horario laboral:\n{mid_day_departures_text}")
     ]
 
@@ -254,9 +254,9 @@ def create_missing_records_section(stats, processor):
     missing_lunch_text = processor.format_list_in_columns(stats['missing_lunch_days']) if stats['missing_lunch_days'] else "No hay días registrados"
 
     missing_records = [
-        ('Sin Registro de Entrada', len(stats['missing_entry_days']), "Total días sin marcar", missing_entry_text),
-        ('Sin Registro de Salida', len(stats['missing_exit_days']), "Total días sin marcar", missing_exit_text),
-        ('Sin Registro de Almuerzo', len(stats['missing_lunch_days']), "Total días sin marcar", missing_lunch_text)
+        ('Sin Registro de Entrada', len(stats['missing_entry_days']) if stats['missing_entry_days'] else 0, "Total días sin marcar", missing_entry_text),
+        ('Sin Registro de Salida', len(stats['missing_exit_days']) if stats['missing_exit_days'] else 0, "Total días sin marcar", missing_exit_text),
+        ('Sin Registro de Almuerzo', len(stats['missing_lunch_days']) if stats['missing_lunch_days'] else 0, "Total días sin marcar", missing_lunch_text)
     ]
 
     st.markdown("""

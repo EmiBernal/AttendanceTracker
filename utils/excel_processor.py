@@ -686,7 +686,8 @@ class ExcelProcessor:
             'total_lunch_minutes': total_lunch_minutes,
             'early_departure_days': early_departure_days,
             'early_minutes': early_minutes,
-            'mid_day_departures': self.format_mid_day_departures_text(employee_name), #Updated here
+            'mid_day_departures_count': self.format_mid_day_departures_text(employee_name)[0],
+            'mid_day_departures_text': self.format_mid_day_departures_text(employee_name)[1],
             'missing_entry_days': missing_entry,
             'missing_exit_days': missing_exit,
             'missing_lunch_days': missing_lunch,
@@ -1616,6 +1617,7 @@ class ExcelProcessor:
         try:
             # Initialize dictionary with empty lists for each week
             weeks_dict = {f'Semana {i}': [] for i in range(1, 5)}
+            total_days = 0
 
             exceptional_index = self.excel_file.sheet_names.index('Exceptional')
             attendance_sheets = self.excel_file.sheet_names[exceptional_index+1:]
@@ -1657,6 +1659,7 @@ class ExcelProcessor:
                                         if not pd.isna(entry_time) and pd.isna(exit_time):
                                             formatted_day = self.translate_day_abbreviation(day_str)
                                             day_num = int(formatted_day.split()[0])
+                                            total_days += 1
 
                                             # Add to appropriate week
                                             if 1 <= day_num <= 7:
@@ -1689,8 +1692,9 @@ class ExcelProcessor:
                 if days:
                     days_text.extend([f"• {day}" for day in days])
 
-            return "\n".join(days_text) if days_text else "No hay días registrados"
+            hover_text = "\n".join(days_text) if days_text else "No hay días registrados"
+            return total_days, hover_text
 
         except Exception as e:
             print(f"Error formatting mid-day departures text: {str(e)}")
-            return "No hay días registrados"
+            return 0, "No hay días registrados"

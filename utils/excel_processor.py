@@ -599,9 +599,13 @@ class ExcelProcessor:
     def format_mid_day_departures_text(self, employee_name):
         """Formats mid-day departures text with bullet points and week grouping"""
         try:
-            # Initialize dictionary with empty lists for each week
+            # Initialize dictionary with empty lists for each week 
             weeks_dict = {f'Semana {i}': [] for i in range(1, 5)}
             total_days = 0
+
+            # Define time range for validation (7:50 - 12:00)
+            start_time = datetime.strptime('7:50', '%H:%M').time()
+            end_time = datetime.strptime('12:00', '%H:%M').time()
 
             exceptional_index = self.excel_file.sheet_names.index('Exceptional')
             attendance_sheets = self.excel_file.sheet_names[exceptional_index+1:]
@@ -633,7 +637,6 @@ class ExcelProcessor:
                 }
             ]
 
-            # Collect all mid-day departure days
             for sheet in attendance_sheets:
                 try:
                     df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
@@ -661,6 +664,7 @@ class ExcelProcessor:
                                     exit_time = df.iloc[row, exit_col]
                                     lunch_out = df.iloc[row, lunch_out_col]
                                     lunch_return = df.iloc[row, lunch_return_col]
+                                    lunch_return = df.iloc[row, lunch_return_col]
 
                                     if pd.isna(day_value):
                                         continue
@@ -670,24 +674,37 @@ class ExcelProcessor:
                                         continue
 
                                     # Nueva lógica: verificar si hay entrada y salida, y si hay registros de almuerzo
+                                    # Verificar si hay entrada y salida
                                     has_entry_exit = not pd.isna(entry_time) and not pd.isna(exit_time)
-                                    has_lunch_records = not pd.isna(lunch_out) and not pd.isna(lunch_return)
 
-                                    # Solo contar como salida si hay entrada/salida Y registros de almuerzo
-                                    if has_entry_exit and has_lunch_records:
-                                        formatted_day = self.translate_day_abbreviation(day_str)
-                                        day_num = int(formatted_day.split()[0])
-                                        total_days += 1
-
-                                        # Add to appropriate week
-                                        if 1 <= day_num <= 7:
-                                            weeks_dict['Semana 1'].append(formatted_day)
-                                        elif 8 <= day_num <= 14:
-                                            weeks_dict['Semana 2'].append(formatted_day)
-                                        elif 15 <= day_num <= 21:
-                                            weeks_dict['Semana 3'].append(formatted_day)
-                                        elif 22 <= day_num <= 31:
-                                            weeks_dict['Semana 4'].append(formatted_day)
+                                    if has_entry_exit and not pd.isna(lunch_out) and not pd.isna(lunch_return):
+                                        try:
+                                            # Convertir tiempos a objetos datetime.time
+                                            lunch_out_time = pd.to_datetime(lunch_out).time()
+                                            lunch_return_time = pd.to_datetime(lunch_return).time()
+                                            
+                                            # Verificar si el almuerzo está entre 7:50 y 12:00
+                                            if start_time <= lunch_out_time <= end_time and start_time <= lunch_return_time <= end_time:
+                                                formatted_day = self.translate_day_abbreviation(day_str)
+                                                try:
+                                                    day_num = int(formatted_day.split()[0])
+                                                    total_days += 1
+                                                    
+                                                    # Add to appropriate week based on day number
+                                                    if 1 <= day_num <= 7:
+                                                        weeks_dict['Semana 1'].append(formatted_day)
+                                                    elif 8 <= day_num <= 14:
+                                                        weeks_dict['Semana 2'].append(formatted_day)
+                                                    elif 15 <= day_num <= 21:
+                                                        weeks_dict['Semana 3'].append(formatted_day)
+                                                    elif 22 <= day_num <= 31:
+                                                        weeks_dict['Semana 4'].append(formatted_day)
+                                                except (ValueError, IndexError) as e:
+                                                    print(f"Error parsing day number: {str(e)}")
+                                                    continue
+                                        except Exception as e:
+                                            print(f"Error processing lunch times: {str(e)}")
+                                            continue
 
                                 except Exception as e:
                                     continue

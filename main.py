@@ -365,6 +365,47 @@ def main():
             processor = ExcelProcessor(uploaded_file)
             attendance_summary = processor.process_attendance_summary()
 
+            # Get stats for all employees
+            total_absences = 0
+            total_late_days = 0
+            total_lunch_overtime_days = 0
+
+            for employee_name in attendance_summary['employee_name'].unique():
+                stats = processor.get_employee_stats(employee_name)
+                total_absences += stats['absences']
+                total_late_days += len(stats['late_days']) if stats['late_days'] else 0
+                total_lunch_overtime_days += len(stats['lunch_overtime_days']) if stats['lunch_overtime_days'] else 0
+
+            # Display the totals using the same card format
+            st.markdown("""
+                <div class="stat-group">
+                    <h3>📈 Métricas Generales del Mes</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+            """, unsafe_allow_html=True)
+
+            # Define the metrics to display
+            summary_metrics = [
+                ('Total Inasistencias', total_absences, "Total días", "Total de días de inasistencia en el mes"),
+                ('Total Llegadas Tarde', total_late_days, "Total días", "Total de días con llegadas tarde en el mes"),
+                ('Total Excesos Almuerzo', total_lunch_overtime_days, "Total días", "Total de días con exceso en tiempo de almuerzo")
+            ]
+
+            # Display each metric in a card
+            for label, value, subtitle, hover_text in summary_metrics:
+                status = get_status(value)
+                st.markdown(f"""
+                    <div class="stat-card">
+                        <div class="content">
+                            <div class="metric-label">{label}</div>
+                            <div class="metric-value {status}">{value}</div>
+                            <div class="metric-label">{subtitle}</div>
+                        </div>
+                        <div class="hover-text">{hover_text}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("</div></div>", unsafe_allow_html=True)
+
             # Employee selector and view selector in sidebar
             with st.sidebar:
                 st.subheader("👤 Selección de Empleado")

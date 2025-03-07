@@ -525,24 +525,32 @@ class ExcelProcessor:
         if not items:
             return "No hay días registrados"
 
-        # Split items into columns of exactly 8 items
+        # Create columns of exactly 8 items
         columns = []
         current_column = []
         
-        for item in items:
-            current_column.append(f"• {item}")
-            
-            # When we reach 8 items, start a new column
-            if len(current_column) == items_per_column:
-                columns.append("\n".join(current_column))
-                current_column = []
-
-        # Add any remaining items in the last column
+        for item in sorted(items, key=lambda x: int(x.split()[0])):
+            if len(current_column) < items_per_column:
+                current_column.append(f"• {item}")
+            else:
+                # When column is full (8 items), start a new one
+                columns.append(current_column)
+                current_column = [f"• {item}"]
+        
+        # Add the last column if it has any items
         if current_column:
-            columns.append("\n".join(current_column))
+            columns.append(current_column)
 
-        # Join columns with sufficient spacing
-        return "          ".join(columns)  # 10 spaces between columns
+        # Format each column as a string, ensuring consistent width
+        formatted_columns = []
+        for column in columns:
+            # Pad column to 8 items if needed
+            while len(column) < items_per_column:
+                column.append("")  # Add empty strings for padding
+            formatted_columns.append("\n".join(column))
+
+        # Join columns with sufficient spacing (10 spaces)
+        return "          ".join(formatted_columns)
 
     def format_lunch_overtime_text(self, lunch_overtime_days):
         """Formats lunch overtime days by week in a horizontal layout"""

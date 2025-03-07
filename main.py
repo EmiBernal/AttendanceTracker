@@ -68,6 +68,7 @@ st.markdown("""
         transform: translateY(-2px);
         box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
         border-color: rgba(255, 255, 255, 0.2);
+        z-index: 1000;
     }
 
     /* Hover card effect */
@@ -81,7 +82,7 @@ st.markdown("""
     }
 
     .stat-card .hover-text {
-        position: absolute;
+        position: fixed;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
@@ -100,10 +101,9 @@ st.markdown("""
         max-width: 90%;
         line-height: 1.5;
         min-width: 300px;
-        max-height: 400px;  /* Increased from 80vh */
+        max-height: 80vh;
         overflow-y: auto;
-        scrollbar-width: thin;
-        scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.2);
+        z-index: 1001;
     }
 
     /* Custom scrollbar styling */
@@ -123,7 +123,7 @@ st.markdown("""
 
     .stat-card:hover .hover-text {
         opacity: 1;
-        z-index: 1000;
+        z-index: 1001;
     }
 
     .metric-value {

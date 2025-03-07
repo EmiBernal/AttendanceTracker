@@ -189,6 +189,8 @@ def create_employee_dashboard(processor, employee_name):
     absence_days_text = "\n".join([f"• {day}" for day in absence_days]) if absence_days else "No hay días registrados"
     late_days_text = "\n".join([f"• {day}" for day in late_days]) if late_days else "No hay días registrados"
     lunch_days_text = processor.format_lunch_overtime_text(lunch_overtime_days)
+    mid_day_departures_text = processor.format_mid_day_departures_text(employee_name)
+
 
     # Regular Attendance Metrics
     st.markdown("""
@@ -231,7 +233,7 @@ def create_employee_dashboard(processor, employee_name):
     auth_metrics = [
         ('Retiros Anticipados', len(early_departure_days), f"{stats['early_minutes']:.0f} minutos en total", f"Días con salida anticipada:\n{early_departure_days_text}"),
         ('Ingresos con Retraso', len(late_days), f"{stats['late_minutes']:.0f} minutos en total", f"Días con llegada tarde:\n{late_days_text}"),
-        ('Retiros Durante Horario', stats['mid_day_departures'], "Total salidas", "Salidas durante horario laboral")
+        ('Retiros Durante Horario', stats['mid_day_departures'], "Total salidas", f"Salidas durante horario laboral:\n{mid_day_departures_text}")
     ]
 
     for label, value, subtitle, hover_text in auth_metrics:

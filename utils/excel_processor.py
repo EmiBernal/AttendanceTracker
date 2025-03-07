@@ -664,8 +664,8 @@ class ExcelProcessor:
                 'required_hours': float(employee_data['required_hours']),
                 'actual_hours': float(employee_data['actual_hours']), 
                 'absence_days': absence_days,
-                'absences': len(absence_days) if absence_days else 0,  # Ensure we have a valid count
-                'late_days': late_days,
+                'absences': len(absence_days) if absence_days else 0,
+                'late_days': late_days,  # Ensure we're passing the list of days
                 'late_minutes': late_minutes,
                 'lunch_overtime_days': lunch_overtime_days,
                 'total_lunch_minutes': total_lunch_minutes,

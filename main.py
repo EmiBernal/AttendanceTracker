@@ -152,7 +152,7 @@ def create_employee_dashboard(processor, employee_name):
 
     # Get specific days information
     absence_days = processor.get_absence_days(employee_name)
-    late_days = processor.get_late_days(employee_name)[0]  # Get just the list of days
+    late_days = stats['late_days']  # Use the list directly from stats
     early_departure_days = stats['early_departure_days']
     lunch_overtime_days = stats['lunch_overtime_days']
 

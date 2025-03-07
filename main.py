@@ -287,6 +287,11 @@ def create_missing_records_section(stats, processor):
 
     st.markdown("</div></div>", unsafe_allow_html=True)
 
+def create_monthly_summary():
+    """Create a general monthly summary page"""
+    st.title("📊 Resumen General del Mes")
+    st.write("Esta sección mostrará un resumen general de todos los empleados.")
+
 def get_status(value, warning_threshold=3, danger_threshold=5):
     """Determina el estado (success, warning, danger) basado en el valor"""
     # Si el valor es una lista, usar su longitud
@@ -317,13 +322,18 @@ def main():
             processor = ExcelProcessor(uploaded_file)
             attendance_summary = processor.process_attendance_summary()
 
-            # Employee selector in sidebar
+            # Employee selector and view selector in sidebar
             with st.sidebar:
                 st.subheader("👤 Selección de Empleado")
                 selected_employee = st.selectbox(
                     "Selecciona un empleado",
                     attendance_summary['employee_name'].unique()
                 )
+
+                st.subheader("📋 Vistas Disponibles")
+                if st.button("Ver Resumen General del Mes"):
+                    create_monthly_summary()
+                    return
 
             # Create dashboard for selected employee
             create_employee_dashboard(processor, selected_employee)

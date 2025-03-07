@@ -372,11 +372,11 @@ def main():
                     attendance_summary['employee_name'].unique()
                 )
 
+            # Show either monthly summary or employee dashboard
             if show_summary:
                 create_monthly_summary(processor, attendance_summary)
-
-            # Create dashboard for selected employee
-            create_employee_dashboard(processor, selected_employee)
+            else:
+                create_employee_dashboard(processor, selected_employee)
 
         except Exception as e:
             st.error(f"Error procesando el archivo: {str(e)}")

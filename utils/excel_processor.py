@@ -639,20 +639,20 @@ class ExcelProcessor:
             early_departure_days = []
             total_early_minutes = 0
             
-            # Si es un empleado especial, usar los retiros durante horario como salidas
+            # Si es un empleado especial, usar los registros específicos
             if employee_name.lower() in ['valentina al', 'agustin taba']:
                 # Find Exceptional sheet index
                 exceptional_index = self.excel_file.sheet_names.index('Exceptional')
-                attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+                # Solo procesar las hojas después de "Exceptional"
+                attendance_sheets = self.excel_file.sheet_names[exceptional_index + 1:]
 
-                special_config = self.SPECIAL_SCHEDULES[employee_name.lower()]
                 for sheet in attendance_sheets:
                     try:
                         df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
-                        exit_col = self.get_column_index(special_config['exit_col'])
-                        day_col = self.get_column_index('A')  # Columna A para días
+                        exit_col = self.get_column_index('AH')  # Columna AH fija para ambos
+                        day_col = self.get_column_index('AE')  # Columna AE para días
                         
-                        for row in range(special_config['start_row'], special_config['end_row']):
+                        for row in range(11, 41):  # Desde fila 12 hasta 40
                             try:
                                 day_value = df.iloc[row, day_col]
                                 if pd.isna(day_value):
@@ -666,15 +666,18 @@ class ExcelProcessor:
                                 if not pd.isna(exit_time):
                                     try:
                                         exit_time = pd.to_datetime(exit_time).time()
+                                        schedule = self.get_employee_schedule(employee_name)
+                                        
                                         if self.is_early_departure(employee_name, exit_time):
                                             early_minutes = (
-                                                datetime.combine(datetime.min, special_config['end_time']) -
+                                                datetime.combine(datetime.min, schedule['end_time']) -
                                                 datetime.combine(datetime.min, exit_time)
                                             ).total_seconds() / 60
                                             total_early_minutes += early_minutes
                                             
                                             formatted_day = self.translate_day_abbreviation(day_str)
                                             early_departure_days.append(formatted_day)
+                                            print(f"Salida temprana en {sheet} fila {row+1}: {early_minutes:.0f} minutos")
                                     except Exception as e:
                                         print(f"Error processing exit time in row {row+1}: {str(e)}")
                             except Exception as e:

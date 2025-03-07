@@ -287,23 +287,19 @@ def create_missing_records_section(stats, processor):
 
     st.markdown("</div></div>", unsafe_allow_html=True)
 
-def create_monthly_summary():
-    """Create a general monthly summary page"""
-    st.title("📊 Resumen General del Mes")
-
+def create_monthly_summary(processor, attendance_summary):
+    """Create a general monthly summary"""
     # Initialize counters for totals
     total_absences = 0
     total_late_days = 0
     total_lunch_overtime_days = 0
 
     # Get stats for all employees
-    if 'processor' in locals():
-        attendance_summary = processor.process_attendance_summary()
-        for employee_name in attendance_summary['employee_name'].unique():
-            stats = processor.get_employee_stats(employee_name)
-            total_absences += stats['absences']
-            total_late_days += len(stats['late_days']) if stats['late_days'] else 0
-            total_lunch_overtime_days += len(stats['lunch_overtime_days']) if stats['lunch_overtime_days'] else 0
+    for employee_name in attendance_summary['employee_name'].unique():
+        stats = processor.get_employee_stats(employee_name)
+        total_absences += stats['absences']
+        total_late_days += len(stats['late_days']) if stats['late_days'] else 0
+        total_lunch_overtime_days += len(stats['lunch_overtime_days']) if stats['lunch_overtime_days'] else 0
 
     # Display the totals using the same card format as individual employees
     st.markdown("""
@@ -367,16 +363,17 @@ def main():
 
             # Employee selector and view selector in sidebar
             with st.sidebar:
+                st.subheader("📋 Vistas Disponibles")
+                show_summary = st.button("Ver Resumen General del Mes")
+
                 st.subheader("👤 Selección de Empleado")
                 selected_employee = st.selectbox(
                     "Selecciona un empleado",
                     attendance_summary['employee_name'].unique()
                 )
 
-                st.subheader("📋 Vistas Disponibles")
-                if st.button("Ver Resumen General del Mes"):
-                    create_monthly_summary()
-                    return
+            if show_summary:
+                create_monthly_summary(processor, attendance_summary)
 
             # Create dashboard for selected employee
             create_employee_dashboard(processor, selected_employee)

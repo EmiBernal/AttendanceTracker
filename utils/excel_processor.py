@@ -511,65 +511,18 @@ class ExcelProcessor:
             return [], [], []
 
     def format_lunch_overtime_text(self, lunch_overtime_days):
-        """Formats lunch overtime days in a columnar layout with weeks as shown in the design"""
+        """Formats lunch overtime days in a bulleted list format"""
         if not lunch_overtime_days:
             return "No existen dias"
 
-        # Initialize dictionary for weeks
-        weeks_dict = {f'Semana {i}': [] for i in range(1, 5)}
-
-        # Sort days into weeks
-        for day in lunch_overtime_days:
-            try:
-                day_parts = day.split()
-                if len(day_parts) >= 2:
-                    day_num = int(day_parts[0])
-                    if 1 <= day_num <= 7:
-                        weeks_dict['Semana 1'].append(day)
-                    elif 8 <= day_num <= 14:
-                        weeks_dict['Semana 2'].append(day)
-                    elif 15 <= day_num <= 21:
-                        weeks_dict['Semana 3'].append(day)
-                    elif 22 <= day_num <= 31:
-                        weeks_dict['Semana 4'].append(day)
-            except (ValueError, IndexError) as e:
-                print(f"Error processing day {day}: {str(e)}")
-                continue
-
-        # Sort days within each week by day number
-        for week_days in weeks_dict.values():
-            week_days.sort(key=lambda x: int(x.split()[0]))
-
-        # Check if there are any days to display
-        total_days = sum(len(days) for days in weeks_dict.values())
-        if total_days == 0:
-            return "No existen dias"
-
-        # Format output with centered title and weeks header
-        formatted_text = [
-            "\n\t\t\t\tDias con exceso\n\n",
-            "\t\tSemana 1\tSemana 2\tSemana 3\tSemana 4\n"
-        ]
-
-        # Find the maximum number of days in any week 
-        max_days = max(len(days) for days in weeks_dict.values())
-
-        # Add days in rows, with proper formatting and alignment
-        for i in range(max_days):
-            row_parts = ["\t\t"]  # Initial indent
-            for week_num in range(1, 5):
-                week_key = f'Semana {week_num}'
-                days = weeks_dict[week_key]
-                if i < len(days):
-                    # Format day with dot and proper spacing
-                    day_text = f".{days[i]}"
-                    row_parts.append(f"{day_text}\t")
-                else:
-                    row_parts.append("\t\t")  # Empty space for alignment
-            formatted_text.append("".join(row_parts).rstrip())  # Remove trailing whitespace
-
-        # Return the formatted text with proper line breaks
-        return "\n".join(formatted_text)
+        # Sort days by day number
+        sorted_days = sorted(lunch_overtime_days, key=lambda x: int(x.split()[0]))
+        
+        # Format each day with a bullet point
+        formatted_days = [f"• {day}" for day in sorted_days]
+        
+        # Join with newlines
+        return "\n".join(formatted_days)
 
     def calculate_agustin_hours(self, df, start_row=11, end_row=42):
         """Calcula las horas trabajadas específicamente para Agustín Tabasso"""

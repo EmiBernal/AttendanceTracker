@@ -186,10 +186,11 @@ def create_employee_dashboard(processor, employee_name):
     """, unsafe_allow_html=True)
 
     # Format days lists for hover text
-    absence_days_text = "\n".join([f"• {day}" for day in absence_days]) if absence_days else "No hay días registrados"
-    late_days_text = "\n".join([f"• {day}" for day in late_days]) if late_days else "No hay días registrados"
+    absence_days_text = processor.format_list_in_columns(absence_days) if absence_days else "No hay días registrados"
+    late_days_text = processor.format_list_in_columns(late_days) if late_days else "No hay días registrados"
     lunch_days_text = processor.format_lunch_overtime_text(lunch_overtime_days)
     mid_day_departures_count, mid_day_departures_text = processor.format_mid_day_departures_text(employee_name)
+    early_departure_days_text = processor.format_list_in_columns(early_departure_days) if early_departure_days else "No hay días registrados"
 
 
     # Regular Attendance Metrics
@@ -219,9 +220,6 @@ def create_employee_dashboard(processor, employee_name):
         """, unsafe_allow_html=True)
 
     st.markdown("</div></div>", unsafe_allow_html=True)
-
-    # Format early departure days text
-    early_departure_days_text = "\n".join([f"• {day}" for day in early_departure_days]) if early_departure_days else "No hay días registrados"
 
     # Metrics Requiring Authorization
     st.markdown("""

@@ -517,6 +517,162 @@ class ExcelProcessor:
             print(f"Error general: {str(e)}")
             return [], [], []
 
+    def format_list_in_columns(self, items, items_per_column=8):
+        """
+        Format a list of items into columns, with a maximum number of items per column.
+        Returns a string with the formatted text.
+        """
+        if not items:
+            return "No hay días registrados"
+
+        # Split items into columns
+        columns = []
+        for i in range(0, len(items), items_per_column):
+            columns.append(items[i:i + items_per_column])
+
+        # Format each column with bullet points
+        formatted_columns = []
+        for column in columns:
+            formatted_column = [f"• {item}" for item in column]
+            formatted_columns.append("\n".join(formatted_column))
+
+        # Join columns with appropriate spacing
+        return "     ".join(formatted_columns)
+
+    def format_lunch_overtime_text(self, lunch_overtime_days):
+        """Formats lunch overtime days by week in a horizontal layout"""
+        if not lunch_overtime_days:
+            return "No hay días registrados"
+
+        # Initialize dictionary with empty lists for each week
+        weeks_dict = {f'Semana {i}': [] for i in range(1, 5)}
+
+        # Sort days into weeks
+        for day in lunch_overtime_days:
+            try:
+                day_parts = day.split()
+                if len(day_parts) >= 2:
+                    day_num = int(day_parts[0])
+                    # Determine week number
+                    if 1 <= day_num <= 7:
+                        weeks_dict['Semana 1'].append(day)
+                    elif 8 <= day_num <= 14:
+                        weeks_dict['Semana 2'].append(day)
+                    elif 15 <= day_num <= 21:
+                        weeks_dict['Semana 3'].append(day)
+                    elif 22 <= day_num <= 31:
+                        weeks_dict['Semana 4'].append(day)
+            except (ValueError, IndexError) as e:
+                print(f"Error processing day {day}: {str(e)}")
+                continue
+
+        # Sort days within each week
+        for week_days in weeks_dict.values():
+            week_days.sort(key=lambda x: int(x.split()[0]))
+
+        # Format output with header and columns
+        lines = ["Días con exceso:"]
+        
+        # Add each week with its days in columns
+        for week_num in range(1, 5):
+            week_key = f'Semana {week_num}'
+            days = weeks_dict[week_key]
+            if days:
+                lines.append(f"\n{week_key}")
+                lines.append(self.format_list_in_columns(days))
+
+        return "\n".join(lines)
+
+    def format_mid_day_departures_text(self, employee_name):
+        """Formats mid-day departures text with bullet points and week grouping"""
+        try:
+            # Initialize dictionary with empty lists for each week
+            weeks_dict = {f'Semana {i}': [] for i in range(1, 5)}
+            total_days = 0
+
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index+1:]
+
+            positions = [
+                {'name_col': 'J', 'day_col': 'A', 'exit_col': 'I', 'entry_col': 'B'},
+                {'name_col': 'Y', 'day_col': 'P', 'exit_col': 'X', 'entry_col': 'Q'},
+                {'name_col': 'AN', 'day_col': 'AE', 'exit_col': 'AM', 'entry_col': 'AF'}
+            ]
+
+            # Collect all mid-day departure days
+            for sheet in attendance_sheets:
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+
+                    for position in positions:
+                        try:
+                            name_col_index = self.get_column_index(position['name_col'])
+                            name_cell = df.iloc[2, name_col_index]
+
+                            if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
+                                continue
+
+                            day_col = self.get_column_index(position['day_col'])
+                            exit_col = self.get_column_index(position['exit_col'])
+                            entry_col = self.get_column_index(position['entry_col'])
+
+                            for row in range(11, 42):
+                                try:
+                                    day_value = df.iloc[row, day_col]
+                                    entry_time = df.iloc[row, entry_col]
+                                    exit_time = df.iloc[row, exit_col]
+
+                                    if not pd.isna(day_value):
+                                        day_str = str(day_value).strip()
+                                        if any(abbr in day_str.lower() for abbr in ['sa', 'su']):
+                                            continue
+
+                                        if not pd.isna(entry_time) and pd.isna(exit_time):
+                                            formatted_day = self.translate_day_abbreviation(day_str)
+                                            day_num = int(formatted_day.split()[0])
+                                            total_days += 1
+
+                                            # Add to appropriate week
+                                            if 1 <= day_num <= 7:
+                                                weeks_dict['Semana 1'].append(formatted_day)
+                                            elif 8 <= day_num <= 14:
+                                                weeks_dict['Semana 2'].append(formatted_day)
+                                            elif 15 <= day_num <= 21:
+                                                weeks_dict['Semana 3'].append(formatted_day)
+                                            elif 22 <= day_num <= 31:
+                                                weeks_dict['Semana 4'].append(formatted_day)
+
+                                except Exception as e:
+                                    continue
+
+                        except Exception as e:
+                            continue
+
+                except Exception as e:
+                    continue
+
+            # Sort days within each week
+            for week_days in weeks_dict.values():
+                week_days.sort(key=lambda x: int(x.split()[0]))
+
+            # Format output with header and columns
+            lines = ["Salidas durante horario laboral:"]
+            
+            # Add each week with its days in columns
+            for week_num in range(1, 5):
+                week_key = f'Semana {week_num}'
+                days = weeks_dict[week_key]
+                if days:
+                    lines.append(f"\n{week_key}")
+                    lines.append(self.format_list_in_columns(days))
+
+            hover_text = "\n".join(lines) if lines else "No hay días registrados"
+            return total_days, hover_text
+
+        except Exception as e:
+            print(f"Error formatting mid-day departures text: {str(e)}")
+            return 0, "No hay días registrados"
+
     def calculate_agustin_hours(self, df, start_row=11, end_row=42):
         """Calcula las horas trabajadas específicamente para Agustín Tabasso"""
         try:

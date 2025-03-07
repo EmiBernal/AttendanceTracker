@@ -51,7 +51,7 @@ st.markdown("""
         background-position: right center;
     }
 
-    /* Stat card styling with blur effects */
+    /* Stat card styling */
     .stat-card {
         background-color: rgba(17, 25, 40, 0.75);
         border-radius: 12px;
@@ -100,8 +100,25 @@ st.markdown("""
         max-width: 90%;
         line-height: 1.5;
         min-width: 300px;
-        max-height: 80vh;
+        max-height: 400px;  /* Increased from 80vh */
         overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.2);
+    }
+
+    /* Custom scrollbar styling */
+    .stat-card .hover-text::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .stat-card .hover-text::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+    }
+
+    .stat-card .hover-text::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
     }
 
     .stat-card:hover .hover-text {

@@ -599,7 +599,7 @@ class ExcelProcessor:
     def format_mid_day_departures_text(self, employee_name):
         """Formats mid-day departures text with bullet points and week grouping"""
         try:
-            # Initialize dictionary with empty lists for each week 
+            # Initialize dictionary with empty lists for each week
             weeks_dict = {f'Semana {i}': [] for i in range(1, 5)}
             total_days = 0
 
@@ -672,17 +672,20 @@ class ExcelProcessor:
                                     if any(abbr in day_str.lower() for abbr in ['sa', 'su', 'absence']):
                                         continue
 
-                                    # Nueva lógica: verificar que existan todos los registros
-                                    if (not pd.isna(entry_time) and 
-                                        not pd.isna(lunch_out) and 
-                                        not pd.isna(lunch_return) and 
-                                        not pd.isna(exit_time)):
+                                    # Check if it's a valid day with all required records
+                                    has_entry = not pd.isna(entry_time)
+                                    has_exit = not pd.isna(exit_time)
+                                    has_lunch_out = not pd.isna(lunch_out)
+                                    has_lunch_return = not pd.isna(lunch_return)
+
+                                    # Only proceed if we have all records
+                                    if has_entry and has_exit and has_lunch_out and has_lunch_return:
                                         try:
-                                            # Convertir tiempos a objetos datetime.time
+                                            # Convert lunch times to datetime.time objects
                                             lunch_out_time = pd.to_datetime(lunch_out).time()
                                             lunch_return_time = pd.to_datetime(lunch_return).time()
-                                            
-                                            # Verificar si el almuerzo está entre 7:50 y 12:00
+
+                                            # Check if lunch times are between 7:50 and 12:00
                                             if (start_time <= lunch_out_time <= end_time and 
                                                 start_time <= lunch_return_time <= end_time):
                                                 
@@ -690,7 +693,7 @@ class ExcelProcessor:
                                                 try:
                                                     day_num = int(formatted_day.split()[0])
                                                     total_days += 1
-                                                    
+
                                                     # Add to appropriate week based on day number
                                                     if 1 <= day_num <= 7:
                                                         weeks_dict['Semana 1'].append(formatted_day)

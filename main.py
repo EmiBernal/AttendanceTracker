@@ -66,6 +66,13 @@ st.markdown("""
     }
 
     /* Larger stat cards for summary view */
+    .stat-group h3:contains("Métricas Generales del Mes") {
+        text-align: center;  /* Centrar el título */
+        font-size: 24px;
+        margin: 30px 0;
+        color: #E2E8F0;
+    }
+
     .stat-group h3:contains("Métricas Generales del Mes") + div .stat-card {
         padding: 40px;
         min-height: 250px;

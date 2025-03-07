@@ -1925,3 +1925,72 @@ class ExcelProcessor:
         except Exception as e:
             print(f"Error formatting mid-day departures text: {str(e)}")
             return 0, "No hay días registrados"
+            
+    def process_attendance_summary(self):
+        """Process the Summary sheet to get employee information"""
+        try:
+            print("Leyendo hoja Summary...")
+            df = pd.read_excel(self.excel_file, sheet_name='Summary', header=None)
+            
+            # Start from row 5 (index 4) which contains the actual data
+            data_start_row = 4
+            
+            # Print the data being processed for debugging
+            print("\nDatos procesados de empleados:")
+            print(df.iloc[data_start_row:, [0, 1, 2, 3, 4, 5, 6, 7, 8, 13]].to_string())
+            
+            # Create a DataFrame with employee information
+            employee_data = []
+            
+            # Process each row starting from row 5
+            for idx, row in df.iloc[data_start_row:].iterrows():
+                # Stop if we hit an empty row
+                if pd.isna(row[1]):  # Check if name column is empty
+                    break
+                    
+                employee_data.append({
+                    'employee_id': row[0],
+                    'employee_name': str(row[1]).strip(),
+                    'department': str(row[2]).strip() if not pd.isna(row[2]) else "No especificado",
+                    'required_hours': float(row[3]) if not pd.isna(row[3]) else 0.0,
+                    'actual_hours': float(row[4]) if not pd.isna(row[4]) else 0.0
+                })
+            
+            # Convert to DataFrame
+            summary_df = pd.DataFrame(employee_data)
+            
+            # Get all employees from all sheets after 'Exceptional'
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            additional_employees = set()
+            
+            for sheet in self.excel_file.sheet_names[exceptional_index:]:
+                df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+                
+                # Check each position (J3, Y3, AN3)
+                for col in ['J', 'Y', 'AN']:
+                    try:
+                        name = df.iloc[2, self.get_column_index(col)]
+                        if not pd.isna(name):
+                            additional_employees.add(str(name).strip())
+                    except:
+                        continue
+            
+            # Add any employees found in other sheets that weren't in Summary
+            for name in additional_employees:
+                if name not in summary_df['employee_name'].values:
+                    summary_df = pd.concat([summary_df, pd.DataFrame([{
+                        'employee_id': len(summary_df) + 1,
+                        'employee_name': name,
+                        'department': "No especificado",
+                        'required_hours': 0.0,
+                        'actual_hours': 0.0
+                    }])], ignore_index=True)
+            
+            print("\nEmpleados disponibles:", sorted(summary_df['employee_name'].tolist()))
+            
+            return summary_df
+            
+        except Exception as e:
+            print(f"Error processing Summary sheet: {str(e)}")
+            # Return an empty DataFrame with the required columns if there's an error
+            return pd.DataFrame(columns=['employee_id', 'employee_name', 'department', 'required_hours', 'actual_hours'])

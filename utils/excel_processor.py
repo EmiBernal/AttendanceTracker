@@ -596,6 +596,70 @@ class ExcelProcessor:
 
         return "\n".join(lines)
 
+    def get_employee_stats(self, employee_name):
+        """Get comprehensive statistics for a specific employee"""
+        try:
+            # Get basic employee info from summary
+            employee_summary = self.process_attendance_summary()
+            employee_data = employee_summary[employee_summary['employee_name'] == employee_name].iloc[0]
+
+            # Get absence days first, since we need the count
+            absence_days = self.get_absence_days(employee_name)
+            
+            # Get late arrival information
+            late_days, late_minutes = self.count_late_days(employee_name)
+            
+            # Get lunch overtime information
+            lunch_overtime_days, total_lunch_minutes = self.count_lunch_overtime_days(employee_name)
+            
+            # Get early departure information
+            early_departures, early_minutes = self.count_early_departures(employee_name)
+            
+            # Get missing records information
+            missing_entry_days, missing_exit_days, missing_lunch_days = self.count_missing_records(employee_name)
+
+            # Compile all stats
+            stats = {
+                'name': employee_name,
+                'department': employee_data['department'],
+                'required_hours': float(employee_data['required_hours']),
+                'actual_hours': float(employee_data['actual_hours']), 
+                'absence_days': absence_days,
+                'absences': len(absence_days) if absence_days else 0,  # Ensure we have a valid count
+                'late_days': late_days,
+                'late_minutes': late_minutes,
+                'lunch_overtime_days': lunch_overtime_days,
+                'total_lunch_minutes': total_lunch_minutes,
+                'early_departure_days': early_departures,
+                'early_minutes': early_minutes,
+                'missing_entry_days': missing_entry_days, 
+                'missing_exit_days': missing_exit_days,
+                'missing_lunch_days': missing_lunch_days
+            }
+
+            return stats
+
+        except Exception as e:
+            print(f"Error getting employee stats: {str(e)}")
+            # Return default values if there's an error
+            return {
+                'name': employee_name,
+                'department': 'No especificado',
+                'required_hours': 0.0,
+                'actual_hours': 0.0,
+                'absence_days': [],
+                'absences': 0,
+                'late_days': [],
+                'late_minutes': 0,
+                'lunch_overtime_days': [],
+                'total_lunch_minutes': 0,
+                'early_departure_days': [],
+                'early_minutes': 0,
+                'missing_entry_days': [],
+                'missing_exit_days': [],
+                'missing_lunch_days': []
+            }
+
     def format_mid_day_departures_text(self, employee_name):
         """Formats mid-day departures text with bullet points and week grouping"""
         try:
@@ -668,81 +732,44 @@ class ExcelProcessor:
                                     lunch_return = df.iloc[row, lunch_return_col]
                                     exit_time = df.iloc[row, exit_col]
 
+                                    # Process and validate the day
                                     if pd.isna(day_value):
                                         continue
 
                                     day_str = str(day_value).strip()
-                                    if any(abbr in day_str.lower() for abbr in ['sa', 'su', 'absence']):
+                                    if any(abbr in day_str.lower() for abbr in ['sa', 'su']):
                                         continue
 
-                                    # Verificar que hay entrada y almuerzo pero NO hay salida
-                                    has_entry = not pd.isna(entry_time)
-                                    has_lunch_out = not pd.isna(lunch_out)
-                                    has_lunch_return = not pd.isna(lunch_return)
-                                    has_exit = pd.isna(exit_time)  # Verificamos que NO haya salida
-
-                                    # Solo proceder si tenemos entrada y almuerzo pero NO salida
-                                    if has_entry and not has_exit and has_lunch_out and has_lunch_return:
-                                        try:
-                                            # Convert lunch times to datetime.time objects
-                                            lunch_out_time = pd.to_datetime(lunch_out).time()
-                                            lunch_return_time = pd.to_datetime(lunch_return).time()
-
-                                            # Check if lunch times are between 7:50 and 12:00
-                                            if (start_time <= lunch_out_time <= end_time and 
-                                                start_time <= lunch_return_time <= end_time):
-                                                
-                                                formatted_day = self.translate_day_abbreviation(day_str)
-                                                try:
-                                                    day_num = int(formatted_day.split()[0])
-                                                    total_days += 1
-
-                                                    # Add to appropriate week based on day number
-                                                    if 1 <= day_num <= 7:
-                                                        weeks_dict['Semana 1'].append(formatted_day)
-                                                    elif 8 <= day_num <= 14:
-                                                        weeks_dict['Semana 2'].append(formatted_day)
-                                                    elif 15 <= day_num <= 21:
-                                                        weeks_dict['Semana 3'].append(formatted_day)
-                                                    elif 22 <= day_num <= 31:
-                                                        weeks_dict['Semana 4'].append(formatted_day)
-                                                except (ValueError, IndexError) as e:
-                                                    print(f"Error parsing day number: {str(e)}")
-                                                    continue
-                                        except Exception as e:
-                                            print(f"Error processing lunch times: {str(e)}")
-                                            continue
+                                    # Check for mid-day departure pattern
+                                    if pd.isna(lunch_return) and pd.isna(exit_time):
+                                        week_num = (int(day_str.split()[0]) - 1) // 7 + 1
+                                        weeks_dict[f'Semana {week_num}'].append(self.translate_day_abbreviation(day_str))
+                                        total_days += 1
 
                                 except Exception as e:
+                                    print(f"Error processing row {row+1}: {e}")
                                     continue
 
                         except Exception as e:
+                            print(f"Error checking position {position['name_col']}: {e}")
                             continue
 
                 except Exception as e:
+                    print(f"Error processing sheet {sheet}: {e}")
                     continue
 
-            # Sort days within each week
-            for week_days in weeks_dict.values():
-                week_days.sort(key=lambda x: int(x.split()[0]))
+            # Prepare the output text
+            text = "Retiros del mediodía:\n"
+            for week in sorted(weeks_dict.keys()):
+                if weeks_dict[week]:
+                    text += f"\n{week}\n"
+                    text += self.format_list_in_columns(sorted(weeks_dict[week], key=lambda x: int(x.split()[0])))
 
-            # Format output with header and columns
-            lines = ["Salidas durante horario laboral:"]
-            
-            # Add each week with its days in columns
-            for week_num in range(1, 5):
-                week_key = f'Semana {week_num}'
-                days = weeks_dict[week_key]
-                if days:
-                    lines.append(f"\n{week_key}")
-                    lines.append(self.format_list_in_columns(days))
-
-            hover_text = "\n".join(lines) if any(weeks_dict[week] for week in weeks_dict) else "No hay días registrados"
-            return total_days, hover_text
+            return total_days, text
 
         except Exception as e:
-            print(f"Error formatting mid-day departures text: {str(e)}")
-            return 0, "No hay días registrados"
+            print(f"Error formatting mid-day departures: {e}")
+            return 0, "Error al procesar retiros del mediodía"
 
     def calculate_agustin_hours(self, df, start_row=11, end_row=42):
         """Calcula las horas trabajadas específicamente para Agustín Tabasso"""
@@ -893,36 +920,7 @@ class ExcelProcessor:
         except IndexError:
             return {'department': None, 'required_hours': 0, 'actual_hours': 0, 'absences': 0}
 
-    def get_employee_stats(self, employee_name):
-        """Get comprehensive statistics for an employee"""
-        employee_summary = self.get_employee_summary(employee_name)
-        missing_entry, missing_exit, missing_lunch = self.count_missing_records(employee_name)
-        late_days, late_minutes = self.count_late_days(employee_name)
-        lunch_overtime_days, total_lunch_minutes = self.count_lunch_overtime_days(employee_name)
-        early_departure_days, early_minutes = self.get_early_departure_days(employee_name)
-        mid_day_departures = self.get_mid_day_departures(employee_name)
 
-        stats = {
-            'name': employee_name,
-            'department': employee_summary['department'],
-            'required_hours': float(employee_summary['required_hours']),
-            'actual_hours': float(employee_summary['actual_hours']),
-            'late_days': late_days,
-            'late_minutes': late_minutes,
-            'lunch_overtime_days': lunch_overtime_days,
-            'total_lunch_minutes': total_lunch_minutes,
-            'early_departure_days': early_departure_days,
-            'early_minutes': early_minutes,
-            'mid_day_departures_count': self.format_mid_day_departures_text(employee_name)[0],
-            'mid_day_departures_text': self.format_mid_day_departures_text(employee_name)[1],
-            'missing_entry_days': missing_entry,
-            'missing_exit_days': missing_exit,
-            'missing_lunch_days': missing_lunch,
-            'absences': int(employee_summary['absences']),
-            'special_schedule': employee_name.lower() in self.SPECIAL_SCHEDULES
-        }
-
-        return stats
 
     def calculate_valentina_absences(self, df):
         """Calcula las ausencias de Valentina verificandosolo la columna AK"""

@@ -635,6 +635,129 @@ class ExcelProcessor:
 
         return "\n".join(lines)
 
+    def format_mid_day_departures_text(self, employee_name):
+        """Formats mid-day departures text with bullet points and week grouping"""
+        try:
+            total_days = 0
+            weeks_dict = {f'Semana {i}': [] for i in range(1, 5)}
+
+            # Define start and end times for regular employees
+            start_time = datetime.strptime('7:50', '%H:%M').time()
+            end_time = datetime.strptime('12:00', '%H:%M').time()
+
+            # Encontrar el índice de la hoja "Exceptional"
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            # Solo procesar las hojas después de "Exceptional"
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index + 1:]
+
+            # Definir las posiciones de las columnas según la ubicación del nombre
+            positions = [
+                {
+                    'name_col': 'J',
+                    'entry_col': 'B',
+                    'exit_col': 'I',
+                    'day_col': 'A',
+                    'lunch_out': 'D',
+                    'lunch_return': 'G'
+                },
+                {
+                    'name_col': 'Y',
+                    'entry_col': 'Q',
+                    'exit_col': 'X',
+                    'day_col': 'P',
+                    'lunch_out': 'S',
+                    'lunch_return': 'V'
+                },
+                {
+                    'name_col': 'AN',
+                    'entry_col': 'AF',
+                    'exit_col': 'AM',
+                    'day_col': 'AE',
+                    'lunch_out': 'AH',
+                    'lunch_return': 'AK'
+                }
+            ]
+
+            is_ppp_employee = 'ppp' in employee_name.lower()
+
+            for sheet in attendance_sheets:
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+
+                    for position in positions:
+                        try:
+                            name_col_index = self.get_column_index(position['name_col'])
+                            name_cell = df.iloc[2, name_col_index]
+
+                            if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
+                                continue
+
+                            day_col = self.get_column_index(position['day_col'])
+                            entry_col = self.get_column_index(position['entry_col'])
+                            exit_col = self.get_column_index(position['exit_col'])
+                            lunch_out_col = self.get_column_index(position['lunch_out'])
+                            lunch_return_col = self.get_column_index(position['lunch_return'])
+
+                            for row in range(11, 42):
+                                try:
+                                    day_value = df.iloc[row, day_col]
+                                    if pd.isna(day_value):
+                                        continue
+
+                                    day_str = str(day_value).strip()
+                                    if any(abbr in day_str.lower() for abbr in ['sa', 'su']):
+                                        continue
+
+                                    if is_ppp_employee:
+                                        # Para empleados PPP, cualquier salida es considerada como retiro durante horario
+                                        exit_time = df.iloc[row, exit_col]
+                                        if not pd.isna(exit_time):
+                                            week_num = (int(day_str.split()[0]) - 1) // 7 + 1
+                                            formatted_day = self.translate_day_abbreviation(day_str)
+                                            weeks_dict[f'Semana {week_num}'].append(formatted_day)
+                                            total_days += 1
+                                    else:
+                                        # Para empleados regulares, solo contar salidas sin retorno
+                                        lunch_return = df.iloc[row, lunch_return_col]
+                                        exit_time = df.iloc[row, exit_col]
+                                        if pd.isna(lunch_return) and pd.isna(exit_time):
+                                            week_num = (int(day_str.split()[0]) - 1) // 7 + 1
+                                            formatted_day = self.translate_day_abbreviation(day_str)
+                                            weeks_dict[f'Semana {week_num}'].append(formatted_day)
+                                            total_days += 1
+
+                                except Exception as e:
+                                    print(f"Error processing row {row+1}: {e}")
+                                    continue
+
+                        except Exception as e:
+                            print(f"Error checking position {position['name_col']}: {e}")
+                            continue
+
+                except Exception as e:
+                    print(f"Error processing sheet {sheet}: {e}")
+                    continue
+
+            # Sort days within each week
+            for week_days in weeks_dict.values():
+                week_days.sort(key=lambda x: int(x.split()[0]))
+
+            # Format output
+            lines = ["Salidas durante horario laboral:"]
+            for week_num in range(1, 5):
+                week_key = f'Semana {week_num}'
+                days = weeks_dict[week_key]
+                if days:
+                    lines.append(f"\n{week_key}")
+                    lines.append(self.format_list_in_columns(days))
+
+            hover_text = "\n".join(lines) if any(weeks_dict[week] for week in weeks_dict) else "No hay días registrados"
+            return total_days, hover_text
+
+        except Exception as e:
+            print(f"Error formatting mid-day departures: {e}")
+            return 0, "Error al procesar retiros del mediodía"
+
     def get_employee_stats(self, employee_name):
         """Get comprehensive statistics for a specific employee"""
         try:

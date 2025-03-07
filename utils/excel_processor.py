@@ -607,9 +607,30 @@ class ExcelProcessor:
             attendance_sheets = self.excel_file.sheet_names[exceptional_index+1:]
 
             positions = [
-                {'name_col': 'J', 'day_col': 'A', 'exit_col': 'I', 'entry_col': 'B'},
-                {'name_col': 'Y', 'day_col': 'P', 'exit_col': 'X', 'entry_col': 'Q'},
-                {'name_col': 'AN', 'day_col': 'AE', 'exit_col': 'AM', 'entry_col': 'AF'}
+                {
+                    'name_col': 'J',
+                    'entry_col': 'B',
+                    'exit_col': 'I',
+                    'lunch_out': 'D',
+                    'lunch_return': 'G',
+                    'day_col': 'A'
+                },
+                {
+                    'name_col': 'Y',
+                    'entry_col': 'Q',
+                    'exit_col': 'X',
+                    'lunch_out': 'S',
+                    'lunch_return': 'V',
+                    'day_col': 'P'
+                },
+                {
+                    'name_col': 'AN',
+                    'entry_col': 'AF',
+                    'exit_col': 'AM',
+                    'lunch_out': 'AH',
+                    'lunch_return': 'AK',
+                    'day_col': 'AE'
+                }
             ]
 
             # Collect all mid-day departure days
@@ -625,35 +646,48 @@ class ExcelProcessor:
                             if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
                                 continue
 
+                            # Get all column indices
                             day_col = self.get_column_index(position['day_col'])
-                            exit_col = self.get_column_index(position['exit_col'])
                             entry_col = self.get_column_index(position['entry_col'])
+                            exit_col = self.get_column_index(position['exit_col'])
+                            lunch_out_col = self.get_column_index(position['lunch_out'])
+                            lunch_return_col = self.get_column_index(position['lunch_return'])
 
                             for row in range(11, 42):
                                 try:
+                                    # Get all cell values
                                     day_value = df.iloc[row, day_col]
                                     entry_time = df.iloc[row, entry_col]
                                     exit_time = df.iloc[row, exit_col]
+                                    lunch_out = df.iloc[row, lunch_out_col]
+                                    lunch_return = df.iloc[row, lunch_return_col]
 
-                                    if not pd.isna(day_value):
-                                        day_str = str(day_value).strip()
-                                        if any(abbr in day_str.lower() for abbr in ['sa', 'su']):
-                                            continue
+                                    if pd.isna(day_value):
+                                        continue
 
-                                        if not pd.isna(entry_time) and pd.isna(exit_time):
-                                            formatted_day = self.translate_day_abbreviation(day_str)
-                                            day_num = int(formatted_day.split()[0])
-                                            total_days += 1
+                                    day_str = str(day_value).strip()
+                                    if any(abbr in day_str.lower() for abbr in ['sa', 'su', 'absence']):
+                                        continue
 
-                                            # Add to appropriate week
-                                            if 1 <= day_num <= 7:
-                                                weeks_dict['Semana 1'].append(formatted_day)
-                                            elif 8 <= day_num <= 14:
-                                                weeks_dict['Semana 2'].append(formatted_day)
-                                            elif 15 <= day_num <= 21:
-                                                weeks_dict['Semana 3'].append(formatted_day)
-                                            elif 22 <= day_num <= 31:
-                                                weeks_dict['Semana 4'].append(formatted_day)
+                                    # Nueva lógica: verificar si hay entrada y salida, y si hay registros de almuerzo
+                                    has_entry_exit = not pd.isna(entry_time) and not pd.isna(exit_time)
+                                    has_lunch_records = not pd.isna(lunch_out) and not pd.isna(lunch_return)
+
+                                    # Solo contar como salida si hay entrada/salida Y registros de almuerzo
+                                    if has_entry_exit and has_lunch_records:
+                                        formatted_day = self.translate_day_abbreviation(day_str)
+                                        day_num = int(formatted_day.split()[0])
+                                        total_days += 1
+
+                                        # Add to appropriate week
+                                        if 1 <= day_num <= 7:
+                                            weeks_dict['Semana 1'].append(formatted_day)
+                                        elif 8 <= day_num <= 14:
+                                            weeks_dict['Semana 2'].append(formatted_day)
+                                        elif 15 <= day_num <= 21:
+                                            weeks_dict['Semana 3'].append(formatted_day)
+                                        elif 22 <= day_num <= 31:
+                                            weeks_dict['Semana 4'].append(formatted_day)
 
                                 except Exception as e:
                                     continue

@@ -641,17 +641,37 @@ class ExcelProcessor:
             total_days = 0
             weeks_dict = {f'Semana {i}': [] for i in range(1, 5)}
 
-            # Define start and end times for regular employees
-            start_time = datetime.strptime('7:50', '%H:%M').time()
-            end_time = datetime.strptime('12:00', '%H:%M').time()
-
             # Encontrar el índice de la hoja "Exceptional"
             exceptional_index = self.excel_file.sheet_names.index('Exceptional')
             # Solo procesar las hojas después de "Exceptional"
             attendance_sheets = self.excel_file.sheet_names[exceptional_index + 1:]
 
-            # Definir las posiciones de las columnas según la ubicación del nombre
-            positions = [
+            is_ppp_employee = 'ppp' in employee_name.lower()
+
+            # Configuración especial para empleados PPP
+            ppp_positions = [
+                {
+                    'name_col': 'J',
+                    'exit_col': 'D',
+                    'day_col': 'A',
+                    'start_row': 11  # corresponde a fila 12
+                },
+                {
+                    'name_col': 'Y',
+                    'exit_col': 'S',
+                    'day_col': 'P',
+                    'start_row': 21  # corresponde a fila 22
+                },
+                {
+                    'name_col': 'AN',
+                    'exit_col': 'AH',
+                    'day_col': 'AE',
+                    'start_row': 21  # corresponde a fila 22
+                }
+            ]
+
+            # Configuración para empleados regulares
+            regular_positions = [
                 {
                     'name_col': 'J',
                     'entry_col': 'B',
@@ -678,7 +698,7 @@ class ExcelProcessor:
                 }
             ]
 
-            is_ppp_employee = 'ppp' in employee_name.lower()
+            positions = ppp_positions if is_ppp_employee else regular_positions
 
             for sheet in attendance_sheets:
                 try:
@@ -693,10 +713,13 @@ class ExcelProcessor:
                                 continue
 
                             day_col = self.get_column_index(position['day_col'])
-                            entry_col = self.get_column_index(position['entry_col'])
                             exit_col = self.get_column_index(position['exit_col'])
-                            lunch_out_col = self.get_column_index(position['lunch_out'])
-                            lunch_return_col = self.get_column_index(position['lunch_return'])
+
+                            # Solo obtener columnas adicionales para empleados no PPP
+                            if not is_ppp_employee:
+                                entry_col = self.get_column_index(position['entry_col'])
+                                lunch_out_col = self.get_column_index(position['lunch_out'])
+                                lunch_return_col = self.get_column_index(position['lunch_return'])
 
                             for row in range(11, 42):
                                 try:
@@ -894,117 +917,6 @@ class ExcelProcessor:
         except Exception as e:
             print(f"Error getting early departure days: {str(e)}")
             return [], 0
-
-    def format_mid_day_departures_text(self, employee_name):
-        """Formats mid-day departures text with bullet points and week grouping"""
-        try:
-            # Initialize dictionary with empty lists for each week
-            weeks_dict = {f'Semana {i}': [] for i in range(1, 5)}
-            total_days = 0
-
-            # Define time range for validation (7:50 - 12:00)
-            start_time = datetime.strptime('7:50', '%H:%M').time()
-            end_time = datetime.strptime('12:00', '%H:%M').time()
-
-            # Encontrar el índice de la hoja "Exceptional"
-            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
-            # Solo procesar las hojas después de "Exceptional"
-            attendance_sheets = self.excel_file.sheet_names[exceptional_index + 1:]
-
-            # Definir las posiciones de las columnas según la ubicación del nombre
-            positions = [
-                {
-                    'name_col': 'J',
-                    'entry_col': 'B',
-                    'lunch_out': 'D',
-                    'lunch_return': 'G',
-                    'exit_col': 'I',
-                    'day_col': 'A'
-                },
-                {
-                    'name_col': 'Y',
-                    'entry_col': 'Q',
-                    'lunch_out': 'S',
-                    'lunch_return': 'V',
-                    'exit_col': 'X',
-                    'day_col': 'P'
-                },
-                {
-                    'name_col': 'AN',
-                    'entry_col': 'AF',
-                    'lunch_out': 'AH',
-                    'lunch_return': 'AK',
-                    'exit_col': 'AM',
-                    'day_col': 'AE'
-                }
-            ]
-
-            for sheet in attendance_sheets:
-                try:
-                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
-
-                    for position in positions:
-                        try:
-                            name_col_index = self.get_column_index(position['name_col'])
-                            name_cell = df.iloc[2, name_col_index]
-
-                            if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
-                                continue
-
-                            # Get column indices
-                            day_col = self.get_column_index(position['day_col'])
-                            entry_col = self.get_column_index(position['entry_col'])
-                            lunch_out_col = self.get_column_index(position['lunch_out'])
-                            lunch_return_col = self.get_column_index(position['lunch_return'])
-                            exit_col = self.get_column_index(position['exit_col'])
-
-                            for row in range(11, 42):
-                                try:
-                                    # Get cell values
-                                    day_value = df.iloc[row, day_col]
-                                    entry_time = df.iloc[row, entry_col]
-                                    lunch_out = df.iloc[row, lunch_out_col]
-                                    lunch_return = df.iloc[row, lunch_return_col]
-                                    exit_time = df.iloc[row, exit_col]
-
-                                    # Process and validate the day
-                                    if pd.isna(day_value):
-                                        continue
-
-                                    day_str = str(day_value).strip()
-                                    if any(abbr in day_str.lower() for abbr in ['sa', 'su']):
-                                        continue
-
-                                    # Check for mid-day departure pattern
-                                    if pd.isna(lunch_return) and pd.isna(exit_time):
-                                        week_num = (int(day_str.split()[0]) - 1) // 7 + 1
-                                        weeks_dict[f'Semana {week_num}'].append(self.translate_day_abbreviation(day_str))
-                                        total_days += 1
-
-                                except Exception as e:
-                                    print(f"Error processing row {row+1}: {e}")
-                                    continue
-
-                        except Exception as e:
-                            print(f"Error checking position {position['name_col']}: {e}")
-                            continue
-
-                except Exception as e:
-                    print(f"Error processing sheet {sheet}: {e}")
-                    continue
-
-            # Prepare the output text
-            text = "Retiros del mediodía:\n"
-            for week in sorted(weeks_dict.keys()):
-                if weeks_dict[week]:
-                    text += f"\n{week}\n"
-                    text += self.format_list_in_columns(sorted(weeks_dict[week], key=lambda x: int(x.split()[0])))
-
-            return total_days, text
-
-        except Exception as e:
-            print(f"Error formatting mid-day departures: {e}")
-            return 0, "Error al procesar retiros del mediodía"
 
     def calculate_agustin_hours(self, df, start_row=11, end_row=42):
         """Calcula las horas trabajadas específicamente para Agustín Tabasso"""

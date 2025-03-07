@@ -7,8 +7,8 @@ from fpdf import FPDF
 class ExcelProcessor:
     def __init__(self, file):
         self.excel_file = pd.ExcelFile(file)
-        self.WORK_START_TIME = datetime.strptime('7:50', '%H:%M').time()
-        self.WORK_END_TIME = datetime.strptime('17:10', '%H:%M').time()
+        self.DEFAULT_WORK_START_TIME = datetime.strptime('7:50', '%H:%M').time()
+        self.DEFAULT_WORK_END_TIME = datetime.strptime('17:10', '%H:%M').time()
         self.LUNCH_TIME_LIMIT = 20  # minutos máximos permitidos para almuerzo
 
         # Excepciones de horarios especiales
@@ -48,18 +48,48 @@ class ExcelProcessor:
             }
         }
 
+    def get_employee_schedule(self, employee_name):
+        """Determina el horario de trabajo basado en el nombre del empleado"""
+        if 'ppp' in employee_name.lower():
+            return {
+                'start_time': datetime.strptime('8:00', '%H:%M').time(),
+                'end_time': datetime.strptime('12:00', '%H:%M').time(),
+                'no_lunch': True
+            }
+        elif employee_name.lower() in self.SPECIAL_SCHEDULES:
+            schedule = self.SPECIAL_SCHEDULES[employee_name.lower()]
+            return {
+                'start_time': self.DEFAULT_WORK_START_TIME,
+                'end_time': schedule['end_time'],
+                'no_lunch': schedule.get('no_lunch', False)
+            }
+        else:
+            return {
+                'start_time': self.DEFAULT_WORK_START_TIME,
+                'end_time': self.DEFAULT_WORK_END_TIME,
+                'no_lunch': False
+            }
+
     def is_early_departure(self, employee_name, exit_time):
         """Determina si la salida es temprana considerando excepciones"""
         if not exit_time:
             return False
 
-        if employee_name.lower() in self.SPECIAL_SCHEDULES:
-            schedule = self.SPECIAL_SCHEDULES[employee_name.lower()]
-            expected_end = schedule['end_time']
-        else:
-            expected_end = self.WORK_END_TIME
+        schedule = self.get_employee_schedule(employee_name)
+        return exit_time < schedule['end_time']
 
-        return exit_time < expected_end
+    def is_late_arrival(self, employee_name, entry_time):
+        """Determina si la llegada es tarde considerando excepciones"""
+        if not entry_time:
+            return False
+
+        schedule = self.get_employee_schedule(employee_name)
+        return entry_time > schedule['start_time']
+
+    def should_check_lunch(self, employee_name):
+        """Determina si se debe verificar el almuerzo para este empleado"""
+        schedule = self.get_employee_schedule(employee_name)
+        return not schedule['no_lunch']
 
     def count_early_departures(self, employee_name):
         """Cuenta las salidas tempranas considerando horarios especiales"""
@@ -100,8 +130,9 @@ class ExcelProcessor:
                                             exit_time = pd.to_datetime(exit_time).time()
                                             if self.is_early_departure(employee_name, exit_time):
                                                 early_departures += 1
+                                                schedule = self.get_employee_schedule(employee_name)
                                                 early_minutes = (
-                                                    datetime.combine(datetime.min, self.WORK_END_TIME) -
+                                                    datetime.combine(datetime.min, schedule['end_time']) -
                                                     datetime.combine(datetime.min, exit_time)
                                                 ).total_seconds() / 60
                                                 total_early_minutes += early_minutes
@@ -136,8 +167,8 @@ class ExcelProcessor:
             exceptional_index = self.excel_file.sheet_names.index('Exceptional')
             attendance_sheets = self.excel_file.sheet_names[exceptional_index+1:]  # Start after Exceptional
 
-            # Si es Valentina, Agustín o Soledad, retornar lista vacía ya que no tienen almuerzo
-            if employee_name.lower() in ['valentina al', 'agustin taba', 'soledad silv']:
+            # Check if employee should have lunch time checked
+            if not self.should_check_lunch(employee_name):
                 print(f"{employee_name} no tiene horario de almuerzo")
                 return [], 0
 
@@ -240,58 +271,58 @@ class ExcelProcessor:
             return [], 0
 
     def count_late_days(self, employee_name):
-        """Cuenta los días que el empleado llegó tarde (después de 7:50)"""
+        """Cuenta los días que el empleado llegó tarde según su horario asignado"""
         try:
             exceptional_index = self.excel_file.sheet_names.index('Exceptional')
             attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
             late_days = []
             total_late_minutes = 0
 
+            schedule = self.get_employee_schedule(employee_name)
+            work_start_time = schedule['start_time']
+
             for sheet in attendance_sheets:
                 try:
                     print(f"\nProcesando hoja: {sheet}")
                     df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
 
-                    # Definir las tres posibles posiciones del empleado
                     positions = [
-                        {'name_col': 'J', 'entry_col': 'B', 'day_col': 'A'},  # Primera persona
-                        {'name_col': 'Y', 'entry_col': 'Q', 'day_col': 'P'},  # Segunda persona
-                        {'name_col': 'AN', 'entry_col': 'AF', 'day_col': 'AE'}  # Tercera persona
+                        {'name_col': 'J', 'entry_col': 'B', 'day_col': 'A'},
+                        {'name_col': 'Y', 'entry_col': 'Q', 'day_col': 'P'},
+                        {'name_col': 'AN', 'entry_col': 'AF', 'day_col': 'AE'}
                     ]
 
-                    for position in positions:
-                        try:
-                            name_col_index = self.get_column_index(position['name_col'])
-                            name_cell = df.iloc[2, name_col_index]
+                    try:
+                        for position in positions:
+                            try:
+                                name_col_index = self.get_column_index(position['name_col'])
+                                name_cell = df.iloc[2, name_col_index]
 
-                            if pd.isna(name_cell):
-                                continue
+                                if pd.isna(name_cell):
+                                    continue
 
-                            employee_cell = str(name_cell).strip()
-                            if employee_cell == employee_name:
-                                print(f"Empleado encontrado en hoja {sheet}, columna {position['name_col']}")
+                                employee_cell = str(name_cell).strip()
+                                if employee_cell == employee_name:
+                                    print(f"Empleado encontrado en hoja {sheet}, columna {position['name_col']}")
 
-                                entry_col = self.get_column_index(position['entry_col'])
-                                day_col = self.get_column_index(position['day_col'])
+                                    entry_col = self.get_column_index(position['entry_col'])
+                                    day_col = self.get_column_index(position['day_col'])
 
-                                for row in range(11, 42):  # Filas 12 a 42
-                                    try:
-                                        day_value = df.iloc[row, day_col]
-                                        if pd.isna(day_value):
-                                            continue
+                                    for row in range(11, 42):
+                                        try:
+                                            day_value = df.iloc[row, day_col]
+                                            if pd.isna(day_value):
+                                                continue
 
-                                        day_str = str(day_value).strip().lower()
-                                        if day_str == '' or day_str == 'nan':
-                                            continue
+                                            day_str = str(day_value).strip().lower()
+                                            if day_str == '' or day_str == 'nan' or day_str == 'absence':
+                                                continue
 
-                                        # Solo procesar si no es ausencia
-                                        if day_str != 'absence':
                                             entry_time = df.iloc[row, entry_col]
                                             print(f"Fila {row+1}: Entrada={entry_time}")
 
                                             if not pd.isna(entry_time):
                                                 try:
-                                                    # Convertir a datetime
                                                     if isinstance(entry_time, str):
                                                         entry_time = pd.to_datetime(entry_time).time()
                                                     elif isinstance(entry_time, datetime):
@@ -300,12 +331,10 @@ class ExcelProcessor:
                                                         print(f"Formato de hora no reconocido en fila {row+1}")
                                                         continue
 
-                                                    # Verificar si llegó tarde
-                                                    if entry_time > self.WORK_START_TIME:
-
+                                                    if self.is_late_arrival(employee_name, entry_time):
                                                         late_minutes = (
                                                             datetime.combine(datetime.min, entry_time) -
-                                                            datetime.combine(datetime.min, self.WORK_START_TIME)
+                                                            datetime.combine(datetime.min, work_start_time)
                                                         ).total_seconds() / 60
                                                         total_late_minutes += late_minutes
 
@@ -315,21 +344,30 @@ class ExcelProcessor:
 
                                                 except Exception as e:
                                                     print(f"Error procesando hora de entrada en fila {row+1}: {str(e)}")
+                                                    continue
                                             else:
                                                 print(f"Sin registro de entrada en fila {row+1}")
 
-                                    except Exception as e:
-                                        print(f"Error en fila {row+1}: {str(e)}")
+                                        except Exception as e:
+                                            print(f"Error en fila {row+1}: {str(e)}")
+                                            continue
 
-                        except Exception as e:
-                            print(f"Error procesando posición: {str(e)}")
+                            except Exception as e:
+                                print(f"Error procesando posición {position['name_col']}: {str(e)}")
+                                continue
+
+                    except Exception as e:
+                        print(f"Error en el bucle de posiciones: {str(e)}")
+                        continue
 
                 except Exception as e:
                     print(f"Error procesando hoja {sheet}: {str(e)}")
+                    continue
 
             print(f"Total días de llegada tarde: {len(late_days)}")
             print(f"Total minutos de tardanza: {total_late_minutes:.0f}")
             return late_days, total_late_minutes
+
         except Exception as e:
             print(f"Error general: {str(e)}")
             return [], 0
@@ -474,13 +512,14 @@ class ExcelProcessor:
                                             missing_exit_days.append(self.translate_day_abbreviation(day_str))
 
                                         # Verificar almuerzo
-                                        lunch_out = df.iloc[row, self.get_column_index(position['lunch_out'])]
-                                        lunch_return = df.iloc[row, self.get_column_index(position['lunch_return'])]
+                                        if self.should_check_lunch(employee_name):
+                                            lunch_out = df.iloc[row, self.get_column_index(position['lunch_out'])]
+                                            lunch_return = df.iloc[row, self.get_column_index(position['lunch_return'])]
 
-                                        if not pd.isna(exit_value) and str(exit_value).strip() != '':
-                                            if (not pd.isna(lunch_out) and pd.isna(lunch_return)) or \
-                                               (pd.isna(lunch_out) and pd.isna(lunch_return)):
-                                                missing_lunch_days.append(self.translate_day_abbreviation(day_str))
+                                            if not pd.isna(exit_value) and str(exit_value).strip() != '':
+                                                if (not pd.isna(lunch_out) and pd.isna(lunch_return)) or \
+                                                   (pd.isna(lunch_out) and pd.isna(lunch_return)):
+                                                    missing_lunch_days.append(self.translate_day_abbreviation(day_str))
 
                                     except Exception as e:
                                         print(f"Error en fila {row+1}: {str(e)}")
@@ -707,8 +746,9 @@ class ExcelProcessor:
                                         try:
                                             exit_time = pd.to_datetime(exit_time).time()
                                             if self.is_early_departure(employee_name, exit_time):
+                                                schedule = self.get_employee_schedule(employee_name)
                                                 early_minutes = (
-                                                    datetime.combine(datetime.min, self.WORK_END_TIME) -
+                                                    datetime.combine(datetime.min, schedule['end_time']) -
                                                     datetime.combine(datetime.min, exit_time)
                                                 ).total_seconds() / 60
                                                 total_early_minutes += early_minutes

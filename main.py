@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Updated CSS with blur effects
+# Updated CSS for hover cards and metrics
 st.markdown("""
 <style>
     /* Base transitions */
@@ -61,6 +61,7 @@ st.markdown("""
         border: 1px solid rgba(255, 255, 255, 0.1);
         backdrop-filter: blur(10px);
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        position: relative;
     }
 
     .stat-card:hover {
@@ -69,7 +70,7 @@ st.markdown("""
         border-color: rgba(255, 255, 255, 0.2);
     }
 
-    /* Hover blur effect */
+    /* Hover card effect */
     .stat-card .content {
         transition: all 0.3s ease;
     }
@@ -90,18 +91,22 @@ st.markdown("""
         font-weight: 500;
         color: #E2E8F0;
         background: rgba(17, 25, 40, 0.95);
-        padding: 12px 18px;
+        padding: 20px;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         pointer-events: none;
         white-space: pre-line;
-        text-align: center;
+        text-align: left;
         max-width: 90%;
         line-height: 1.5;
+        min-width: 300px;
+        max-height: 80vh;
+        overflow-y: auto;
     }
 
     .stat-card:hover .hover-text {
         opacity: 1;
+        z-index: 1000;
     }
 
     .metric-value {
@@ -121,35 +126,6 @@ st.markdown("""
     .warning { color: #FBBF24; }
     .danger { color: #EF4444; }
     .success { color: #10B981; }
-
-    h1, h2, h3 {
-        text-align: center;
-        animation: fadeInUp 0.6s ease-out forwards;
-        color: #E2E8F0;
-        text-shadow: 0 0 20px rgba(33, 150, 243, 0.1);
-        transition: text-shadow 0.3s ease;
-    }
-
-    h1:hover, h2:hover, h3:hover {
-        text-shadow: 0 0 30px rgba(33, 150, 243, 0.2);
-    }
-
-    .department-label {
-        color: #94A3B8;
-        font-size: 14px;
-        margin-bottom: 8px;
-        transition: color 0.3s ease;
-    }
-
-    .stSelectbox, .stFileUploader {
-        transition: transform 0.3s ease,
-                    box-shadow 0.3s ease;
-    }
-
-    .stSelectbox:hover, .stFileUploader:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
 </style>
 """, unsafe_allow_html=True)
 

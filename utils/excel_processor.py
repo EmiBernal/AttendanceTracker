@@ -536,8 +536,8 @@ class ExcelProcessor:
             formatted_column = [f"• {item}" for item in column]
             formatted_columns.append("\n".join(formatted_column))
 
-        # Join columns with appropriate spacing
-        return "     ".join(formatted_columns)
+        # Join columns with wider spacing and add a newline between columns if there are many items
+        return "          ".join(formatted_columns)  # Increased spacing between columns
 
     def format_lunch_overtime_text(self, lunch_overtime_days):
         """Formats lunch overtime days by week in a horizontal layout"""

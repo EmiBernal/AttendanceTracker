@@ -545,9 +545,10 @@ class ExcelProcessor:
         if total_days == 0:
             return "No existen dias"
 
-        # Format output with weeks header, adding dots and colons
+        # Format output with centered title and weeks header
         formatted_text = [
-            "\n\t\t.Semana 1:\t.Semana 2:\t.Semana 3:\t.Semana 4:\n"
+            "\n\t\t\t\tDias con exceso\n\n",
+            "\t\tSemana 1\tSemana 2\tSemana 3\tSemana 4\n"
         ]
 
         # Find the maximum number of days in any week 

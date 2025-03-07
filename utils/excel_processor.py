@@ -504,10 +504,11 @@ class ExcelProcessor:
                                         if pd.isna(entry_value) or str(entry_value).strip() == '':
                                             missing_entry_days.append(self.translate_day_abbreviation(day_str))
 
-                                        # Verificar salida
-                                        exit_value = df.iloc[row, self.get_column_index(position['exit_col'])]
-                                        if pd.isna(exit_value) or str(exit_value).strip() == '':
-                                            missing_exit_days.append(self.translate_day_abbreviation(day_str))
+                                        # Verificar salida solo si no es empleado especial
+                                        if employee_name.lower() not in ['valentina al', 'agustin taba']:
+                                            exit_value = df.iloc[row, self.get_column_index(position['exit_col'])]
+                                            if pd.isna(exit_value) or str(exit_value).strip() == '':
+                                                missing_exit_days.append(self.translate_day_abbreviation(day_str))
 
                                         # Verificar almuerzo
                                         if self.should_check_lunch(employee_name):
@@ -644,9 +645,8 @@ class ExcelProcessor:
             # Solo procesar las hojas después de "Exceptional"
             attendance_sheets = self.excel_file.sheet_names[exceptional_index + 1:]
 
+            is_special_employee = employee_name.lower() in ['valentina al', 'agustin taba']
             is_ppp_employee = 'ppp' in employee_name.lower()
-            is_special_employee = employee_name.lower() in self.SPECIAL_SCHEDULES and \
-                                self.SPECIAL_SCHEDULES[employee_name.lower()].get('check_special_exit', False)
 
             # Configuración para empleados PPP
             ppp_positions = [
@@ -740,7 +740,7 @@ class ExcelProcessor:
                         # Verificar las columnas específicas
                         for row in range(start_row, end_row + 1):
                             try:
-                                day_value = df.iloc[row, self.get_column_index('A')]  # Columna A para días
+                                day_value = df.iloc[row, self.get_column_index('AE')]  # Columna AE para días
                                 if pd.isna(day_value):
                                     continue
 

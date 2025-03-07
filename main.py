@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Updated CSS for hover cards and metrics
+# Updated CSS for hover cards and metrics with larger sizes for summary cards
 st.markdown("""
 <style>
     /* Base transitions */
@@ -54,14 +54,32 @@ st.markdown("""
     /* Stat card styling */
     .stat-card {
         background-color: rgba(17, 25, 40, 0.75);
-        border-radius: 12px;
-        padding: 24px;
-        margin: 12px;
+        border-radius: 16px;
+        padding: 32px;
+        margin: 16px;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid rgba(255, 255, 255, 0.1);
         backdrop-filter: blur(10px);
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         position: relative;
+        min-height: 200px;
+    }
+
+    /* Larger stat cards for summary view */
+    .stat-group h3:contains("Métricas Generales del Mes") + div .stat-card {
+        padding: 40px;
+        min-height: 250px;
+        margin: 20px;
+    }
+
+    .stat-group h3:contains("Métricas Generales del Mes") + div .stat-card .metric-value {
+        font-size: 48px;
+        margin: 20px 0;
+    }
+
+    .stat-group h3:contains("Métricas Generales del Mes") + div .stat-card .metric-label {
+        font-size: 18px;
+        margin: 10px 0;
     }
 
     .stat-card:hover {

@@ -692,7 +692,7 @@ class ExcelProcessor:
         """Calcula lasausencias de Valentina verificando solo lacolumna AK"""
         absences = 0
         try:
-            absence_col = self.get_columnindex('AK')
+            absence_col = self.get_column_index('AK')
             day_col = self.get_column_index('AE')
 
             for row in range(11, 42):  # AK12 hasta AK42 (índices 11-41)
@@ -1434,7 +1434,7 @@ class ExcelProcessor:
                 'Días con Llegada Tarde': [len(late_days)],
                 'Minutos Totales de Retraso': [f"{stats['late_minutes']:.0f}"],
                 'Días con Exceso en Almuerzo': [len(lunch_overtime_days)],
-                'Minutos Totales Excedidos en Almuerzo': [f"{stats['total_lunch_minutes']:.0f}"],'Retiros Anticipados': [len(early_departure_days)],
+                'Minutos Totales Excedidos enAlmuerzo': [f"{stats['total_lunch_minutes']:.0f}"],'Retiros Anticipados': [len(early_departure_days)],
                 'Minutos Totales de Salida Anticipada': [f"{early_minutes:.0f}"],
                 'Días sin Registro de Entrada': [len(stats['missing_entry_days'])],
                 'Días sin Registro de Salida': [len(stats['missing_exit_days'])],
@@ -1528,10 +1528,10 @@ class ExcelProcessor:
         """Organizes a list of days into weeks of the month"""
         # Initialize weeks dictionary
         weeks = {
-            'Semana 1': [],
-            'Semana 2': [],
-            'Semana 3': [],
-            'Semana 4': []
+            'Semana 1:': [],
+            'Semana 2:': [],
+            'Semana 3:': [],
+            'Semana 4:': []
         }
 
         for day in days:
@@ -1564,13 +1564,8 @@ class ExcelProcessor:
         if not lunch_overtime_days:
             return "No hay días registrados"
 
-        # Initialize weeks dictionary
-        weeks = {
-            'Semana 1': [],
-            'Semana 2': [],
-            'Semana 3': [],
-            'Semana 4': []
-        }
+        # Initialize dictionary with empty lists for each week
+        weeks_dict = {f'Semana {i}': [] for i in range(1, 5)}
 
         # Sort days into weeks
         for day in lunch_overtime_days:
@@ -1579,35 +1574,33 @@ class ExcelProcessor:
                 day_parts = day.split()
                 if len(day_parts) >= 2:
                     day_num = int(day_parts[0])
+                    # Determine week number
                     if 1 <= day_num <= 7:
-                        weeks['Semana 1'].append(day)
+                        weeks_dict['Semana 1'].append(day)
                     elif 8 <= day_num <= 14:
-                        weeks['Semana 2'].append(day)
+                        weeks_dict['Semana 2'].append(day)
                     elif 15 <= day_num <= 21:
-                        weeks['Semana 3'].append(day)
+                        weeks_dict['Semana 3'].append(day)
                     elif 22 <= day_num <= 31:
-                        weeks['Semana 4'].append(day)
-            except (ValueError, IndexError):
+                        weeks_dict['Semana 4'].append(day)
+            except (ValueError, IndexError) as e:
+                print(f"Error processing day {day}: {str(e)}")
                 continue
 
         # Sort days within each week by day number
-        for week in weeks.values():
-            week.sort(key=lambda x: int(x.split()[0]))
+        for week_days in weeks_dict.values():
+            week_days.sort(key=lambda x: int(x.split()[0]))
 
-        # Format output
+        # Format output starting with title
         formatted_text = ["Dias con exceso"]
 
-        # Add weeks and their days horizontally with bullet points
-        week_lines = []
-        for i in range(1, 5):
-            week_key = f'Semana {i}'
-            if weeks[week_key]:  # Only include weeks that have days
-                days = weeks[week_key]
-                days_text = " • ".join(days)  # Use bullet points between days
-                week_lines.append(f"{week_key}  {days_text}")
-
-        # Add weeks to formatted text
-        formatted_text.extend(week_lines)
+        # Add weeks with days in horizontal format with bullet points
+        for week_num in range(1, 5):
+            week_key = f'Semana {week_num}'
+            days = weeks_dict[week_key]
+            if days:  # Only include weeks that have days
+                days_text = " • ".join(days)
+                formatted_text.append(f"{week_key}  {days_text}")
 
         # Return the formatted text with proper line breaks
         return "\n".join(formatted_text)

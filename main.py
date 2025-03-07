@@ -290,7 +290,50 @@ def create_missing_records_section(stats, processor):
 def create_monthly_summary():
     """Create a general monthly summary page"""
     st.title("📊 Resumen General del Mes")
-    st.write("Esta sección mostrará un resumen general de todos los empleados.")
+
+    # Initialize counters for totals
+    total_absences = 0
+    total_late_days = 0
+    total_lunch_overtime_days = 0
+
+    # Get stats for all employees
+    if 'processor' in locals():
+        attendance_summary = processor.process_attendance_summary()
+        for employee_name in attendance_summary['employee_name'].unique():
+            stats = processor.get_employee_stats(employee_name)
+            total_absences += stats['absences']
+            total_late_days += len(stats['late_days']) if stats['late_days'] else 0
+            total_lunch_overtime_days += len(stats['lunch_overtime_days']) if stats['lunch_overtime_days'] else 0
+
+    # Display the totals using the same card format as individual employees
+    st.markdown("""
+        <div class="stat-group">
+            <h3>📈 Métricas Generales del Mes</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+    """, unsafe_allow_html=True)
+
+    # Define the metrics to display
+    summary_metrics = [
+        ('Total Inasistencias', total_absences, "Total días", "Total de días de inasistencia en el mes"),
+        ('Total Llegadas Tarde', total_late_days, "Total días", "Total de días con llegadas tarde en el mes"),
+        ('Total Excesos Almuerzo', total_lunch_overtime_days, "Total días", "Total de días con exceso en tiempo de almuerzo")
+    ]
+
+    # Display each metric in a card
+    for label, value, subtitle, hover_text in summary_metrics:
+        status = get_status(value)
+        st.markdown(f"""
+            <div class="stat-card">
+                <div class="content">
+                    <div class="metric-label">{label}</div>
+                    <div class="metric-value {status}">{value}</div>
+                    <div class="metric-label">{subtitle}</div>
+                </div>
+                <div class="hover-text">{hover_text}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("</div></div>", unsafe_allow_html=True)
 
 def get_status(value, warning_threshold=3, danger_threshold=5):
     """Determina el estado (success, warning, danger) basado en el valor"""

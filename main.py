@@ -229,13 +229,17 @@ def create_employee_dashboard(processor, employee_name):
 
     for label, value, subtitle, hover_text in auth_metrics:
         status = get_status(value)
+        auth_note = "Requiere Autorización"
+        if label == 'Retiros Durante Horario' and 'ppp' in employee_name.lower():
+            auth_note = "Horario normal de salida para PPP"
+
         st.markdown(f"""
             <div class="stat-card">
                 <div class="content">
                     <div class="metric-label">{label}</div>
                     <div class="metric-value {status}">{value}</div>
                     <div class="metric-label">{subtitle}</div>
-                    <div class="metric-label warning">Requiere Autorización</div>
+                    <div class="metric-label warning">{auth_note}</div>
                 </div>
                 <div class="hover-text">{hover_text}</div>
             </div>

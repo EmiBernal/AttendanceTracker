@@ -231,10 +231,15 @@ def create_employee_dashboard(processor, employee_name):
 
 def create_missing_records_section(stats):
     """Creates a section for displaying missing records"""
+    # Format the lists using the column format
+    missing_entry_text = processor.format_list_in_columns(stats['missing_entry_days']) if stats['missing_entry_days'] else "No hay días registrados"
+    missing_exit_text = processor.format_list_in_columns(stats['missing_exit_days']) if stats['missing_exit_days'] else "No hay días registrados"
+    missing_lunch_text = processor.format_list_in_columns(stats['missing_lunch_days']) if stats['missing_lunch_days'] else "No hay días registrados"
+
     missing_records = [
-        ('Sin Registro de Entrada', len(stats['missing_entry_days']), "Total días sin marcar", "Días sin registro de entrada"),
-        ('Sin Registro de Salida', len(stats['missing_exit_days']), "Total días sin marcar", "Días sin registro de salida"),
-        ('Sin Registro de Almuerzo', len(stats['missing_lunch_days']), "Total días sin marcar", "Días sin marcar almuerzo")
+        ('Sin Registro de Entrada', len(stats['missing_entry_days']), "Total días sin marcar", missing_entry_text),
+        ('Sin Registro de Salida', len(stats['missing_exit_days']), "Total días sin marcar", missing_exit_text),
+        ('Sin Registro de Almuerzo', len(stats['missing_lunch_days']), "Total días sin marcar", missing_lunch_text)
     ]
 
     st.markdown("""

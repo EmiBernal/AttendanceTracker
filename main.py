@@ -70,16 +70,19 @@ st.markdown("""
         padding: 40px;
         min-height: 250px;
         margin: 20px;
+        text-align: center;  /* Centrar texto para las tarjetas del resumen general */
     }
 
     .stat-group h3:contains("Métricas Generales del Mes") + div .stat-card .metric-value {
         font-size: 48px;
         margin: 20px 0;
+        text-align: center;  /* Asegurar que los valores estén centrados */
     }
 
     .stat-group h3:contains("Métricas Generales del Mes") + div .stat-card .metric-label {
         font-size: 18px;
         margin: 10px 0;
+        text-align: center;  /* Asegurar que las etiquetas estén centradas */
     }
 
     .stat-card:hover {

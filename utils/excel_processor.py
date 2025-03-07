@@ -2116,7 +2116,9 @@ class ExcelProcessor:
                     try:
                         name = df.iloc[2, self.get_column_index(col)]
                         if not pd.isna(name):
-                            additional_employees.add(str(name).strip())
+                            employee_name = str(name).strip()
+                            if employee_name.lower() != 'early leave (mm)':  # Skip the unwanted entry
+                                additional_employees.add(employee_name)
                     except:
                         continue
             

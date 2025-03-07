@@ -673,38 +673,26 @@ class ExcelProcessor:
                                    'absence' in day_str:
                                     continue
 
+                                # Verificar registro de salida
                                 exit_time = df.iloc[row, exit_col]
-                                if not pd.isna(exit_time):
-                                    try:
-                                        if isinstance(exit_time, str):
-                                            exit_time = pd.to_datetime(exit_time).time()
-                                        elif isinstance(exit_time, datetime):
-                                            exit_time = exit_time.time()
-                                        else:
-                                            print(f"Formato de hora no reconocido en fila {row+1}")
-                                            continue
+                                # Si la celda está vacía o es una cadena vacía, contar como salida temprana
+                                if pd.isna(exit_time) or str(exit_time).strip() == '':
+                                    formatted_day = self.translate_day_abbreviation(str(day_value).strip())
+                                    early_departure_days.append(formatted_day)
+                                    # Asumimos 60 minutos por defecto para estos casos
+                                    total_early_minutes += 60
+                                    print(f"Falta registro de salida en {sheet} fila {row+1}: {formatted_day}")
 
-                                        schedule = self.get_employee_schedule(employee_name)
-                                        if self.is_early_departure(employee_name, exit_time):
-                                            early_minutes = (
-                                                datetime.combine(datetime.min, schedule['end_time']) -
-                                                datetime.combine(datetime.min, exit_time)
-                                            ).total_seconds() / 60
-                                            total_early_minutes += early_minutes
-                                            
-                                            formatted_day = self.translate_day_abbreviation(str(day_value).strip())
-                                            early_departure_days.append(formatted_day)
-                                            print(f"Salida temprana en {sheet} fila {row+1}: {early_minutes:.0f} minutos")
-                                    except Exception as e:
-                                        print(f"Error processing exit time in row {row+1}: {str(e)}")
                             except Exception as e:
                                 print(f"Error in row {row+1}: {str(e)}")
+                                continue
 
                     except Exception as e:
                         print(f"Error processing sheet {sheet}: {str(e)}")
+                        continue
 
                 return early_departure_days, total_early_minutes
-            
+
             # Para empleados regulares, mantener la lógica original
             exceptional_index = self.excel_file.sheet_names.index('Exceptional')
             attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
@@ -805,34 +793,6 @@ class ExcelProcessor:
                     'exit_col': 'AH',
                     'day_col': 'AE',
                     'start_row': 21  # corresponde a fila 22
-                }
-            ]
-
-            # Configuración para empleados regulares
-            regular_positions = [
-                {
-                    'name_col': 'J',
-                    'entry_col': 'B',
-                    'exit_col': 'I',
-                    'day_col': 'A',
-                    'lunch_out': 'D',
-                    'lunch_return': 'G'
-                },
-                {
-                    'name_col': 'Y',
-                    'entry_col': 'Q',
-                    'exit_col': 'X',
-                    'day_col': 'P',
-                    'lunch_out': 'S',
-                    'lunch_return': 'V'
-                },
-                {
-                    'name_col': 'AN',
-                    'entry_col': 'AF',
-                    'exit_col': 'AM',
-                    'day_col': 'AE',
-                    'lunch_out': 'AH',
-                    'lunch_return': 'AK'
                 }
             ]
 

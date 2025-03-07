@@ -227,9 +227,9 @@ def create_employee_dashboard(processor, employee_name):
     st.markdown("</div></div>", unsafe_allow_html=True)
 
     # Missing Records Section
-    create_missing_records_section(stats)
+    create_missing_records_section(stats, processor)
 
-def create_missing_records_section(stats):
+def create_missing_records_section(stats, processor):
     """Creates a section for displaying missing records"""
     # Format the lists using the column format
     missing_entry_text = processor.format_list_in_columns(stats['missing_entry_days']) if stats['missing_entry_days'] else "No hay días registrados"

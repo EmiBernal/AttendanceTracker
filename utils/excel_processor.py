@@ -519,25 +519,26 @@ class ExcelProcessor:
 
     def format_list_in_columns(self, items, items_per_column=8):
         """
-        Format a list of items into columns, with a maximum number of items per column.
+        Format a list of items into columns, with exactly 8 items per column.
         Returns a string with the formatted text.
         """
         if not items:
             return "No hay días registrados"
 
-        # Split items into columns
+        # Split items into columns of exactly 8 items
         columns = []
-        for i in range(0, len(items), items_per_column):
-            columns.append(items[i:i + items_per_column])
+        current_column = []
+        
+        for i, item in enumerate(items):
+            current_column.append(f"• {item}")
+            
+            # When we reach 8 items or it's the last item, add the column
+            if len(current_column) == items_per_column or i == len(items) - 1:
+                columns.append("\n".join(current_column))
+                current_column = []
 
-        # Format each column with bullet points
-        formatted_columns = []
-        for column in columns:
-            formatted_column = [f"• {item}" for item in column]
-            formatted_columns.append("\n".join(formatted_column))
-
-        # Join columns with wider spacing and add a newline between columns if there are many items
-        return "          ".join(formatted_columns)  # Increased spacing between columns
+        # Join columns with sufficient spacing to prevent overlap
+        return "          ".join(columns)  # 10 spaces between columns
 
     def format_lunch_overtime_text(self, lunch_overtime_days):
         """Formats lunch overtime days by week in a horizontal layout"""

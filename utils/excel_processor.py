@@ -1001,10 +1001,15 @@ class ExcelProcessor:
         except Exception as e:
             print(f"Error getting department: {str(e)}")
 
-        # Calculate total hours
-        required_hours = 76.40  # Standard required hours
-        actual_hours = required_hours - (absences * 8)  # Subtract 8 hours for each absence
-        
+        # Calculate actual hours differently for PPP employees
+        if 'ppp' in employee_name.lower():
+            weekly_hours, weekly_details = self.calculate_ppp_weekly_hours(employee_name)
+            actual_hours = sum(weekly_hours.values())
+            required_hours = 80.0  # Estándar mensual para PPP
+        else:
+            required_hours = 76.40  # Estándar regular
+            actual_hours = required_hours - (absences * 8)  # Subtract 8 hours for each absence
+
         # Get stats dictionary ready
         stats = {
             'name': employee_name,
@@ -1024,13 +1029,12 @@ class ExcelProcessor:
             'actual_hours': actual_hours,
             'mid_day_departures': mid_day_departures,
             'mid_day_departures_text': mid_day_departures_text,
-            'overtime_minutes': overtime_minutes,
-            'overtime_days': overtime_days
+            'overtime_minutes': overtime_minutes if 'agustin taba' in employee_name.lower() else 0,
+            'overtime_days': overtime_days if 'agustin taba' in employee_name.lower() else []
         }
         
         # Add PPP weekly hours if applicable
         if 'ppp' in employee_name.lower():
-            weekly_hours, weekly_details = self.calculate_ppp_weekly_hours(employee_name)
             stats['weekly_hours'] = weekly_hours
             stats['weekly_details'] = weekly_details
             

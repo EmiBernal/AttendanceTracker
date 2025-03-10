@@ -34,15 +34,6 @@ class ExcelProcessor:
                 'exit_col': 'AH',
                 'start_row': 11,  # corresponde a fila 12
                 'end_row': 40
-            },
-            'valentina al': {
-                'half_day': True,
-                'end_time': datetime.strptime('12:40', '%H:%M').time(),
-                'no_lunch': True,
-                'check_special_exit': True,
-                'exit_col': 'AH',
-                'start_row': 11,  # corresponde a fila 12
-                'end_row': 40
             }
         }
 

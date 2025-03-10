@@ -252,17 +252,17 @@ def create_employee_dashboard(processor, employee_name):
     auth_metrics = [
         ('Retiros Anticipados', len(early_departure_days) if early_departure_days else 0, f"{stats['early_minutes']:.0f} minutos en total", f"Días con salida anticipada:\n{early_departure_days_text}"),
         ('Ingresos con Retraso', len(late_days) if late_days else 0, f"{stats['late_minutes']:.0f} minutos en total", f"Días con llegada tarde:\n{late_days_text}"),
-        ('Retiros Durante Horario', mid_day_departures_count, "Total salidas", f"Salidas durante horario laboral:\n{mid_day_departures_text}")
     ]
+
+    # Solo agregar "Retiros Durante Horario" si no es PPP
+    if not 'ppp' in employee_name.lower():
+        auth_metrics.append(('Retiros Durante Horario', mid_day_departures_count, "Total salidas", f"Salidas durante horario laboral:\n{mid_day_departures_text}"))
 
     for label, value, subtitle, hover_text in auth_metrics:
         status = get_status(value)
         auth_note = "Requiere Autorización"
-        if label == 'Retiros Durante Horario':
-            if 'ppp' in employee_name.lower():
-                auth_note = "Horario normal de salida para PPP"
-            elif employee_name.lower() == 'agustin taba':
-                auth_note = "Horario normal de salida (12:40)"
+        if label == 'Retiros Durante Horario' and employee_name.lower() == 'agustin taba':
+            auth_note = "Horario normal de salida (12:40)"
 
         st.markdown(f"""
             <div class="stat-card">

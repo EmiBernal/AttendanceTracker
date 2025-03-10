@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Updated CSS for hover cards and metrics with larger sizes for summary cards
+# Updated CSS for hover cards and metrics with lighter colors for light mode
 st.markdown("""
 <style>
     /* Base transitions */
@@ -30,15 +30,14 @@ st.markdown("""
 
     /* Info group styling */
     .info-group {
-        background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0.1) 100%);
-        background-size: 200% 200%;
+        background: linear-gradient(135deg, rgba(236, 246, 255, 0.8) 0%, rgba(240, 249, 255, 0.9) 100%);
         border-radius: 16px;
         padding: 24px;
         margin: 20px 0;
         transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
                     box-shadow 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid rgba(33, 150, 243, 0.1);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(191, 219, 254, 0.3);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
         animation: fadeInUp 0.6s ease-out forwards;
         text-align: center;
         position: relative;
@@ -47,56 +46,55 @@ st.markdown("""
 
     .info-group:hover {
         transform: translateY(-4px) scale(1.01);
-        box-shadow: 0 8px 30px rgba(33, 150, 243, 0.15);
+        box-shadow: 0 8px 30px rgba(191, 219, 254, 0.2);
         background-position: right center;
     }
 
     /* Stat card styling */
     .stat-card {
-        background-color: rgba(17, 25, 40, 0.75);
+        background-color: rgba(255, 255, 255, 0.95);
         border-radius: 16px;
         padding: 32px;
         margin: 16px;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(226, 232, 240, 0.3);
         backdrop-filter: blur(10px);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         position: relative;
         min-height: 200px;
     }
 
     /* Larger stat cards for summary view */
     .stat-group h3:contains("Métricas Generales del Mes") {
-        text-align: center;  /* Centrar el título */
+        text-align: center;
         font-size: 24px;
         margin: 30px 0;
-        color: #E2E8F0;
+        color: #475569;
     }
 
     .stat-group h3:contains("Métricas Generales del Mes") + div .stat-card {
         padding: 40px;
         min-height: 250px;
         margin: 20px;
-        text-align: center;  /* Centrar texto para las tarjetas del resumen general */
+        text-align: center;
     }
 
     .stat-group h3:contains("Métricas Generales del Mes") + div .stat-card .metric-value {
         font-size: 48px;
         margin: 20px 0;
-        text-align: center;  /* Asegurar que los valores estén centrados */
+        text-align: center;
     }
 
     .stat-group h3:contains("Métricas Generales del Mes") + div .stat-card .metric-label {
         font-size: 18px;
         margin: 10px 0;
-        text-align: center;  /* Asegurar que las etiquetas estén centradas */
+        text-align: center;
     }
 
     .stat-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
-        border-color: rgba(255, 255, 255, 0.2);
-        z-index: 1000;
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        border-color: rgba(226, 232, 240, 0.5);
     }
 
     /* Hover card effect */
@@ -105,8 +103,8 @@ st.markdown("""
     }
 
     .stat-card:hover .content {
-        filter: blur(3px);
-        opacity: 0.15;
+        filter: blur(2px);
+        opacity: 0.2;
     }
 
     .stat-card .hover-text {
@@ -118,11 +116,11 @@ st.markdown("""
         transition: all 0.3s ease;
         font-size: 15px;
         font-weight: 500;
-        color: #E2E8F0;
-        background: rgba(17, 25, 40, 0.95);
+        color: #475569;
+        background: rgba(255, 255, 255, 0.98);
         padding: 20px;
         border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         pointer-events: none;
         white-space: pre-line;
         text-align: left;
@@ -131,7 +129,6 @@ st.markdown("""
         min-width: 300px;
         max-height: 80vh;
         overflow-y: auto;
-        z-index: 1001;
     }
 
     /* Custom scrollbar styling */
@@ -140,18 +137,17 @@ st.markdown("""
     }
 
     .stat-card .hover-text::-webkit-scrollbar-track {
-        background: rgba(0, 0, 0, 0.2);
+        background: rgba(241, 245, 249, 0.5);
         border-radius: 4px;
     }
 
     .stat-card .hover-text::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.3);
+        background: rgba(148, 163, 184, 0.3);
         border-radius: 4px;
     }
 
     .stat-card:hover .hover-text {
         opacity: 1;
-        z-index: 1001;
     }
 
     .metric-value {
@@ -159,7 +155,7 @@ st.markdown("""
         font-weight: 600;
         margin: 8px 0;
         transition: all 0.3s ease;
-        color: #E2E8F0;
+        color: #475569;
     }
 
     .metric-label {
@@ -168,9 +164,34 @@ st.markdown("""
         transition: color 0.3s ease;
     }
 
-    .warning { color: #FBBF24; }
-    .danger { color: #EF4444; }
-    .success { color: #10B981; }
+    /* Softer status colors */
+    .warning { color: #F59E0B; }
+    .danger { color: #DC2626; }
+    .success { color: #059669; }
+
+    /* Light mode specific adjustments */
+    @media (prefers-color-scheme: light) {
+        .stat-card {
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .metric-value {
+            color: #1E293B;
+        }
+
+        .metric-label {
+            color: #64748B;
+        }
+
+        .warning { color: #F97316; }
+        .danger { color: #EF4444; }
+        .success { color: #10B981; }
+
+        .hover-text {
+            color: #1E293B;
+            background: rgba(255, 255, 255, 0.95);
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 

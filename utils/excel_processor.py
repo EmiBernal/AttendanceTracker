@@ -657,21 +657,17 @@ class ExcelProcessor:
                         for row in range(11, 42):  # Filas 12-42
                             try:
                                 entry = df.iloc[row, self.get_column_index('B')]
-                                exit = df.iloc[row, self.get_column_index('I')]
-                                lunch_out = df.iloc[row, self.get_column_index('D')]
-                                lunch_return = df.iloc[row, self.get_column_index('G')]
+                                exit_time = df.iloc[row, self.get_column_index('D')]
+                                return_time = df.iloc[row, self.get_column_index('G')]
                                 
-                                if not pd.isna(entry) and not pd.isna(exit):
-                                    if pd.isna(lunch_out) or pd.isna(lunch_return):
-                                        continue
-                                    else:
-                                        lunch_out_time = pd.to_datetime(lunch_out).time()
-                                        lunch_return_time = pd.to_datetime(lunch_return).time()
-                                        if (work_start <= lunch_out_time <= work_lunch_limit and 
-                                            work_start <= lunch_return_time <= work_lunch_limit):
-                                            total_mid_day_departures += 1
-                                            day_value = df.iloc[row, self.get_column_index('A')]
-                                            days_with_mid_departures.append(self.translate_day_abbreviation(str(day_value).strip()))
+                                if not pd.isna(entry):  # Si hay entrada
+                                    if not pd.isna(exit_time):  # Si hay salida
+                                        exit_time = pd.to_datetime(exit_time).time()
+                                        if work_start <= exit_time <= work_lunch_limit:  # Salida entre 7:50 y 12:00
+                                            if pd.isna(return_time) or pd.to_datetime(return_time).time() > work_lunch_limit:
+                                                total_mid_day_departures += 1
+                                                day_value = df.iloc[row, self.get_column_index('A')]
+                                                days_with_mid_departures.append(self.translate_day_abbreviation(str(day_value).strip()))
                             except Exception as e:
                                 print(f"Error processing row {row} data: {e}")
                                 continue
@@ -681,21 +677,17 @@ class ExcelProcessor:
                         for row in range(11, 42):
                             try:
                                 entry = df.iloc[row, self.get_column_index('Q')]
-                                exit = df.iloc[row, self.get_column_index('X')]
-                                lunch_out = df.iloc[row, self.get_column_index('S')]
-                                lunch_return = df.iloc[row, self.get_column_index('V')]
+                                exit_time = df.iloc[row, self.get_column_index('S')]
+                                return_time = df.iloc[row, self.get_column_index('V')]
                                 
-                                if not pd.isna(entry) and not pd.isna(exit):
-                                    if pd.isna(lunch_out) or pd.isna(lunch_return):
-                                        continue
-                                    else:
-                                        lunch_out_time = pd.to_datetime(lunch_out).time()
-                                        lunch_return_time = pd.to_datetime(lunch_return).time()
-                                        if (work_start <= lunch_out_time <= work_lunch_limit and 
-                                            work_start <= lunch_return_time <= work_lunch_limit):
-                                            total_mid_day_departures += 1
-                                            day_value = df.iloc[row, self.get_column_index('P')]
-                                            days_with_mid_departures.append(self.translate_day_abbreviation(str(day_value).strip()))
+                                if not pd.isna(entry):  # Si hay entrada
+                                    if not pd.isna(exit_time):  # Si hay salida
+                                        exit_time = pd.to_datetime(exit_time).time()
+                                        if work_start <= exit_time <= work_lunch_limit:  # Salida entre 7:50 y 12:00
+                                            if pd.isna(return_time) or pd.to_datetime(return_time).time() > work_lunch_limit:
+                                                total_mid_day_departures += 1
+                                                day_value = df.iloc[row, self.get_column_index('P')]
+                                                days_with_mid_departures.append(self.translate_day_abbreviation(str(day_value).strip()))
                             except Exception as e:
                                 print(f"Error processing row {row} data in position 2: {e}")
                                 continue
@@ -705,21 +697,17 @@ class ExcelProcessor:
                         for row in range(11, 42):
                             try:
                                 entry = df.iloc[row, self.get_column_index('AF')]
-                                exit = df.iloc[row, self.get_column_index('AM')]
-                                lunch_out = df.iloc[row, self.get_column_index('AH')]
-                                lunch_return = df.iloc[row, self.get_column_index('AK')]
+                                exit_time = df.iloc[row, self.get_column_index('AH')]
+                                return_time = df.iloc[row, self.get_column_index('AK')]
                                 
-                                if not pd.isna(entry) and not pd.isna(exit):
-                                    if pd.isna(lunch_out) or pd.isna(lunch_return):
-                                        continue
-                                    else:
-                                        lunch_out_time = pd.to_datetime(lunch_out).time()
-                                        lunch_return_time = pd.to_datetime(lunch_return).time()
-                                        if (work_start <= lunch_out_time <= work_lunch_limit and 
-                                            work_start <= lunch_return_time <= work_lunch_limit):
-                                            total_mid_day_departures += 1
-                                            day_value = df.iloc[row, self.get_column_index('AE')]
-                                            days_with_mid_departures.append(self.translate_day_abbreviation(str(day_value).strip()))
+                                if not pd.isna(entry):  # Si hay entrada
+                                    if not pd.isna(exit_time):  # Si hay salida
+                                        exit_time = pd.to_datetime(exit_time).time()
+                                        if work_start <= exit_time <= work_lunch_limit:  # Salida entre 7:50 y 12:00
+                                            if pd.isna(return_time) or pd.to_datetime(return_time).time() > work_lunch_limit:
+                                                total_mid_day_departures += 1
+                                                day_value = df.iloc[row, self.get_column_index('AE')]
+                                                days_with_mid_departures.append(self.translate_day_abbreviation(str(day_value).strip()))
                             except Exception as e:
                                 print(f"Error processing row {row} data in position 3: {e}")
                                 continue

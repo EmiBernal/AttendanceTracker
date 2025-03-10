@@ -612,6 +612,112 @@ class ExcelProcessor:
         except Exception as e:
             print(f"Error translating day: {str(e)}")
             return day_str
+
+    def calculate_ppp_overtime(self, employee_name):
+        """Calculate overtime hours for PPP employees"""
+        if 'ppp' not in employee_name.lower():
+            return 0, []
+
+        try:
+            total_overtime_minutes = 0
+            overtime_days = []
+            
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            
+            # Positions in the Excel sheet with correct columns for PPP overtime
+            positions = [
+                {'name_col': 'J', 'extra_entry_col': 'G', 'extra_exit_col': 'I', 'day_col': 'A'},
+                {'name_col': 'Y', 'extra_entry_col': 'V', 'extra_exit_col': 'X', 'day_col': 'P'},
+                {'name_col': 'AN', 'extra_entry_col': 'AK', 'extra_exit_col': 'AM', 'day_col': 'AE'}
+            ]
+
+            for sheet in attendance_sheets:
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+                    
+                    for position in positions:
+                        try:
+                            name_col_index = self.get_column_index(position['name_col'])
+                            name_cell = df.iloc[2, name_col_index]
+                            
+                            if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
+                                continue
+                                
+                            for row in range(11, 42):  # Filas 12-42
+                                try:
+                                    day_value = df.iloc[row, self.get_column_index(position['day_col'])]
+                                    entry_time = df.iloc[row, self.get_column_index(position['extra_entry_col'])]
+                                    exit_time = df.iloc[row, self.get_column_index(position['extra_exit_col'])]
+                                    
+                                    if pd.isna(day_value) or pd.isna(entry_time) or pd.isna(exit_time):
+                                        continue
+                                        
+                                    day_str = str(day_value).strip()
+                                    if 'absence' in day_str.lower():
+                                        continue
+                                        
+                                    # Skip weekends
+                                    if any(abbr in day_str.lower() for abbr in ['sa', 'su']):
+                                        continue
+                                        
+                                    try:
+                                        entry_time = pd.to_datetime(entry_time).time()
+                                        exit_time = pd.to_datetime(exit_time).time()
+                                        
+                                        # Obtener horas y minutos por separado
+                                        end_hour = exit_time.hour
+                                        end_minute = exit_time.minute
+                                        start_hour = entry_time.hour
+                                        start_minute = entry_time.minute
+                                        
+                                        # Realizar la resta de horas y minutos
+                                        diff_hours = end_hour - start_hour
+                                        diff_minutes = end_minute - start_minute
+                                        
+                                        # Ajustar si los minutos son negativos
+                                        if diff_minutes < 0:
+                                            diff_minutes += 60
+                                            diff_hours -= 1
+                                        
+                                        # Convertir minutos extras a horas si superan 60
+                                        if diff_minutes >= 60:
+                                            extra_hours = diff_minutes // 60
+                                            diff_hours += extra_hours
+                                            diff_minutes = diff_minutes % 60
+                                        
+                                        # Calcular minutos totales para esta entrada
+                                        total_minutes = (diff_hours * 60) + diff_minutes
+
+                                        if total_minutes > 0:
+                                            total_overtime_minutes += total_minutes
+                                            formatted_day = self.translate_day_abbreviation(day_str)
+                                            overtime_days.append(f"{formatted_day} ({diff_hours}h {diff_minutes}m)")
+                                            print(f"Horas extras en {formatted_day}: {diff_hours}h {diff_minutes}m")
+                                        
+                                    except Exception as e:
+                                        print(f"Error processing times in row {row+1}: {str(e)}")
+                                        continue
+                                        
+                                except Exception as e:
+                                    print(f"Error in row {row+1}: {str(e)}")
+                                    continue
+                                    
+                        except Exception as e:
+                            print(f"Error checking position {position['name_col']}: {str(e)}")
+                            continue
+                            
+                except Exception as e:
+                    print(f"Error processing sheet {sheet}: {str(e)}")
+                    continue
+                    
+            print(f"Total días con horas extras: {len(overtime_days)}")
+            print(f"Total minutos extras: {total_overtime_minutes:.0f}")
+            return total_overtime_minutes, overtime_days
+            
+        except Exception as e:
+            print(f"Error calculating PPP overtime: {str(e)}")
+            return 0, []
         if not lunch_overtime_days:
             return "No hay días registrados"
 

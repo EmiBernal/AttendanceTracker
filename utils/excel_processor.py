@@ -634,6 +634,57 @@ class ExcelProcessor:
 
         return "\n".join(lines)
 
+    def get_employee_stats(self, employee_name):
+        """Get comprehensive statistics for a specific employee"""
+        # Regular stats
+        absence_days = self.get_absence_days(employee_name)
+        absences = len(absence_days) if absence_days else 0
+        late_days, late_minutes = self.count_late_days(employee_name)
+        lunch_overtime_days, total_lunch_minutes = self.count_lunch_overtime_days(employee_name)
+        early_departure_days, early_minutes = self.count_early_departures(employee_name)
+        missing_entry_days, missing_exit_days, missing_lunch_days = self.count_missing_records(employee_name)
+        
+        # Mid-day departures with detailed text
+        mid_day_departures, mid_day_departures_text = self.format_mid_day_departures_text(employee_name)
+        
+        print(f"Debug - {employee_name} mid-day departures: {mid_day_departures}")
+        print(f"Debug - {employee_name} mid-day departures text: {mid_day_departures_text}")
+
+        # Get department from the first sheet (Summary)
+        department = ""
+        try:
+            df = pd.read_excel(self.excel_file, sheet_name='Summary', header=None)
+            for idx in range(4, 24):  # Filas 5-24
+                if str(df.iloc[idx, 1]).strip() == employee_name:
+                    department = str(df.iloc[idx, 2]).strip()
+                    break
+        except Exception as e:
+            print(f"Error getting department: {str(e)}")
+
+        # Calculate total hours
+        required_hours = 76.40  # Standard required hours
+        actual_hours = required_hours - (absences * 8)  # Subtract 8 hours for each absence
+
+        return {
+            'name': employee_name,
+            'department': department,
+            'absences': absences,
+            'absence_days': absence_days,
+            'late_days': late_days,
+            'late_minutes': late_minutes,
+            'lunch_overtime_days': lunch_overtime_days,
+            'total_lunch_minutes': total_lunch_minutes,
+            'early_departure_days': early_departure_days,
+            'early_minutes': early_minutes,
+            'missing_entry_days': missing_entry_days,
+            'missing_exit_days': missing_exit_days,
+            'missing_lunch_days': missing_lunch_days,
+            'required_hours': required_hours,
+            'actual_hours': actual_hours,
+            'mid_day_departures': mid_day_departures,
+            'mid_day_departures_text': mid_day_departures_text
+        }
+
     def format_mid_day_departures_text(self, employee_name):
         """Updates the mid-day departures text based on new logic"""
         try:
@@ -725,54 +776,7 @@ class ExcelProcessor:
             print(f"Error general en format_mid_day_departures_text: {str(e)}")
             return 0, "Error al procesar los datos"
 
-    def get_employee_stats(self, employee_name):
-        """Get comprehensive statistics for a specific employee"""
-        # Regular stats
-        absences = self.count_absences(employee_name)
-        late_days, late_minutes = self.count_late_days(employee_name)
-        lunch_overtime_days, total_lunch_minutes = self.count_lunch_overtime_days(employee_name)
-        early_departure_days, early_minutes = self.count_early_departures(employee_name)
-        missing_entry_days, missing_exit_days, missing_lunch_days = self.count_missing_records(employee_name)
-        
-        # Mid-day departures with detailed text
-        mid_day_departures, mid_day_departures_text = self.format_mid_day_departures_text(employee_name)
-        
-        print(f"Debug - {employee_name} mid-day departures: {mid_day_departures}")
-        print(f"Debug - {employee_name} mid-day departures text: {mid_day_departures_text}")
 
-        # Get department from the first sheet (Summary)
-        department = ""
-        try:
-            df = pd.read_excel(self.excel_file, sheet_name='Summary', header=None)
-            for idx in range(4, 24):  # Filas 5-24
-                if str(df.iloc[idx, 1]).strip() == employee_name:
-                    department = str(df.iloc[idx, 2]).strip()
-                    break
-        except Exception as e:
-            print(f"Error getting department: {str(e)}")
-
-        # Calculate total hours
-        required_hours = 76.40  # Standard required hours
-        actual_hours = required_hours - (absences * 8)  # Subtract 8 hours for each absence
-
-        return {
-            'name': employee_name,
-            'department': department,
-            'absences': absences,
-            'late_days': late_days,
-            'late_minutes': late_minutes,
-            'lunch_overtime_days': lunch_overtime_days,
-            'total_lunch_minutes': total_lunch_minutes,
-            'early_departure_days': early_departure_days,
-            'early_minutes': early_minutes,
-            'missing_entry_days': missing_entry_days,
-            'missing_exit_days': missing_exit_days,
-            'missing_lunch_days': missing_lunch_days,
-            'required_hours': required_hours,
-            'actual_hours': actual_hours,
-            'mid_day_departures': mid_day_departures,
-            'mid_day_departures_text': mid_day_departures_text
-        }
 
     def get_early_departure_days(self, employee_name):
         """Returns a list of days with early departures and total early minutes"""

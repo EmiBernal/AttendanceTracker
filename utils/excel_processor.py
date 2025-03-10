@@ -698,6 +698,117 @@ class ExcelProcessor:
             print(f"Error calculating overtime: {str(e)}")
             return 0, []
 
+    def calculate_ppp_weekly_hours(self, employee_name):
+        """Calculate weekly hours for PPP employees"""
+        try:
+            weekly_hours = {
+                'Semana 1': 0,
+                'Semana 2': 0,
+                'Semana 3': 0,
+                'Semana 4': 0
+            }
+            weekly_details = []
+            
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            
+            # Positions in the Excel sheet
+            positions = [
+                {'name_col': 'J', 'entry_col': 'B', 'exit_col': 'I', 'day_col': 'A'},
+                {'name_col': 'Y', 'entry_col': 'Q', 'exit_col': 'X', 'day_col': 'P'},
+                {'name_col': 'AN', 'entry_col': 'AF', 'exit_col': 'AM', 'day_col': 'AE'}
+            ]
+
+            for sheet in attendance_sheets:
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+                    
+                    for position in positions:
+                        try:
+                            name_col_index = self.get_column_index(position['name_col'])
+                            name_cell = df.iloc[2, name_col_index]
+                            
+                            if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
+                                continue
+                                
+                            for row in range(11, 42):  # Filas 12-42
+                                try:
+                                    day_value = df.iloc[row, self.get_column_index(position['day_col'])]
+                                    entry_time = df.iloc[row, self.get_column_index(position['entry_col'])]
+                                    exit_time = df.iloc[row, self.get_column_index(position['exit_col'])]
+                                    
+                                    if pd.isna(day_value):
+                                        continue
+                                        
+                                    day_str = str(day_value).strip()
+                                    if 'absence' in day_str.lower():
+                                        continue
+                                        
+                                    # Skip weekends
+                                    if any(abbr in day_str.lower() for abbr in ['sa', 'su']):
+                                        continue
+                                        
+                                    # Process entry and exit times
+                                    if not pd.isna(entry_time) and not pd.isna(exit_time):
+                                        try:
+                                            entry_time = pd.to_datetime(entry_time).time()
+                                            exit_time = pd.to_datetime(exit_time).time()
+                                            
+                                            # Calculate hours worked
+                                            hours = ((
+                                                datetime.combine(datetime.min, exit_time) - 
+                                                datetime.combine(datetime.min, entry_time)
+                                            ).total_seconds() / 3600)
+                                            
+                                            # Add to appropriate week
+                                            day_num = int(day_str.split()[0])
+                                            week_key = ''
+                                            if 1 <= day_num <= 7:
+                                                week_key = 'Semana 1'
+                                            elif 8 <= day_num <= 14:
+                                                week_key = 'Semana 2'
+                                            elif 15 <= day_num <= 21:
+                                                week_key = 'Semana 3'
+                                            elif day_num >= 22:
+                                                week_key = 'Semana 4'
+                                                
+                                            if week_key:
+                                                weekly_hours[week_key] += hours
+                                                week_details = {
+                                                    'week': week_key,
+                                                    'day': self.translate_day_abbreviation(day_str),
+                                                    'entry': entry_time.strftime('%H:%M'),
+                                                    'exit': exit_time.strftime('%H:%M'),
+                                                    'hours': round(hours, 2)
+                                                }
+                                                weekly_details.append(week_details)
+                                                
+                                        except Exception as e:
+                                            print(f"Error processing times in row {row+1}: {str(e)}")
+                                            continue
+                                            
+                                except Exception as e:
+                                    print(f"Error in row {row+1}: {str(e)}")
+                                    continue
+                                    
+                        except Exception as e:
+                            print(f"Error checking position {position['name_col']}: {str(e)}")
+                            continue
+                            
+                except Exception as e:
+                    print(f"Error processing sheet {sheet}: {str(e)}")
+                    continue
+                    
+            # Round weekly hours
+            for week in weekly_hours:
+                weekly_hours[week] = round(weekly_hours[week], 2)
+                
+            return weekly_hours, weekly_details
+            
+        except Exception as e:
+            print(f"Error calculating PPP weekly hours: {str(e)}")
+            return {'Semana 1': 0, 'Semana 2': 0, 'Semana 3': 0, 'Semana 4': 0}, []
+
     def get_employee_stats(self, employee_name):
         """Get comprehensive statistics for a specific employee"""
         # Regular stats
@@ -734,8 +845,9 @@ class ExcelProcessor:
         # Calculate total hours
         required_hours = 76.40  # Standard required hours
         actual_hours = required_hours - (absences * 8)  # Subtract 8 hours for each absence
-
-        return {
+        
+        # Get stats dictionary ready
+        stats = {
             'name': employee_name,
             'department': department,
             'absences': absences,
@@ -756,6 +868,14 @@ class ExcelProcessor:
             'overtime_minutes': overtime_minutes,
             'overtime_days': overtime_days
         }
+        
+        # Add PPP weekly hours if applicable
+        if 'ppp' in employee_name.lower():
+            weekly_hours, weekly_details = self.calculate_ppp_weekly_hours(employee_name)
+            stats['weekly_hours'] = weekly_hours
+            stats['weekly_details'] = weekly_details
+            
+        return stats
 
     def format_mid_day_departures_text(self, employee_name):
         """Updates the mid-day departures text based on new logic"""

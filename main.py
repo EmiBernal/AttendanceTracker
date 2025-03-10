@@ -306,6 +306,48 @@ def create_employee_dashboard(processor, employee_name):
 
         st.markdown("</div></div>", unsafe_allow_html=True)
 
+    # PPP Weekly Hours section
+    if 'ppp' in employee_name.lower() and stats.get('weekly_hours'):
+        weekly_hours = stats['weekly_hours']
+        weekly_details = stats['weekly_details']
+
+        # Prepare hover text
+        hover_text = "Horas trabajadas por semana:\n\n"
+        total_hours = 0
+        for week, hours in weekly_hours.items():
+            hover_text += f"{week}: {hours:.1f} horas\n"
+            # Filter details for this week
+            week_details = [detail for detail in weekly_details if detail['week'] == week]
+            if week_details:
+                hover_text += "Detalle:\n"
+                for detail in week_details:
+                    hover_text += f"  • {detail['day']}: {detail['entry']} - {detail['exit']} ({detail['hours']}h)\n"
+            hover_text += "\n"
+            total_hours += hours
+
+        # Calculate status based on 20-hour standard
+        status = 'success' if total_hours >= 20 else 'danger'
+        compliance_text = "Cumplió con el estándar" if total_hours >= 20 else "No cumplió con el estándar"
+
+        st.markdown("""
+            <div class="stat-group">
+                <h3>⏰ Horas Trabajadas por Semana</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+            <div class="stat-card">
+                <div class="content">
+                    <div class="metric-label">Total Horas Trabajadas</div>
+                    <div class="metric-value {status}">{total_hours:.1f}/20.0</div>
+                    <div class="metric-label">{compliance_text}</div>
+                </div>
+                <div class="hover-text">{hover_text}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("</div></div>", unsafe_allow_html=True)
+
     # Missing Records Section
     create_missing_records_section(stats, processor)
 

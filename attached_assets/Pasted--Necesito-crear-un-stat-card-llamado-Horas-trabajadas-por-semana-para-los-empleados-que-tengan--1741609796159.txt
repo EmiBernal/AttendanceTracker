@@ -1,0 +1,23 @@
+"Necesito crear un 'stat card' llamado 'Horas trabajadas por semana' para los empleados que tengan 'ppp' en su nombre. El sistema debe calcular el total de horas trabajadas durante la semana y verificar si el total cumple con un estándar de 20 horas.
+
+Si el nombre del empleado contiene 'ppp' y coincide con la celda AN3, el sistema debe:
+
+Sumar las horas trabajadas entre las filas 12 a 42. Para el calculo de la suma,dada una fila x (entre 12 y 42) restar AHx - AFx para obtener las horas trabajadas por día.
+El sistema debe comparar el total de horas trabajadas con el estándar de 20 horas y mostrar el resultado.
+El 'stat card' debe mostrar el total de horas trabajadas y las horas estándar de 20 horas. Si el empleado cumple con el estándar, debe decir "Cumplió con el estándar", de lo contrario, "No cumplió con el estándar".
+Como un añadido, quiero que haya un hover que muestre las semanas (ya que hay 4/5 semanas por mes) para mayor claridad.
+
+
+Si el nombre del empleado contiene 'ppp' y coincide con la celda  Y3, el sistema debe:
+
+Sumar las horas trabajadas entre las filas 12 a 42. Para el calculo de la suma,dada una fila x (entre 12 y 42) restar Sx - Qx para obtener las horas trabajadas por día.
+El sistema debe comparar el total de horas trabajadas con el estándar de 20 horas y mostrar el resultado.
+El 'stat card' debe mostrar el total de horas trabajadas y las horas estándar de 20 horas. Si el empleado cumple con el estándar, debe decir "Cumplió con el estándar", de lo contrario, "No cumplió con el estándar".
+Como un añadido, quiero que haya un hover que muestre las semanas (ya que hay 4/5 semanas por mes) para mayor claridad.
+
+Si el nombre del empleado contiene 'ppp' y coincide con la celda  J3, el sistema debe:
+
+Sumar las horas trabajadas entre las filas 12 a 42. Para el calculo de la suma,dada una fila x (entre 12 y 42) restar Dx - Bx para obtener las horas trabajadas por día.
+El sistema debe comparar el total de horas trabajadas con el estándar de 20 horas y mostrar el resultado.
+El 'stat card' debe mostrar el total de horas trabajadas y las horas estándar de 20 horas. Si el empleado cumple con el estándar, debe decir "Cumplió con el estándar", de lo contrario, "No cumplió con el estándar".
+Como un añadido, quiero que haya un hover que muestre las semanas (ya que hay 4/5 semanas por mes) para mayor claridad.

@@ -280,7 +280,10 @@ def create_employee_dashboard(processor, employee_name):
 
     # Horas Extras section (para agustin taba y ppp)
     if employee_name.lower() == 'agustin taba' or 'ppp' in employee_name.lower():
-        overtime_days_text = processor.format_list_in_columns(stats['overtime_days']) if stats['overtime_days'] else "No hay días registrados"
+        if stats['overtime_days']:
+            overtime_days_text = processor.format_list_in_columns(stats['overtime_days'])
+        else:
+            overtime_days_text = "No hay días registrados"
 
         # Calcular horas y minutos totales
         total_hours = int(stats['overtime_minutes'] // 60)

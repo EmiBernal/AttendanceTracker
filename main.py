@@ -282,6 +282,10 @@ def create_employee_dashboard(processor, employee_name):
     if employee_name.lower() == 'agustin taba':
         overtime_days_text = processor.format_list_in_columns(stats['overtime_days']) if stats['overtime_days'] else "No hay días registrados"
 
+        # Calcular horas y minutos totales
+        total_hours = int(stats['overtime_minutes'] // 60)
+        total_minutes = int(stats['overtime_minutes'] % 60)
+
         st.markdown("""
             <div class="stat-group">
                 <h3>⏰ Horas Extras</h3>
@@ -292,7 +296,7 @@ def create_employee_dashboard(processor, employee_name):
             <div class="stat-card">
                 <div class="content">
                     <div class="metric-label">Total Horas Extras</div>
-                    <div class="metric-value success">{stats['overtime_minutes'] / 60:.1f}</div>
+                    <div class="metric-value success">{total_hours}h {total_minutes}m</div>
                     <div class="metric-label">Horas acumuladas</div>
                     <div class="metric-label">{stats['overtime_minutes']:.0f} minutos en total</div>
                 </div>

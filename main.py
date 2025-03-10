@@ -339,6 +339,8 @@ def create_monthly_summary(processor, attendance_summary):
         total_missing_exit += len(stats['missing_exit_days']) if stats['missing_exit_days'] else 0
         total_missing_lunch += len(stats['missing_lunch_days']) if stats['missing_lunch_days'] else 0
 
+        print(f"Debug - {employee_name} mid-day departures: {stats.get('mid_day_departures', 0)}")
+
     # Display the totals using the same card format as individual employees
     st.markdown("""
         <div class="stat-group">

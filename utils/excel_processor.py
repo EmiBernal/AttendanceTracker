@@ -635,205 +635,107 @@ class ExcelProcessor:
         return "\n".join(lines)
 
     def format_mid_day_departures_text(self, employee_name):
-        """Formats mid-day departures text with bullet points and week grouping"""
+        """Updates the mid-day departures text based on new logic"""
         try:
-            total_days = 0
-            weeks_dict = {f'Semana {i}': [] for i in range(1, 5)}
-
+            total_mid_day_departures = 0
+            days_with_mid_departures = []
+            
             # Encontrar el índice de la hoja "Exceptional"
             exceptional_index = self.excel_file.sheet_names.index('Exceptional')
             # Solo procesar las hojas después de "Exceptional"
             attendance_sheets = self.excel_file.sheet_names[exceptional_index + 1:]
-
-            is_special_employee = employee_name.lower() in ['valentina al', 'agustin taba']
-            is_ppp_employee = 'ppp' in employee_name.lower()
-
-            # Configuración para empleados PPP
-            ppp_positions = [
-                {
-                    'name_col': 'J',
-                    'exit_col': 'D',
-                    'day_col': 'A',
-                    'start_row': 11  # corresponde a fila 12
-                },
-                {
-                    'name_col': 'Y',
-                    'exit_col': 'S',
-                    'day_col': 'P',
-                    'start_row': 21  # corresponde a fila 22
-                },
-                {
-                    'name_col': 'AN',
-                    'exit_col': 'AH',
-                    'day_col': 'AE',
-                    'start_row': 21  # corresponde a fila 22
-                }
-            ]
-
-            # Configuración para empleados regulares
-            regular_positions = [
-                {
-                    'name_col': 'J',
-                    'entry_col': 'B',
-                    'exit_col': 'I',
-                    'day_col': 'A',
-                    'lunch_out': 'D',
-                    'lunch_return': 'G'
-                },
-                {
-                    'name_col': 'Y',
-                    'entry_col': 'Q',
-                    'exit_col': 'X',
-                    'day_col': 'P',
-                    'lunch_out': 'S',
-                    'lunch_return': 'V'
-                },
-                {
-                    'name_col': 'AN',
-                    'entry_col': 'AF',
-                    'exit_col': 'AM',
-                    'day_col': 'AE',
-                    'lunch_out': 'AH',
-                    'lunch_return': 'AK'
-                }
-            ]
-
-            # Configuración para empleados regulares
-            regular_positions = [
-                {
-                    'name_col': 'J',
-                    'entry_col': 'B',
-                    'exit_col': 'I',
-                    'day_col': 'A',
-                    'lunch_out': 'D',
-                    'lunch_return': 'G'
-                },
-                {
-                    'name_col': 'Y',
-                    'entry_col': 'Q',
-                    'exit_col': 'X',
-                    'day_col': 'P',
-                    'lunch_out': 'S',
-                    'lunch_return': 'V'
-                },
-                {
-                    'name_col': 'AN',
-                    'entry_col': 'AF',
-                    'exit_col': 'AM',
-                    'day_col': 'AE',
-                    'lunch_out': 'AH',
-                    'lunch_return': 'AK'
-                }
-            ]
+            
+            work_start = datetime.strptime('07:50', '%H:%M').time()
+            work_lunch_limit = datetime.strptime('12:00', '%H:%M').time()
 
             for sheet in attendance_sheets:
                 try:
                     df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
-
-                    if is_special_employee:
-                        # Procesar empleados especiales (valentina y agustin)
-                        special_config = self.SPECIAL_SCHEDULES[employee_name.lower()]
-                        exit_col = self.get_column_index(special_config['exit_col'])
-                        start_row = special_config['start_row']
-                        end_row = special_config['end_row']
-
-                        # Verificar las columnas específicas
-                        for row in range(start_row, end_row + 1):
+                    
+                    # Check position 1 (J3)
+                    if str(df.iloc[2, self.get_column_index('J')]).strip() == employee_name:
+                        for row in range(11, 42):  # Filas 12-42
                             try:
-                                day_value = df.iloc[row, self.get_column_index('AE')]  # Columna AE para días
-                                if pd.isna(day_value):
-                                    continue
-
-                                day_str = str(day_value).strip()
-                                if any(abbr in day_str.lower() for abbr in ['sa', 'su', 'absence']):
-                                    continue
-
-                                exit_time = df.iloc[row, exit_col]
-                                if not pd.isna(exit_time):
-                                    week_num = (int(day_str.split()[0]) - 1) // 7 + 1
-                                    formatted_day = self.translate_day_abbreviation(day_str)
-                                    weeks_dict[f'Semana {week_num}'].append(formatted_day)
-                                    total_days += 1
-
+                                entry = df.iloc[row, self.get_column_index('B')]
+                                exit = df.iloc[row, self.get_column_index('I')]
+                                lunch_out = df.iloc[row, self.get_column_index('D')]
+                                lunch_return = df.iloc[row, self.get_column_index('G')]
+                                
+                                if not pd.isna(entry) and not pd.isna(exit):
+                                    if pd.isna(lunch_out) or pd.isna(lunch_return):
+                                        continue
+                                    else:
+                                        lunch_out_time = pd.to_datetime(lunch_out).time()
+                                        lunch_return_time = pd.to_datetime(lunch_return).time()
+                                        if (work_start <= lunch_out_time <= work_lunch_limit and 
+                                            work_start <= lunch_return_time <= work_lunch_limit):
+                                            total_mid_day_departures += 1
+                                            day_value = df.iloc[row, self.get_column_index('A')]
+                                            days_with_mid_departures.append(self.translate_day_abbreviation(str(day_value).strip()))
                             except Exception as e:
-                                print(f"Error processing special employee row {row+1}: {e}")
+                                print(f"Error processing row {row} data: {e}")
                                 continue
 
-                    else:
-                        # Procesar empleados PPP o regulares
-                        positions = ppp_positions if is_ppp_employee else regular_positions
-                        for position in positions:
+                    # Check position 2 (Y3)
+                    elif str(df.iloc[2, self.get_column_index('Y')]).strip() == employee_name:
+                        for row in range(11, 42):
                             try:
-                                name_col_index = self.get_column_index(position['name_col'])
-                                name_cell = df.iloc[2, name_col_index]
-
-                                if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
-                                    continue
-
-                                day_col = self.get_column_index(position['day_col'])
-                                exit_col = self.get_column_index(position['exit_col'])
+                                entry = df.iloc[row, self.get_column_index('Q')]
+                                exit = df.iloc[row, self.get_column_index('X')]
+                                lunch_out = df.iloc[row, self.get_column_index('S')]
+                                lunch_return = df.iloc[row, self.get_column_index('V')]
                                 
-                                start_row = position.get('start_row', 11)
-                                end_row = 42
-
-                                for row in range(start_row, end_row):
-                                    try:
-                                        day_value = df.iloc[row, day_col]
-                                        if pd.isna(day_value):
-                                            continue
-
-                                        day_str = str(day_value).strip()
-                                        if any(abbr in day_str.lower() for abbr in ['sa', 'su', 'absence']):
-                                            continue
-
-                                        if is_ppp_employee:
-                                            exit_time = df.iloc[row, exit_col]
-                                            if not pd.isna(exit_time):
-                                                week_num = (int(day_str.split()[0]) - 1) // 7 + 1
-                                                formatted_day = self.translate_day_abbreviation(day_str)
-                                                weeks_dict[f'Semana {week_num}'].append(formatted_day)
-                                                total_days += 1
-                                        else:
-                                            lunch_return_col = self.get_column_index(position['lunch_return'])
-                                            lunch_return = df.iloc[row, lunch_return_col]
-                                            exit_time = df.iloc[row, exit_col]
-                                            if pd.isna(lunch_return) and pd.isna(exit_time):
-                                                week_num = (int(day_str.split()[0]) - 1) // 7 + 1
-                                                formatted_day = self.translate_day_abbreviation(day_str)
-                                                weeks_dict[f'Semana {week_num}'].append(formatted_day)
-                                                total_days += 1
-
-                                    except Exception as e:
-                                        print(f"Error processing row {row+1}: {e}")
+                                if not pd.isna(entry) and not pd.isna(exit):
+                                    if pd.isna(lunch_out) or pd.isna(lunch_return):
                                         continue
-
+                                    else:
+                                        lunch_out_time = pd.to_datetime(lunch_out).time()
+                                        lunch_return_time = pd.to_datetime(lunch_return).time()
+                                        if (work_start <= lunch_out_time <= work_lunch_limit and 
+                                            work_start <= lunch_return_time <= work_lunch_limit):
+                                            total_mid_day_departures += 1
+                                            day_value = df.iloc[row, self.get_column_index('P')]
+                                            days_with_mid_departures.append(self.translate_day_abbreviation(str(day_value).strip()))
                             except Exception as e:
-                                print(f"Error checking position {position['name_col']}: {e}")
+                                print(f"Error processing row {row} data in position 2: {e}")
+                                continue
+
+                    # Check position 3 (AN3)
+                    elif str(df.iloc[2, self.get_column_index('AN')]).strip() == employee_name:
+                        for row in range(11, 42):
+                            try:
+                                entry = df.iloc[row, self.get_column_index('AF')]
+                                exit = df.iloc[row, self.get_column_index('AM')]
+                                lunch_out = df.iloc[row, self.get_column_index('AH')]
+                                lunch_return = df.iloc[row, self.get_column_index('AK')]
+                                
+                                if not pd.isna(entry) and not pd.isna(exit):
+                                    if pd.isna(lunch_out) or pd.isna(lunch_return):
+                                        continue
+                                    else:
+                                        lunch_out_time = pd.to_datetime(lunch_out).time()
+                                        lunch_return_time = pd.to_datetime(lunch_return).time()
+                                        if (work_start <= lunch_out_time <= work_lunch_limit and 
+                                            work_start <= lunch_return_time <= work_lunch_limit):
+                                            total_mid_day_departures += 1
+                                            day_value = df.iloc[row, self.get_column_index('AE')]
+                                            days_with_mid_departures.append(self.translate_day_abbreviation(str(day_value).strip()))
+                            except Exception as e:
+                                print(f"Error processing row {row} data in position 3: {e}")
                                 continue
 
                 except Exception as e:
-                    print(f"Error processing sheet {sheet}: {e}")
+                    print(f"Error procesando hoja {sheet}: {str(e)}")
                     continue
 
-            # Sort days within each week
-            for week_days in weeks_dict.values():
-                week_days.sort(key=lambda x: int(x.split()[0]))
-
-            # Format output
-            lines = ["Salidas durante horario laboral:"]
-            for week_num in range(1, 5):
-                week_key = f'Semana {week_num}'
-                days = weeks_dict[week_key]
-                if days:
-                    lines.append(f"\n{week_key}")
-                    lines.append(self.format_list_in_columns(days))
-
-            hover_text = "\n".join(lines) if any(weeks_dict[week] for week in weeks_dict) else "No hay días registrados"
-            return total_days, hover_text
+            # Format the days text 
+            days_text = self.format_list_in_columns(days_with_mid_departures) if days_with_mid_departures else "No hay días registrados"
+            
+            return total_mid_day_departures, days_text
 
         except Exception as e:
-            print(f"Error formatting mid-day departures: {e}")
-            return 0, "Error al procesar retiros del mediodía"
+            print(f"Error general en format_mid_day_departures_text: {str(e)}")
+            return 0, "Error al procesar los datos"
 
     def get_employee_stats(self, employee_name):
         """Get comprehensive statistics for a specific employee"""

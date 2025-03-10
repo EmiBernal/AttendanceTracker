@@ -627,9 +627,9 @@ class ExcelProcessor:
             
             # Positions in the Excel sheet with correct columns for PPP overtime
             positions = [
-                {'name_col': 'J', 'extra_entry_col': 'G', 'extra_exit_col': 'I', 'day_col': 'A'},
-                {'name_col': 'Y', 'extra_entry_col': 'V', 'extra_exit_col': 'X', 'day_col': 'P'},
-                {'name_col': 'AN', 'extra_entry_col': 'AK', 'extra_exit_col': 'AM', 'day_col': 'AE'}
+                {'name_col': 'J', 'entry_col': 'B', 'exit_col': 'D', 'extra_entry_col': 'G', 'extra_exit_col': 'I', 'day_col': 'A'},
+                {'name_col': 'Y', 'entry_col': 'Q', 'exit_col': 'S', 'extra_entry_col': 'V', 'extra_exit_col': 'X', 'day_col': 'P'},
+                {'name_col': 'AN', 'entry_col': 'AF', 'exit_col': 'AH', 'extra_entry_col': 'AK', 'extra_exit_col': 'AM', 'day_col': 'AE'}
             ]
 
             for sheet in attendance_sheets:
@@ -2794,3 +2794,78 @@ class ExcelProcessor:
             print(f"Error processing Summary sheet: {str(e)}")
             # Return an empty DataFrame with the required columns if there's an error
             return pd.DataFrame(columns=['employee_id', 'employee_name', 'department', 'required_hours', 'actual_hours'])
+
+    def get_employee_stats(self, employee_name):
+        """Get comprehensive statistics for a specific employee"""
+        # Regular stats
+        late_days, late_minutes = self.count_late_days(employee_name)
+        lunch_overtime_days, total_lunch_minutes = self.count_lunch_overtime_days(employee_name)
+        early_departure_days, early_minutes = self.count_early_departures(employee_name)
+        missing_entry_days, missing_exit_days, missing_lunch_days = self.count_missing_records(employee_name)
+        
+        # Get mid-day departures
+        mid_day_departures, mid_day_departures_text = self.get_early_departure_days(employee_name)
+        
+        # Calculate overtime 
+        if employee_name.lower() == 'agustin taba':
+            overtime_minutes, overtime_days = self.calculate_overtime(employee_name)
+        elif 'ppp' in employee_name.lower():
+            overtime_minutes, overtime_days = self.calculate_ppp_overtime(employee_name)
+        else:
+            overtime_minutes, overtime_days = 0, []
+
+        # Get absences
+        absences = len(self.get_absence_days(employee_name))
+        
+        # Get department
+        department = "N/A"
+        try:
+            summary_df = pd.read_excel(self.excel_file, sheet_name='Summary', header=None)
+            for _, row in summary_df.iterrows():
+                if str(row[1]).strip() == employee_name:
+                    department = str(row[2]) if not pd.isna(row[2]) else "N/A"
+                    break
+        except Exception as e:
+            print(f"Error getting department: {str(e)}")
+
+        # Calculate total hours differently for PPP employees
+        if 'ppp' in employee_name.lower():
+            weekly_hours, weekly_details = self.calculate_ppp_weekly_hours(employee_name)
+            actual_hours = sum(weekly_hours.values())
+            # Add overtime hours to actual hours
+            actual_hours += overtime_minutes / 60
+            required_hours = 80.0  # Estándar mensual para PPP
+        else:
+            weekly_hours = {}
+            weekly_details = []
+            required_hours = 76.40  # Estándar regular
+            actual_hours = required_hours - (absences * 8)  # Subtract 8 hours for each absence
+
+        # Get stats dictionary ready
+        stats = {
+            'name': employee_name,
+            'department': department,
+            'absences': absences,
+            'late_days': late_days,
+            'late_minutes': late_minutes,
+            'lunch_overtime_days': lunch_overtime_days,
+            'total_lunch_minutes': total_lunch_minutes,
+            'early_departure_days': early_departure_days,
+            'early_minutes': early_minutes,
+            'missing_entry_days': missing_entry_days,
+            'missing_exit_days': missing_exit_days,
+            'missing_lunch_days': missing_lunch_days,
+            'required_hours': required_hours,
+            'actual_hours': actual_hours,
+            'mid_day_departures': mid_day_departures,
+            'mid_day_departures_text': mid_day_departures_text,
+            'overtime_minutes': overtime_minutes,
+            'overtime_days': overtime_days
+        }
+        
+        # Add PPP weekly hours if applicable
+        if 'ppp' in employee_name.lower():
+            stats['weekly_hours'] = weekly_hours
+            stats['weekly_details'] = weekly_details
+            
+        return stats

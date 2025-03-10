@@ -650,19 +650,39 @@ class ExcelProcessor:
 
                     if not pd.isna(end_time) and not pd.isna(start_time) and not pd.isna(day_value):
                         try:
+                            # Convertir a datetime.time
                             end_time = pd.to_datetime(end_time).time()
                             start_time = pd.to_datetime(start_time).time()
                             
-                            # Calcular diferencia en minutos
-                            minutes = (
-                                datetime.combine(datetime.min, end_time) - 
-                                datetime.combine(datetime.min, start_time)
-                            ).total_seconds() / 60
+                            # Obtener horas y minutos por separado
+                            end_hour = end_time.hour
+                            end_minute = end_time.minute
+                            start_hour = start_time.hour
+                            start_minute = start_time.minute
+                            
+                            # Realizar la resta de horas y minutos
+                            diff_hours = end_hour - start_hour
+                            diff_minutes = end_minute - start_minute
+                            
+                            # Ajustar si los minutos son negativos
+                            if diff_minutes < 0:
+                                diff_minutes += 60
+                                diff_hours -= 1
+                            
+                            # Convertir minutos extras a horas si superan 60
+                            if diff_minutes >= 60:
+                                extra_hours = diff_minutes // 60
+                                diff_hours += extra_hours
+                                diff_minutes = diff_minutes % 60
+                            
+                            # Calcular minutos totales para esta entrada
+                            total_minutes = (diff_hours * 60) + diff_minutes
 
-                            if minutes > 0:
-                                total_overtime_minutes += minutes
+                            if total_minutes > 0:
+                                total_overtime_minutes += total_minutes
                                 formatted_day = self.translate_day_abbreviation(str(day_value).strip())
-                                overtime_days.append(f"{formatted_day} ({minutes:.0f} min)")
+                                overtime_days.append(f"{formatted_day} ({diff_hours}h {diff_minutes}m)")
+                                print(f"Diferencia para la fila {row+1}: {diff_hours} horas y {diff_minutes} minutos")
                                 
                         except Exception as e:
                             print(f"Error processing times in row {row+1}: {str(e)}")

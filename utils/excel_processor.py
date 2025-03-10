@@ -654,6 +654,229 @@ class ExcelProcessor:
 
         return "\n".join(lines)
 
+    def calculate_ppp_weekly_hours(self, employee_name):
+        """Calculate weekly hours for PPP employees"""
+        try:
+            weekly_hours = {
+                'Semana 1': 0,
+                'Semana 2': 0,
+                'Semana 3': 0,
+                'Semana 4': 0
+            }
+            weekly_details = []
+            
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            
+            # Positions in the Excel sheet with correct columns for PPP employees
+            positions = [
+                {'name_col': 'J', 'entry_col': 'B', 'exit_col': 'D', 'day_col': 'A'},  # Entry y salida B y D
+                {'name_col': 'Y', 'entry_col': 'Q', 'exit_col': 'S', 'day_col': 'P'},  # Entry y salida Q y S
+                {'name_col': 'AN', 'entry_col': 'AF', 'exit_col': 'AH', 'day_col': 'AE'}  # Entry y salida AF y AH
+            ]
+
+            for sheet in attendance_sheets:
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+                    
+                    for position in positions:
+                        try:
+                            name_col_index = self.get_column_index(position['name_col'])
+                            name_cell = df.iloc[2, name_col_index]
+                            
+                            if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
+                                continue
+                                
+                            for row in range(11, 42):  # Filas 12-42
+                                try:
+                                    day_value = df.iloc[row, self.get_column_index(position['day_col'])]
+                                    entry_time = df.iloc[row, self.get_column_index(position['entry_col'])]
+                                    exit_time = df.iloc[row, self.get_column_index(position['exit_col'])]
+                                    
+                                    if pd.isna(day_value):
+                                        continue
+                                        
+                                    day_str = str(day_value).strip()
+                                    if 'absence' in day_str.lower():
+                                        continue
+                                        
+                                    # Skip weekends
+                                    if any(abbr in day_str.lower() for abbr in ['sa', 'su']):
+                                        continue
+                                        
+                                    # Process entry and exit times
+                                    if not pd.isna(entry_time) and not pd.isna(exit_time):
+                                        try:
+                                            entry_time = pd.to_datetime(entry_time).time()
+                                            exit_time = pd.to_datetime(exit_time).time()
+                                            
+                                            # Obtener horas y minutos por separado
+                                            end_hour = exit_time.hour
+                                            end_minute = exit_time.minute
+                                            start_hour = entry_time.hour
+                                            start_minute = entry_time.minute
+                                            
+                                            # Realizar la resta de horas y minutos
+                                            diff_hours = end_hour - start_hour
+                                            diff_minutes = end_minute - start_minute
+                                            
+                                            # Ajustar si los minutos son negativos
+                                            if diff_minutes < 0:
+                                                diff_minutes += 60
+                                                diff_hours -= 1
+                                            
+                                            # Convertir minutos extras a horas si superan 60
+                                            if diff_minutes >= 60:
+                                                extra_hours = diff_minutes // 60
+                                                diff_hours += extra_hours
+                                                diff_minutes = diff_minutes % 60
+                                            
+                                            # Calcular horas totales para esta entrada
+                                            total_hours = diff_hours + (diff_minutes / 60)
+                                            
+                                            # Add to appropriate week
+                                            day_num = int(day_str.split()[0])
+                                            week_key = ''
+                                            if 1 <= day_num <= 7:
+                                                week_key = 'Semana 1'
+                                            elif 8 <= day_num <= 14:
+                                                week_key = 'Semana 2'
+                                            elif 15 <= day_num <= 21:
+                                                week_key = 'Semana 3'
+                                            elif day_num >= 22:
+                                                week_key = 'Semana 4'
+                                                
+                                            if week_key:
+                                                weekly_hours[week_key] += total_hours
+                                                week_details = {
+                                                    'week': week_key,
+                                                    'day': self.translate_day_abbreviation(day_str),
+                                                    'entry': entry_time.strftime('%H:%M'),
+                                                    'exit': exit_time.strftime('%H:%M'),
+                                                    'hours': f"{diff_hours}h {diff_minutes}m"
+                                                }
+                                                
+                                                # Check for extra hours
+                                                extra_entry_col = 'G' if position['name_col'] == 'J' else \
+                                                                'V' if position['name_col'] == 'Y' else 'AK'
+                                                extra_exit_col = 'I' if position['name_col'] == 'J' else \
+                                                                'X' if position['name_col'] == 'Y' else 'AM'
+                                                
+                                                extra_entry = df.iloc[row, self.get_column_index(extra_entry_col)]
+                                                extra_exit = df.iloc[row, self.get_column_index(extra_exit_col)]
+                                                
+                                                if not pd.isna(extra_entry) and not pd.isna(extra_exit):
+                                                    extra_entry_time = pd.to_datetime(extra_entry).time()
+                                                    extra_exit_time = pd.to_datetime(extra_exit).time()
+                                                    
+                                                    # Calculate extra hours
+                                                    extra_end_hour = extra_exit_time.hour
+                                                    extra_end_minute = extra_exit_time.minute
+                                                    extra_start_hour = extra_entry_time.hour
+                                                    extra_start_minute = extra_entry_time.minute
+                                                    
+                                                    extra_diff_hours = extra_end_hour - extra_start_hour
+                                                    extra_diff_minutes = extra_end_minute - extra_start_minute
+                                                    
+                                                    if extra_diff_minutes < 0:
+                                                        extra_diff_minutes += 60
+                                                        extra_diff_hours -= 1
+                                                    
+                                                    if extra_diff_minutes >= 60:
+                                                        more_hours = extra_diff_minutes // 60
+                                                        extra_diff_hours += more_hours
+                                                        extra_diff_minutes = extra_diff_minutes % 60
+                                                    
+                                                    if extra_diff_hours > 0 or extra_diff_minutes > 0:
+                                                        week_details['extra_entry'] = extra_entry_time.strftime('%H:%M')
+                                                        week_details['extra_exit'] = extra_exit_time.strftime('%H:%M')
+                                                        week_details['extra_hours'] = f"{extra_diff_hours}h {extra_diff_minutes}m"
+                                                        
+                                                        # Add extra hours to weekly total
+                                                        extra_total_hours = extra_diff_hours + (extra_diff_minutes / 60)
+                                                        weekly_hours[week_key] += extra_total_hours
+                                                
+                                                weekly_details.append(week_details)
+                                                print(f"Día {day_str}: {diff_hours}h {diff_minutes}m")
+                                                
+                                        except Exception as e:
+                                            print(f"Error processing times in row {row+1}: {str(e)}")
+                                            continue
+                                            
+                                except Exception as e:
+                                    print(f"Error in row {row+1}: {str(e)}")
+                                    continue
+                                    
+                        except Exception as e:
+                            print(f"Error checking position {position['name_col']}: {str(e)}")
+                            continue
+                            
+                except Exception as e:
+                    print(f"Error processing sheet {sheet}: {str(e)}")
+                    continue
+                    
+            # Round weekly hours
+            for week in weekly_hours:
+                weekly_hours[week] = round(weekly_hours[week], 2)
+                
+            return weekly_hours, weekly_details
+            
+        except Exception as e:
+            print(f"Error calculating PPP weekly hours: {str(e)}")
+            return {'Semana 1': 0, 'Semana 2': 0, 'Semana 3': 0, 'Semana 4': 0}, []
+
+    def calculate_ppp_overtime(self, employee_name):
+        """Calculate overtime hours for PPP employees"""
+        if 'ppp' not in employee_name.lower():
+            return 0, []
+
+        try:
+            total_overtime_minutes = 0
+            overtime_days = []
+            weekly_hours, week_details = self.calculate_ppp_weekly_hours(employee_name)
+            
+            # For each week's details, calculate overtime if total hours > 20
+            for details in week_details:
+                try:
+                    # Calculate base hours
+                    hours = details.get('hours', '0h 0m')
+                    base_hours = int(hours.split('h')[0])
+                    base_minutes = int(hours.split('h')[1].replace('m', ''))
+                    
+                    # Add extra hours if present
+                    extra_hours = details.get('extra_hours', '0h 0m')
+                    if extra_hours != '0h 0m':
+                        extra_h = int(extra_hours.split('h')[0])
+                        extra_m = int(extra_hours.split('h')[1].replace('m', ''))
+                        
+                        base_hours += extra_h
+                        base_minutes += extra_m
+                        
+                        # Adjust if minutes exceed 60
+                        if base_minutes >= 60:
+                            base_hours += base_minutes // 60
+                            base_minutes = base_minutes % 60
+                    
+                    # Check if total hours exceed 20 per week
+                    total_time = base_hours + (base_minutes / 60)
+                    if total_time > 4:  # More than 4 hours per day = overtime
+                        overtime_minutes = ((total_time - 4) * 60)
+                        total_overtime_minutes += overtime_minutes
+                        overtime_days.append(details['day'])
+                        print(f"Overtime on {details['day']}: {overtime_minutes:.0f} minutes")
+                        
+                except Exception as e:
+                    print(f"Error calculating overtime for day: {str(e)}")
+                    continue
+            
+            print(f"Total overtime days: {len(overtime_days)}")
+            print(f"Total overtime minutes: {total_overtime_minutes:.0f}")
+            return overtime_days, total_overtime_minutes
+            
+        except Exception as e:
+            print(f"Error calculating PPP overtime: {str(e)}")
+            return [], 0
+
     def calculate_overtime(self, employee_name):
         """Calculate overtime hours for agustin taba"""
         if employee_name.lower() != 'agustin taba':

@@ -3,7 +3,7 @@ from utils.excel_processor import ExcelProcessor
 
 # Page configuration
 st.set_page_config(
-    page_title="Visualizador de Asistencia",
+    page_title="Control de Acceso Gampack",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -465,7 +465,7 @@ def get_status(value, warning_threshold=3, danger_threshold=5):
         return 'warning'
 
 def main():
-    st.title("📊 Visualizador de Asistencia")
+    st.title("📊 Control de Acceso Gampack")
 
     # File uploader in sidebar
     with st.sidebar:

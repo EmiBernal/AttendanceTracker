@@ -319,10 +319,9 @@ def create_monthly_summary(processor, attendance_summary):
     """Create a general monthly summary"""
     # Initialize counters for totals
     total_absences = 0
-    total_late_days = 0
-    total_lunch_overtime_days = 0
-    total_early_departures = 0
-    total_late_arrivals = 0
+    total_late_minutes = 0
+    total_lunch_overtime_minutes = 0
+    total_early_departure_minutes = 0
     total_mid_day_departures = 0
     total_missing_entry = 0
     total_missing_exit = 0
@@ -332,10 +331,9 @@ def create_monthly_summary(processor, attendance_summary):
     for employee_name in attendance_summary['employee_name'].unique():
         stats = processor.get_employee_stats(employee_name)
         total_absences += stats['absences']
-        total_late_days += len(stats['late_days']) if stats['late_days'] else 0
-        total_lunch_overtime_days += len(stats['lunch_overtime_days']) if stats['lunch_overtime_days'] else 0
-        total_early_departures += len(stats['early_departure_days']) if stats['early_departure_days'] else 0
-        total_late_arrivals += len(stats['late_days']) if stats['late_days'] else 0
+        total_late_minutes += stats['late_minutes']
+        total_lunch_overtime_minutes += stats['total_lunch_minutes']
+        total_early_departure_minutes += stats['early_minutes']
         total_mid_day_departures += stats['mid_day_departures'] if 'mid_day_departures' in stats else 0
         total_missing_entry += len(stats['missing_entry_days']) if stats['missing_entry_days'] else 0
         total_missing_exit += len(stats['missing_exit_days']) if stats['missing_exit_days'] else 0
@@ -348,17 +346,16 @@ def create_monthly_summary(processor, attendance_summary):
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
     """, unsafe_allow_html=True)
 
-    # Define the metrics to display
+    # Define the metrics to display with updated descriptions
     summary_metrics = [
-        ('Total Inasistencias', total_absences, "Total días", "Total de días de inasistencia en el mes"),
-        ('Total Llegadas Tarde', total_late_days, "Total días", "Total de días con llegadas tarde en el mes"),
-        ('Total Excesos Almuerzo', total_lunch_overtime_days, "Total días", "Total de días con exceso en tiempo de almuerzo"),
-        ('Total Retiros Anticipados', total_early_departures, "Total días", "Total de días con salida anticipada"),
-        ('Total Ingresos con Retraso', total_late_arrivals, "Total días", "Total de días con ingreso tardío"),
+        ('Total Inasistencias', total_absences, "Total ausencias", "Total de ausencias en el mes"),
+        ('Total Minutos de Llegada Tarde', f"{total_late_minutes:.0f}", "Total minutos", "Total de minutos de llegada tarde en el mes"),
+        ('Total Minutos Exceso Almuerzo', f"{total_lunch_overtime_minutes:.0f}", "Total minutos", "Total de minutos de exceso en tiempo de almuerzo"),
+        ('Total Minutos Retiro Anticipado', f"{total_early_departure_minutes:.0f}", "Total minutos", "Total de minutos de salida anticipada"),
         ('Total Retiros Durante Horario', total_mid_day_departures, "Total retiros", "Total de retiros durante horario laboral"),
-        ('Total Sin Registro de Entrada', total_missing_entry, "Total días", "Total de días sin registro de entrada"),
-        ('Total Sin Registro de Salida', total_missing_exit, "Total días", "Total de días sin registro de salida"),
-        ('Total Sin Registro de Almuerzo', total_missing_lunch, "Total días", "Total de días sin registro de almuerzo")
+        ('Total Sin Registro de Entrada', total_missing_entry, "Total registros", "Total de registros de entrada faltantes"),
+        ('Total Sin Registro de Salida', total_missing_exit, "Total registros", "Total de registros de salida faltantes"),
+        ('Total Sin Registro de Almuerzo', total_missing_lunch, "Total registros", "Total de registros de almuerzo faltantes")
     ]
 
     # Display each metric in a card

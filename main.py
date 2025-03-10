@@ -321,13 +321,17 @@ def create_employee_dashboard(processor, employee_name):
             if week_details:
                 hover_text += "Detalle:\n"
                 for detail in week_details:
-                    hover_text += f"  • {detail['day']}: {detail['entry']} - {detail['exit']} ({detail['hours']}h)\n"
+                    hover_text += f"  • {detail['day']}: "
+                    hover_text += f"{detail['entry']} - {detail['exit']} ({detail['hours']})"
+                    if 'extra_hours' in detail:
+                        hover_text += f"\n    Extra: {detail['extra_entry']} - {detail['extra_exit']} ({detail['extra_hours']})"
+                    hover_text += "\n"
             hover_text += "\n"
             total_hours += hours
 
-        # Calculate status based on 20-hour standard
-        status = 'success' if total_hours >= 20 else 'danger'
-        compliance_text = "Cumplió con el estándar" if total_hours >= 20 else "No cumplió con el estándar"
+        # Calculate status based on 80-hour monthly standard
+        status = 'success' if total_hours >= 80 else 'danger'
+        compliance_text = "Cumplió con el estándar mensual" if total_hours >= 80 else "No cumplió con el estándar mensual"
 
         st.markdown("""
             <div class="stat-group">
@@ -339,8 +343,9 @@ def create_employee_dashboard(processor, employee_name):
             <div class="stat-card">
                 <div class="content">
                     <div class="metric-label">Total Horas Trabajadas</div>
-                    <div class="metric-value {status}">{total_hours:.1f}/20.0</div>
+                    <div class="metric-value {status}">{total_hours:.1f}/80.0</div>
                     <div class="metric-label">{compliance_text}</div>
+                    <div class="metric-label">Estándar: 20 horas por semana</div>
                 </div>
                 <div class="hover-text">{hover_text}</div>
             </div>

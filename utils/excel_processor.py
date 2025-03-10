@@ -625,6 +625,59 @@ class ExcelProcessor:
 
         return "\n".join(lines)
 
+    def calculate_overtime(self, employee_name):
+        """Calculate overtime hours for agustin taba"""
+        if employee_name.lower() != 'agustin taba':
+            return 0, []
+
+        try:
+            total_overtime_minutes = 0
+            overtime_days = []
+            
+            # Solo procesar la hoja "4.5.6"
+            df = pd.read_excel(self.excel_file, sheet_name='4.5.6', header=None)
+            
+            # Verificar si es el empleado correcto
+            if str(df.iloc[2, self.get_column_index('AN')]).strip() != employee_name:
+                return 0, []
+
+            # Procesar filas 12-42 (índices 11-41)
+            for row in range(11, 42):
+                try:
+                    end_time = df.iloc[row, self.get_column_index('AM')]
+                    start_time = df.iloc[row, self.get_column_index('AH')]
+                    day_value = df.iloc[row, self.get_column_index('AE')]
+
+                    if not pd.isna(end_time) and not pd.isna(start_time) and not pd.isna(day_value):
+                        try:
+                            end_time = pd.to_datetime(end_time).time()
+                            start_time = pd.to_datetime(start_time).time()
+                            
+                            # Calcular diferencia en minutos
+                            minutes = (
+                                datetime.combine(datetime.min, end_time) - 
+                                datetime.combine(datetime.min, start_time)
+                            ).total_seconds() / 60
+
+                            if minutes > 0:
+                                total_overtime_minutes += minutes
+                                formatted_day = self.translate_day_abbreviation(str(day_value).strip())
+                                overtime_days.append(f"{formatted_day} ({minutes:.0f} min)")
+                                
+                        except Exception as e:
+                            print(f"Error processing times in row {row+1}: {str(e)}")
+                            continue
+
+                except Exception as e:
+                    print(f"Error in row {row+1}: {str(e)}")
+                    continue
+
+            return total_overtime_minutes, overtime_days
+
+        except Exception as e:
+            print(f"Error calculating overtime: {str(e)}")
+            return 0, []
+
     def get_employee_stats(self, employee_name):
         """Get comprehensive statistics for a specific employee"""
         # Regular stats
@@ -638,8 +691,14 @@ class ExcelProcessor:
         # Mid-day departures with detailed text
         mid_day_departures, mid_day_departures_text = self.format_mid_day_departures_text(employee_name)
         
+        # Calculate overtime for agustin taba
+        overtime_minutes, overtime_days = self.calculate_overtime(employee_name)
+        
         print(f"Debug - {employee_name} mid-day departures: {mid_day_departures}")
         print(f"Debug - {employee_name} mid-day departures text: {mid_day_departures_text}")
+        if employee_name.lower() == 'agustin taba':
+            print(f"Debug - {employee_name} overtime minutes: {overtime_minutes}")
+            print(f"Debug - {employee_name} overtime days: {overtime_days}")
 
         # Get department from the first sheet (Summary)
         department = ""
@@ -673,7 +732,9 @@ class ExcelProcessor:
             'required_hours': required_hours,
             'actual_hours': actual_hours,
             'mid_day_departures': mid_day_departures,
-            'mid_day_departures_text': mid_day_departures_text
+            'mid_day_departures_text': mid_day_departures_text,
+            'overtime_minutes': overtime_minutes,
+            'overtime_days': overtime_days
         }
 
     def format_mid_day_departures_text(self, employee_name):

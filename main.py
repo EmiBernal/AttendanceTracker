@@ -261,7 +261,7 @@ def create_employee_dashboard(processor, employee_name):
         if label == 'Retiros Durante Horario':
             if 'ppp' in employee_name.lower():
                 auth_note = "Horario normal de salida para PPP"
-            elif employee_name.lower() in ['valentina al', 'agustin taba']:
+            elif employee_name.lower() == 'agustin taba':
                 auth_note = "Horario normal de salida (12:40)"
 
         st.markdown(f"""
@@ -277,6 +277,30 @@ def create_employee_dashboard(processor, employee_name):
         """, unsafe_allow_html=True)
 
     st.markdown("</div></div>", unsafe_allow_html=True)
+
+    # Horas Extras section (solo para agustin taba)
+    if employee_name.lower() == 'agustin taba':
+        overtime_days_text = processor.format_list_in_columns(stats['overtime_days']) if stats['overtime_days'] else "No hay días registrados"
+
+        st.markdown("""
+            <div class="stat-group">
+                <h3>⏰ Horas Extras</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+            <div class="stat-card">
+                <div class="content">
+                    <div class="metric-label">Total Horas Extras</div>
+                    <div class="metric-value success">{stats['overtime_minutes'] / 60:.1f}</div>
+                    <div class="metric-label">Horas acumuladas</div>
+                    <div class="metric-label">{stats['overtime_minutes']:.0f} minutos en total</div>
+                </div>
+                <div class="hover-text">Días con horas extras:\n{overtime_days_text}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("</div></div>", unsafe_allow_html=True)
 
     # Missing Records Section
     create_missing_records_section(stats, processor)

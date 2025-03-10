@@ -645,7 +645,7 @@ class ExcelProcessor:
             for row in range(11, 42):
                 try:
                     end_time = df.iloc[row, self.get_column_index('AM')]
-                    start_time = df.iloc[row, self.get_column_index('AH')]
+                    start_time = df.iloc[row, self.get_column_index('AK')]
                     day_value = df.iloc[row, self.get_column_index('AE')]
 
                     if not pd.isna(end_time) and not pd.isna(start_time) and not pd.isna(day_value):

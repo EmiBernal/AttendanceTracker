@@ -613,6 +613,7 @@ class ExcelProcessor:
             print(f"Error translating day: {str(e)}")
             return day_str
 
+
     def calculate_ppp_overtime(self, employee_name):
         """Calculate overtime hours for PPP employees"""
         if 'ppp' not in employee_name.lower():
@@ -627,9 +628,9 @@ class ExcelProcessor:
             
             # Positions in the Excel sheet with correct columns for PPP overtime
             positions = [
-                {'name_col': 'J', 'entry_col': 'B', 'exit_col': 'D', 'extra_entry_col': 'G', 'extra_exit_col': 'I', 'day_col': 'A'},
-                {'name_col': 'Y', 'entry_col': 'Q', 'exit_col': 'S', 'extra_entry_col': 'V', 'extra_exit_col': 'X', 'day_col': 'P'},
-                {'name_col': 'AN', 'entry_col': 'AF', 'exit_col': 'AH', 'extra_entry_col': 'AK', 'extra_exit_col': 'AM', 'day_col': 'AE'}
+                {'name_col': 'J', 'extra_entry_col': 'G', 'extra_exit_col': 'I', 'day_col': 'A'},
+                {'name_col': 'Y', 'extra_entry_col': 'V', 'extra_exit_col': 'X', 'day_col': 'P'},
+                {'name_col': 'AN', 'extra_entry_col': 'AK', 'extra_exit_col': 'AM', 'day_col': 'AE'}
             ]
 
             for sheet in attendance_sheets:
@@ -689,10 +690,10 @@ class ExcelProcessor:
                                                 diff_minutes = diff_minutes % 60
                                             
                                             # Calculate total minutes for this entry
-                                            total_minutes = (diff_hours * 60) + diff_minutes
+                                            minutes_worked = (diff_hours * 60) + diff_minutes
 
-                                            if total_minutes > 0:
-                                                total_overtime_minutes += total_minutes
+                                            if minutes_worked > 0:
+                                                total_overtime_minutes += minutes_worked
                                                 formatted_day = self.translate_day_abbreviation(day_str)
                                                 overtime_days.append(f"{formatted_day} ({diff_hours}h {diff_minutes}m)")
                                                 print(f"Horas extras en {formatted_day}: {diff_hours}h {diff_minutes}m")
@@ -714,12 +715,13 @@ class ExcelProcessor:
                     continue
                     
             print(f"Total días con horas extras: {len(overtime_days)}")
-            print(f"Total minutos extras: {total_overtime_minutes:.0f}")
-            return total_overtime_minutes, overtime_days
+            print(f"Total minutos extras: {total_overtime_minutes}")
+            # Asegurarse de devolver el número total de minutos primero, luego la lista de días
+            return float(total_overtime_minutes), overtime_days
             
         except Exception as e:
             print(f"Error calculating PPP overtime: {str(e)}")
-            return 0, []
+            return 0.0, []
 
     def get_employee_stats(self, employee_name):
         """Get comprehensive statistics for a specific employee"""

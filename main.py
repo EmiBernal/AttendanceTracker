@@ -9,7 +9,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Updated CSS for hover cards and metrics with lighter colors for light mode
 st.markdown("""
 <style>
     /* Base transitions */
@@ -69,7 +68,7 @@ st.markdown("""
         text-align: center;
         font-size: 24px;
         margin: 30px 0;
-        color: #475569;
+        color: #1E293B;
     }
 
     .stat-group h3:contains("Métricas Generales del Mes") + div .stat-card {
@@ -89,12 +88,6 @@ st.markdown("""
         font-size: 18px;
         margin: 10px 0;
         text-align: center;
-    }
-
-    .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-        border-color: rgba(226, 232, 240, 0.5);
     }
 
     /* Hover card effect */
@@ -164,12 +157,7 @@ st.markdown("""
         transition: color 0.3s ease;
     }
 
-    /* Softer status colors */
-    .warning { color: #F59E0B; }
-    .danger { color: #DC2626; }
-    .success { color: #059669; }
-
-    /* Light mode specific adjustments */
+    /* Light mode colors */
     @media (prefers-color-scheme: light) {
         .stat-card {
             background-color: rgba(255, 255, 255, 0.9);
@@ -190,6 +178,76 @@ st.markdown("""
         .hover-text {
             color: #1E293B;
             background: rgba(255, 255, 255, 0.95);
+        }
+
+        .info-group {
+            background: linear-gradient(135deg, rgba(236, 246, 255, 0.8) 0%, rgba(240, 249, 255, 0.9) 100%);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+            border-color: rgba(226, 232, 240, 0.5);
+        }
+    }
+
+    /* Dark mode colors - original dark theme */
+    @media (prefers-color-scheme: dark) {
+        .info-group {
+            background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0.1) 100%);
+            border: 1px solid rgba(33, 150, 243, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .info-group:hover {
+            box-shadow: 0 8px 30px rgba(33, 150, 243, 0.15);
+        }
+
+        .stat-card {
+            background-color: rgba(17, 25, 40, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-card:hover .content {
+            filter: blur(3px);
+            opacity: 0.15;
+        }
+
+        .metric-value {
+            color: #E2E8F0;
+        }
+
+        .metric-label {
+            color: #94A3B8;
+        }
+
+        .hover-text {
+            color: #E2E8F0;
+            background: rgba(17, 25, 40, 0.95);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .warning { color: #FBBF24; }
+        .danger { color: #EF4444; }
+        .success { color: #10B981; }
+
+        .stat-group h3:contains("Métricas Generales del Mes") {
+            color: #E2E8F0;
+        }
+
+        /* Dark mode scrollbar */
+        .stat-card .hover-text::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card .hover-text::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
         }
     }
 </style>

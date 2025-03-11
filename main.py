@@ -1,11 +1,6 @@
 import streamlit as st
 from utils.excel_processor import ExcelProcessor
 
-# Explicitly set server configurations
-st.set_option('server.address', '0.0.0.0')
-st.set_option('server.port', 5000)
-st.set_option('server.headless', True)
-
 # Page configuration
 st.set_page_config(
     page_title="Control de Acceso Gampack",

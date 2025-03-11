@@ -67,27 +67,13 @@ class ExcelProcessor:
         schedule = self.get_employee_schedule(employee_name)
         return exit_time < schedule['end_time']
 
-    def is_late_arrival(self, employee_name, entry_time, for_stat_card=False):
-        """Determina si la llegada es tarde considerando excepciones y tiempo de tolerancia para la stat card"""
+    def is_late_arrival(self, employee_name, entry_time):
+        """Determina si la llegada es tarde considerando excepciones"""
         if not entry_time:
             return False
 
-        # Solo usar 8:10 cuando es para la stat card "Ingreso con Retraso"
-        if for_stat_card:
-            # Definir tiempo de tolerancia para llegadas tarde (8:10)
-            tolerance_time = datetime.strptime('8:10', '%H:%M').time()
-            
-            # Para empleados especiales, mantener su horario original si es más tarde que la tolerancia
-            schedule = self.get_employee_schedule(employee_name)
-            if schedule['start_time'] > tolerance_time:
-                return entry_time > schedule['start_time']
-            
-            # Para el resto, usar el nuevo tiempo de tolerancia (8:10)
-            return entry_time > tolerance_time
-        else:
-            # Para el resto de funcionalidades, usar el comportamiento original
-            schedule = self.get_employee_schedule(employee_name)
-            return entry_time > schedule['start_time']
+        schedule = self.get_employee_schedule(employee_name)
+        return entry_time > schedule['start_time']
 
     def should_check_lunch(self, employee_name):
         """Determina si se debe verificar el almuerzo para este empleado"""
@@ -334,8 +320,7 @@ class ExcelProcessor:
                                                         print(f"Formato de hora no reconocido en fila {row+1}")
                                                         continue
 
-                                                    # Para la stat card "Ingreso con Retraso", usar el nuevo umbral de 8:10
-                                                    if self.is_late_arrival(employee_name, entry_time, for_stat_card=True):
+                                                    if self.is_late_arrival(employee_name, entry_time):
                                                         late_minutes = (
                                                             datetime.combine(datetime.min, entry_time) -
                                                             datetime.combine(datetime.min, work_start_time)

@@ -649,6 +649,143 @@ class ExcelProcessor:
             print(f"Error translating day: {str(e)}")
             return day_str
 
+    def calculate_ppp_weekly_hours(self, employee_name):
+        """Calculate weekly hours for PPP employees"""
+        try:
+            weekly_hours = {
+                'Semana 1': 0,
+                'Semana 2': 0,
+                'Semana 3': 0,
+                'Semana 4': 0
+            }
+            weekly_details = []
+            
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            
+            # Positions in the Excel sheet with correct columns for PPP employees
+            positions = [
+                {'name_col': 'J', 'entry_col': 'B', 'exit_col': 'D', 'day_col': 'A'},  # Entry y salida B y D
+                {'name_col': 'Y', 'entry_col': 'Q', 'exit_col': 'S', 'day_col': 'P'},  # Entry y salida Q y S
+                {'name_col': 'AN', 'entry_col': 'AF', 'exit_col': 'AH', 'day_col': 'AE'}  # Entry y salida AF y AH
+            ]
+
+            for sheet in attendance_sheets:
+                try:
+                    print(f"\nProcesando hoja: {sheet}")
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+                    
+                    for position in positions:
+                        try:
+                            name_col_index = self.get_column_index(position['name_col'])
+                            name_cell = df.iloc[2, name_col_index]
+                            
+                            if pd.isna(name_cell):
+                                continue
+                                
+                            if str(name_cell).strip() == employee_name:
+                                print(f"Empleado encontrado en hoja {sheet}, columna {position['name_col']}")
+                                entry_col = self.get_column_index(position['entry_col'])
+                                exit_col = self.get_column_index(position['exit_col'])
+                                day_col = self.get_column_index(position['day_col'])
+                                
+                                for row in range(11, 42):  # Filas 12-42
+                                    try:
+                                        day_value = df.iloc[row, day_col]
+                                        if pd.isna(day_value):
+                                            continue
+                                            
+                                        day_str = str(day_value).strip()
+                                        if 'absence' in day_str.lower():
+                                            continue
+                                            
+                                        # Skip weekends
+                                        if any(abbr in day_str.lower() for abbr in ['sa', 'su']):
+                                            continue
+                                            
+                                        entry_time = df.iloc[row, entry_col]
+                                        exit_time = df.iloc[row, exit_col]
+                                        
+                                        print(f"Fila {row+1}: Entrada={entry_time}, Salida={exit_time}")
+                                        
+                                        if not pd.isna(entry_time) and not pd.isna(exit_time):
+                                            try:
+                                                entry_time = pd.to_datetime(entry_time).time()
+                                                exit_time = pd.to_datetime(exit_time).time()
+                                                
+                                                # Obtener horas y minutos por separado
+                                                end_hour = exit_time.hour
+                                                end_minute = exit_time.minute
+                                                start_hour = entry_time.hour
+                                                start_minute = entry_time.minute
+                                                
+                                                # Realizar la resta de horas y minutos
+                                                diff_hours = end_hour - start_hour
+                                                diff_minutes = end_minute - start_minute
+                                                
+                                                # Ajustar si los minutos son negativos
+                                                if diff_minutes < 0:
+                                                    diff_minutes += 60
+                                                    diff_hours -= 1
+                                                
+                                                # Convertir minutos extras a horas si superan 60
+                                                if diff_minutes >= 60:
+                                                    extra_hours = diff_minutes // 60
+                                                    diff_hours += extra_hours
+                                                    diff_minutes = diff_minutes % 60
+                                                
+                                                # Calcular horas totales para esta entrada
+                                                total_hours = diff_hours + (diff_minutes / 60)
+                                                
+                                                # Add to appropriate week
+                                                day_num = int(day_str.split()[0])
+                                                week_key = ''
+                                                if 1 <= day_num <= 7:
+                                                    week_key = 'Semana 1'
+                                                elif 8 <= day_num <= 14:
+                                                    week_key = 'Semana 2'
+                                                elif 15 <= day_num <= 21:
+                                                    week_key = 'Semana 3'
+                                                elif day_num >= 22:
+                                                    week_key = 'Semana 4'
+                                                    
+                                                if week_key:
+                                                    weekly_hours[week_key] += total_hours
+                                                    week_details.append({
+                                                        'week': week_key,
+                                                        'day': self.translate_day_abbreviation(day_str),
+                                                        'entry': entry_time.strftime('%H:%M'),
+                                                        'exit': exit_time.strftime('%H:%M'),
+                                                        'hours': f"{diff_hours}h {diff_minutes}m"
+                                                    })
+                                                    print(f"Día {day_str}: {diff_hours}h {diff_minutes}m")
+                                                    
+                                            except Exception as e:
+                                                print(f"Error processing times in row {row+1}: {str(e)}")
+                                                continue
+                                                
+                                    except Exception as e:
+                                        print(f"Error in row {row+1}: {str(e)}")
+                                        continue
+                                        
+                        except Exception as e:
+                            print(f"Error checking position {position['name_col']}: {str(e)}")
+                            continue
+                            
+                except Exception as e:
+                    print(f"Error processing sheet {sheet}: {str(e)}")
+                    continue
+                    
+            # Round weekly hours
+            for week in weekly_hours:
+                weekly_hours[week] = round(weekly_hours[week], 2)
+                
+            return weekly_hours, weekly_details
+            
+        except Exception as e:
+            print(f"Error calculating PPP weekly hours: {str(e)}")
+            return {'Semana 1': 0, 'Semana 2': 0, 'Semana 3': 0, 'Semana 4': 0}, []
+
     def count_mid_day_departures(self, employee_name):
         """Cuenta los retiros durante el horario laboral"""
         try:

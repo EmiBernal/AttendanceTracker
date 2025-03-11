@@ -554,6 +554,79 @@ class ExcelProcessor:
         authorized_late_time = datetime.strptime('8:10', '%H:%M').time()
         return entry_time > authorized_late_time
 
+    def get_employee_stats(self, employee_name):
+        """Get comprehensive statistics for a specific employee"""
+        # Regular stats
+        late_days, late_minutes = self.count_late_days(employee_name)
+        lunch_overtime_days, total_lunch_minutes = self.count_lunch_overtime_days(employee_name)
+        early_departure_days, early_minutes = self.count_early_departures(employee_name)
+        mid_day_departures, mid_day_departures_text = self.count_mid_day_departures(employee_name)
+        missing_entry_days, missing_exit_days, missing_lunch_days = self.count_missing_records(employee_name)
+        overtime_minutes, overtime_days = self.calculate_overtime(employee_name)
+        authorized_late_days, authorized_late_minutes = self.count_authorized_late_days(employee_name)
+
+        # Get absence days
+        absence_days = self.get_absence_days(employee_name)
+        absences = len(absence_days) if absence_days else 0
+
+        # Get department
+        try:
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            df = pd.read_excel(self.excel_file, sheet_name=self.excel_file.sheet_names[exceptional_index-1], header=None)
+            department = 'No especificado'
+            
+            for row in range(4, 24):
+                try:
+                    name_cell = str(df.iloc[row, 1]).strip()
+                    if name_cell == employee_name:
+                        department = str(df.iloc[row, 2]).strip()
+                        break
+                except:
+                    continue
+        except Exception as e:
+            print(f"Error getting department: {str(e)}")
+
+        # Calculate actual hours differently for PPP employees
+        if 'ppp' in employee_name.lower():
+            weekly_hours, weekly_details = self.calculate_ppp_weekly_hours(employee_name)
+            actual_hours = sum(weekly_hours.values())
+            required_hours = 80.0  # Estándar mensual para PPP
+        else:
+            required_hours = 76.40  # Estándar regular
+            actual_hours = required_hours - (absences * 8)  # Subtract 8 hours for each absence
+
+        # Get stats dictionary ready 
+        stats = {
+            'name': employee_name,
+            'department': department,
+            'absences': absences,
+            'absence_days': absence_days,
+            'late_days': late_days,
+            'late_minutes': late_minutes,
+            'authorized_late_days': authorized_late_days,  # Nuevo campo
+            'authorized_late_minutes': authorized_late_minutes,  # Nuevo campo
+            'lunch_overtime_days': lunch_overtime_days,
+            'total_lunch_minutes': total_lunch_minutes,
+            'early_departure_days': early_departure_days,
+            'early_minutes': early_minutes,
+            'missing_entry_days': missing_entry_days,
+            'missing_exit_days': missing_exit_days,
+            'missing_lunch_days': missing_lunch_days,
+            'required_hours': required_hours,
+            'actual_hours': actual_hours,
+            'mid_day_departures': mid_day_departures,
+            'mid_day_departures_text': mid_day_departures_text,
+            'overtime_minutes': overtime_minutes if 'agustin taba' in employee_name.lower() else 0,
+            'overtime_days': overtime_days if 'agustin taba' in employee_name.lower() else []
+        }
+        
+        # Add PPP weekly hours if applicable
+        if 'ppp' in employee_name.lower():
+            stats['weekly_hours'] = weekly_hours
+            stats['weekly_details'] = weekly_details
+            
+        return stats
+
     def count_authorized_late_days(self, employee_name):
         """Cuenta los días que el empleado llegó después de las 08:10"""
         try:

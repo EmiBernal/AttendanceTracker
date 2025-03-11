@@ -612,47 +612,195 @@ class ExcelProcessor:
         except Exception as e:
             print(f"Error translating day: {str(e)}")
             return day_str
-        if not lunch_overtime_days:
+
+    def count_late_arrivals_after_810(self, employee_name):
+        """Cuenta los ingresos posteriores a las 8:10"""
+        try:
+            late_arrivals = []
+            total_late_minutes = 0
+            limit_time = datetime.strptime('8:10', '%H:%M').time()
+
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+
+            for sheet in attendance_sheets:
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+
+                    positions = [
+                        {'name_col': 'J', 'entry_col': 'B', 'day_col': 'A'},
+                        {'name_col': 'Y', 'entry_col': 'Q', 'day_col': 'P'},
+                        {'name_col': 'AN', 'entry_col': 'AF', 'day_col': 'AE'}
+                    ]
+
+                    for position in positions:
+                        try:
+                            name_col_index = self.get_column_index(position['name_col'])
+                            name_cell = df.iloc[2, name_col_index]
+
+                            if pd.isna(name_cell):
+                                continue
+
+                            employee_cell = str(name_cell).strip()
+                            if employee_cell == employee_name:
+                                entry_col = self.get_column_index(position['entry_col'])
+                                day_col = self.get_column_index(position['day_col'])
+
+                                for row in range(11, 42):
+                                    try:
+                                        day_value = df.iloc[row, day_col]
+                                        if pd.isna(day_value):
+                                            continue
+
+                                        day_str = str(day_value).strip().lower()
+                                        if day_str == '' or day_str == 'nan' or day_str == 'absence':
+                                            continue
+
+                                        entry_time = df.iloc[row, entry_col]
+                                        if not pd.isna(entry_time):
+                                            try:
+                                                if isinstance(entry_time, str):
+                                                    entry_time = pd.to_datetime(entry_time).time()
+                                                elif isinstance(entry_time, datetime):
+                                                    entry_time = entry_time.time()
+                                                else:
+                                                    continue
+
+                                                # Solo contar si es posterior a las 8:10
+                                                if entry_time > limit_time:
+                                                    late_minutes = (
+                                                        datetime.combine(datetime.min, entry_time) -
+                                                        datetime.combine(datetime.min, limit_time)
+                                                    ).total_seconds() / 60
+                                                    total_late_minutes += late_minutes
+
+                                                    formatted_day = self.translate_day_abbreviation(day_str)
+                                                    late_arrivals.append(formatted_day)
+                                                    print(f"Ingreso con retraso en fila {row+1}: {late_minutes:.0f} minutos (hora: {entry_time}), Dia: {formatted_day}")
+
+                                            except Exception as e:
+                                                print(f"Error procesando hora de entrada en fila {row+1}: {str(e)}")
+                                                continue
+
+                                    except Exception as e:
+                                        print(f"Error en fila {row+1}: {str(e)}")
+                                        continue
+
+                        except Exception as e:
+                            print(f"Error procesando posición {position['name_col']}: {str(e)}")
+                            continue
+
+                except Exception as e:
+                    print(f"Error procesando hoja {sheet}: {str(e)}")
+                    continue
+
+            print(f"Total ingresos con retraso: {len(late_arrivals)}")
+            print(f"Total minutos de retraso: {total_late_minutes:.0f}")
+            return late_arrivals, total_late_minutes
+
+        except Exception as e:
+            print(f"Error general: {str(e)}")
+            return [], 0
+
+    def get_employee_stats(self, employee_name):
+        """Get comprehensive statistics for a specific employee"""
+        # Regular stats
+        late_days, late_minutes = self.count_late_days(employee_name)
+        late_arrivals, late_arrival_minutes = self.count_late_arrivals_after_810(employee_name)
+        early_departure_days, early_minutes = self.count_early_departures(employee_name)
+        lunch_overtime_days, total_lunch_minutes = self.count_lunch_overtime_days(employee_name)
+        missing_entry_days, missing_exit_days, missing_lunch_days = self.count_missing_records(employee_name)
+        absence_days = self.get_absence_days(employee_name)
+        absences = len(absence_days) if absence_days else 0
+        mid_day_departures, mid_day_departures_text = self.count_mid_day_departures(employee_name)
+        overtime_minutes = 0
+        overtime_days = []
+
+        # Get overtime for agustin taba
+        if employee_name.lower() == 'agustin taba':
+            overtime_minutes, overtime_days = self.calculate_overtime(employee_name)
+
+        # Get department
+        department = ""
+        try:
+            department = self.get_employee_department(employee_name)
+        except Exception as e:
+            print(f"Error getting department: {str(e)}")
+
+        # Calculate actual hours differently for PPP employees
+        if 'ppp' in employee_name.lower():
+            weekly_hours, weekly_details = self.calculate_ppp_weekly_hours(employee_name)
+            actual_hours = sum(weekly_hours.values())
+            required_hours = 80.0  # Estándar mensual para PPP
+        else:
+            required_hours = 76.40  # Estándar regular
+            actual_hours = required_hours - (absences * 8)  # Subtract 8 hours for each absence
+
+        # Get stats dictionary ready
+        stats = {
+            'name': employee_name,
+            'department': department,
+            'absences': absences,
+            'absence_days': absence_days,
+            'late_days': late_days,
+            'late_minutes': late_minutes,
+            'late_arrivals': late_arrivals,  # Nuevo campo para ingresos con retraso (>8:10)
+            'late_arrival_minutes': late_arrival_minutes,  # Minutos de retraso después de 8:10
+            'early_departure_days': early_departure_days,
+            'early_minutes': early_minutes,
+            'lunch_overtime_days': lunch_overtime_days,
+            'total_lunch_minutes': total_lunch_minutes,
+            'missing_entry_days': missing_entry_days,
+            'missing_exit_days': missing_exit_days,
+            'missing_lunch_days': missing_lunch_days,
+            'required_hours': required_hours,
+            'actual_hours': actual_hours,
+            'mid_day_departures': mid_day_departures,
+            'mid_day_departures_text': mid_day_departures_text,
+            'overtime_minutes': overtime_minutes if 'agustin taba' in employee_name.lower() else 0,
+            'overtime_days': overtime_days if 'agustin taba' in employee_name.lower() else []
+        }
+        
+        # Add PPP weekly hours if applicable
+        if 'ppp' in employee_name.lower():
+            stats['weekly_hours'] = weekly_hours
+            stats['weekly_details'] = weekly_details
+            
+        return stats
+
+    def format_list_in_columns(self, items, items_per_column=8):
+        """Format a list of items into columns"""
+        if not items:
             return "No hay días registrados"
 
-        # Initialize dictionary with empty lists for each week
-        weeks_dict = {f'Semana {i}': [] for i in range(1, 5)}
-
-        # Sort days into weeks
-        for day in lunch_overtime_days:
-            try:
-                day_parts = day.split()
-                if len(day_parts) >= 2:
-                    day_num = int(day_parts[0])
-                    # Determine week number
-                    if 1 <= day_num <= 7:
-                        weeks_dict['Semana 1'].append(day)
-                    elif 8 <= day_num <= 14:
-                        weeks_dict['Semana 2'].append(day)
-                    elif 15 <= day_num <= 21:
-                        weeks_dict['Semana 3'].append(day)
-                    elif 22 <= day_num <= 31:
-                        weeks_dict['Semana 4'].append(day)
-            except (ValueError, IndexError) as e:
-                print(f"Error processing day {day}: {str(e)}")
-                continue
-
-        # Sort days within each week
-        for week_days in weeks_dict.values():
-            week_days.sort(key=lambda x: int(x.split()[0]))
-
-        # Format output with header and columns
-        lines = ["Días con exceso:"]
+        # Create columns of exactly 8 items
+        columns = []
+        current_column = []
         
-        # Add each week with its days in columns
-        for week_num in range(1, 5):
-            week_key = f'Semana {week_num}'
-            days = weeks_dict[week_key]
-            if days:
-                lines.append(f"\n{week_key}")
-                lines.append(self.format_list_in_columns(days))
+        for item in sorted(items, key=lambda x: int(x.split()[0])):
+            if len(current_column) < items_per_column:
+                current_column.append(f"• {item}")
+            else:
+                # When column is full (8 items), start a new one
+                columns.append(current_column)
+                current_column = [f"• {item}"]
+        
+        # Add the last column if it has any items
+        if current_column:
+            columns.append(current_column)
 
-        return "\n".join(lines)
+        # Format each column as a string, ensuring consistent width
+        formatted_columns = []
+        for column in columns:
+            # Pad column to 8 items if needed
+            while len(column) < items_per_column:
+                column.append("")  # Add empty strings for padding
+            formatted_columns.append("\n".join(column))
+
+        # Join columns with sufficient spacing (10 spaces)
+        return "          ".join(formatted_columns)
+
+
 
     def calculate_ppp_weekly_hours(self, employee_name):
         """Calculate weekly hours for PPP employees"""
@@ -2452,16 +2600,16 @@ class ExcelProcessor:
 
         return weeks
 
-    def format_lunch_overtime_text(self, lunch_overtime_days):
+    def format_lunch_overtime_text(self, days):
         """Formats lunch overtime days by week in a vertical bullet point layout"""
-        if not lunch_overtime_days:
+        if not days:
             return "No hay días registrados"
 
         # Initialize dictionary with empty lists for each week
         weeks_dict = {f'Semana {i}': [] for i in range(1, 5)}
 
         # Sort days into weeks
-        for day in lunch_overtime_days:
+        for day in days:
             try:
                 day_parts = day.split()
                 if len(day_parts) >= 2:

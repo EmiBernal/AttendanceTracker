@@ -613,6 +613,86 @@ class ExcelProcessor:
             print(f"Error translating day: {str(e)}")
             return day_str
 
+    def count_mid_day_departures(self, employee_name):
+        """Cuenta los retiros durante el horario laboral"""
+        try:
+            # No contar retiros durante horario para PPP o empleados especiales
+            if 'ppp' in employee_name.lower() or employee_name.lower() == 'agustin taba':
+                return 0, "No aplica"
+
+            mid_day_departures = 0
+            departure_details = []
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+
+            for sheet in attendance_sheets:
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+
+                    positions = [
+                        {'name_col': 'J', 'exit_col': 'G', 'day_col': 'A'},
+                        {'name_col': 'Y', 'exit_col': 'V', 'day_col': 'P'},
+                        {'name_col': 'AN', 'exit_col': 'AK', 'day_col': 'AE'}
+                    ]
+
+                    for position in positions:
+                        try:
+                            name_col_index = self.get_column_index(position['name_col'])
+                            name_cell = df.iloc[2, name_col_index]
+
+                            if pd.isna(name_cell):
+                                continue
+
+                            if str(name_cell).strip() == employee_name:
+                                exit_col = self.get_column_index(position['exit_col'])
+                                day_col = self.get_column_index(position['day_col'])
+
+                                for row in range(11, 42):
+                                    try:
+                                        day_value = df.iloc[row, day_col]
+                                        if pd.isna(day_value):
+                                            continue
+
+                                        day_str = str(day_value).strip()
+                                        if 'absence' in day_str.lower():
+                                            continue
+
+                                        # Skip weekends
+                                        if any(abbr in day_str.lower() for abbr in ['sa', 'su']):
+                                            continue
+
+                                        exit_time = df.iloc[row, exit_col]
+                                        if not pd.isna(exit_time):
+                                            try:
+                                                exit_time = pd.to_datetime(exit_time).time()
+                                                formatted_day = self.translate_day_abbreviation(day_str)
+                                                departure_details.append(f"{formatted_day} ({exit_time.strftime('%H:%M')})")
+                                                mid_day_departures += 1
+                                            except Exception as e:
+                                                print(f"Error procesando hora de salida en fila {row+1}: {str(e)}")
+                                                continue
+
+                                    except Exception as e:
+                                        print(f"Error en fila {row+1}: {str(e)}")
+                                        continue
+
+                        except Exception as e:
+                            print(f"Error procesando posición {position['name_col']}: {str(e)}")
+                            continue
+
+                except Exception as e:
+                    print(f"Error procesando hoja {sheet}: {str(e)}")
+                    continue
+
+            # Format departure details
+            departure_text = self.format_list_in_columns(departure_details) if departure_details else "No hay registros"
+            
+            return mid_day_departures, departure_text
+
+        except Exception as e:
+            print(f"Error general: {str(e)}")
+            return 0, "Error al procesar los datos"
+
     def get_employee_stats(self, employee_name):
         """Get comprehensive statistics for a specific employee"""
         # Regular stats

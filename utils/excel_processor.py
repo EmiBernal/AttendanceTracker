@@ -93,50 +93,86 @@ class ExcelProcessor:
                     print(f"\nProcesando hoja: {sheet}")
                     df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
 
-                    name_col_index = self.get_column_index('Y')
-                    name_cell = df.iloc[2, name_col_index]
-                    if pd.isna(name_cell):
-                        continue
+                    # Define correct positions for different employee types
+                    if 'ppp' in employee_name.lower():
+                        positions = [
+                            {'name_col': 'J', 'entry_col': 'B', 'exit_col': 'D', 'day_col': 'A'},
+                            {'name_col': 'Y', 'entry_col': 'Q', 'exit_col': 'S', 'day_col': 'P'},
+                            {'name_col': 'AN', 'entry_col': 'AF', 'exit_col': 'AH', 'day_col': 'AE'}
+                        ]
+                    else:
+                        positions = [
+                            {'name_col': 'J', 'exit_col': 'I', 'day_col': 'A'},
+                            {'name_col': 'Y', 'exit_col': 'X', 'day_col': 'P'},
+                            {'name_col': 'AN', 'exit_col': 'AM', 'day_col': 'AE'}
+                        ]
 
-                    employee_cell = str(name_cell).strip()
-                    if employee_cell == employee_name:
-                        print(f"Empleado encontrado en hoja {sheet}, columna Y")
+                    for position in positions:
+                        try:
+                            name_col_index = self.get_column_index(position['name_col'])
+                            name_cell = df.iloc[2, name_col_index]
+                            if pd.isna(name_cell):
+                                continue
 
-                        for row in range(11, 42):
-                            try:
-                                day_value = df.iloc[row, self.get_column_index('P')]
-                                if pd.isna(day_value):
-                                    break
+                            employee_cell = str(name_cell).strip()
+                            if employee_cell == employee_name:
+                                print(f"Empleado encontrado en hoja {sheet}, columna {position['name_col']}")
 
-                                day_str = str(day_value).strip().lower()
-                                if day_str == '' or day_str == 'nan':
-                                    break
+                                day_col = self.get_column_index(position['day_col'])
+                                exit_col = self.get_column_index(position['exit_col'])
 
-                                if day_str != 'absence':
-                                    exit_time = df.iloc[row, self.get_column_index('X')]
-                                    if not pd.isna(exit_time):
-                                        try:
-                                            exit_time = pd.to_datetime(exit_time).time()
-                                            if self.is_early_departure(employee_name, exit_time):
-                                                early_departures += 1
-                                                schedule = self.get_employee_schedule(employee_name)
-                                                early_minutes = (
-                                                    datetime.combine(datetime.min, schedule['end_time']) -
-                                                    datetime.combine(datetime.min, exit_time)
-                                                ).total_seconds() / 60
-                                                total_early_minutes += early_minutes
-                                                print(f"Salida temprana en fila {row+1}: {early_minutes:.0f} minutos")
-                                        except Exception as e:
-                                            print(f"Error procesando hora de salida en fila {row+1}: {str(e)}")
-                            except Exception as e:
-                                print(f"Error en fila {row+1}: {str(e)}")
+                                for row in range(11, 42):
+                                    try:
+                                        day_value = df.iloc[row, day_col]
+                                        if pd.isna(day_value):
+                                            continue
+
+                                        day_str = str(day_value).strip().lower()
+                                        if day_str == '' or day_str == 'nan' or day_str == 'absence':
+                                            continue
+
+                                        exit_time = df.iloc[row, exit_col]
+                                        if not pd.isna(exit_time):
+                                            try:
+                                                if isinstance(exit_time, str):
+                                                    exit_time = pd.to_datetime(exit_time).time()
+                                                elif isinstance(exit_time, datetime):
+                                                    exit_time = exit_time.time()
+                                                else:
+                                                    print(f"Formato de hora no reconocido en fila {row+1}")
+                                                    continue
+
+                                                if self.is_early_departure(employee_name, exit_time):
+                                                    early_departures += 1
+                                                    schedule = self.get_employee_schedule(employee_name)
+                                                    early_minutes = (
+                                                        datetime.combine(datetime.min, schedule['end_time']) -
+                                                        datetime.combine(datetime.min, exit_time)
+                                                    ).total_seconds() / 60
+                                                    total_early_minutes += early_minutes
+                                                    formatted_day = self.translate_day_abbreviation(day_str)
+                                                    print(f"Salida temprana en {formatted_day}: {early_minutes:.0f} minutos")
+
+                                            except Exception as e:
+                                                print(f"Error procesando hora de salida en fila {row+1}: {str(e)}")
+                                                continue
+
+                                    except Exception as e:
+                                        print(f"Error en fila {row+1}: {str(e)}")
+                                        continue
+
+                        except Exception as e:
+                            print(f"Error procesando posición {position['name_col']}: {str(e)}")
+                            continue
 
                 except Exception as e:
                     print(f"Error procesando hoja {sheet}: {str(e)}")
+                    continue
 
             print(f"Total días con salida temprana: {early_departures}")
             print(f"Total minutos de salida temprana: {total_early_minutes:.0f}")
             return early_departures, total_early_minutes
+
         except Exception as e:
             print(f"Error general: {str(e)}")
             return 0, 0

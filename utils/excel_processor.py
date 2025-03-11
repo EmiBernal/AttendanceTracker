@@ -585,6 +585,7 @@ class ExcelProcessor:
                     continue
         except Exception as e:
             print(f"Error getting department: {str(e)}")
+            department = 'No especificado'
 
         # Calculate actual hours differently for PPP employees
         if 'ppp' in employee_name.lower():
@@ -603,8 +604,8 @@ class ExcelProcessor:
             'absence_days': absence_days,
             'late_days': late_days,
             'late_minutes': late_minutes,
-            'authorized_late_days': authorized_late_days,  # Nuevo campo
-            'authorized_late_minutes': authorized_late_minutes,  # Nuevo campo
+            'authorized_late_days': authorized_late_days,
+            'authorized_late_minutes': authorized_late_minutes,
             'lunch_overtime_days': lunch_overtime_days,
             'total_lunch_minutes': total_lunch_minutes,
             'early_departure_days': early_departure_days,

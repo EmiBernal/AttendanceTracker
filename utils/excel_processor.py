@@ -34,6 +34,24 @@ class ExcelProcessor:
                 'exit_col': 'AH',
                 'start_row': 11,  # corresponde a fila 12
                 'end_row': 40
+            },
+            'ana': {
+                'start_time': datetime.strptime('8:00', '%H:%M').time(),
+                'end_time': datetime.strptime('15:00', '%H:%M').time(),
+                'overtime_enabled': True,
+                'no_lunch': False
+            },
+            'luisina ppp': {
+                'start_time': datetime.strptime('8:00', '%H:%M').time(),
+                'end_time': datetime.strptime('12:00', '%H:%M').time(),
+                'no_lunch': True,
+                'hide_exit': True
+            },
+            'emiliano ppp': {
+                'start_time': datetime.strptime('8:00', '%H:%M').time(),
+                'end_time': datetime.strptime('12:00', '%H:%M').time(),
+                'no_lunch': True,
+                'hide_exit': True
             }
         }
 
@@ -43,20 +61,25 @@ class ExcelProcessor:
             return {
                 'start_time': datetime.strptime('8:00', '%H:%M').time(),
                 'end_time': datetime.strptime('12:00', '%H:%M').time(),
-                'no_lunch': True
+                'no_lunch': True,
+                'hide_exit': employee_name.lower() in ['luisina ppp', 'emiliano ppp']
             }
         elif employee_name.lower() in self.SPECIAL_SCHEDULES:
             schedule = self.SPECIAL_SCHEDULES[employee_name.lower()]
             return {
-                'start_time': self.DEFAULT_WORK_START_TIME,
-                'end_time': schedule['end_time'],
-                'no_lunch': schedule.get('no_lunch', False)
+                'start_time': schedule.get('start_time', self.DEFAULT_WORK_START_TIME),
+                'end_time': schedule.get('end_time', self.DEFAULT_WORK_END_TIME),
+                'no_lunch': schedule.get('no_lunch', False),
+                'overtime_enabled': schedule.get('overtime_enabled', False),
+                'hide_exit': schedule.get('hide_exit', False)
             }
         else:
             return {
                 'start_time': self.DEFAULT_WORK_START_TIME,
                 'end_time': self.DEFAULT_WORK_END_TIME,
-                'no_lunch': False
+                'no_lunch': False,
+                'overtime_enabled': False,
+                'hide_exit': False
             }
 
     def is_early_departure(self, employee_name, exit_time):
@@ -183,6 +206,131 @@ class ExcelProcessor:
         for i, letter in enumerate(reversed(column_letter)):
             result += (ord(letter.upper()) - ord('A') + 1) * (26 ** i)
         return result - 1
+
+    def calculate_worked_hours(self, employee_name, entry_time, exit_time):
+        """Calcula las horas trabajadas considerando horarios especiales y horas extra"""
+        if not entry_time or not exit_time:
+            return 0, 0  # horas regulares, horas extra
+            
+        schedule = self.get_employee_schedule(employee_name)
+        
+        # Si el empleado tiene habilitadas las horas extra
+        if schedule.get('overtime_enabled'):
+            regular_end_time = schedule['end_time']
+            
+            # Si la salida es después del horario regular
+            if exit_time > regular_end_time:
+                # Calcular horas regulares hasta el horario de salida
+                regular_hours = (
+                    datetime.combine(datetime.min, regular_end_time) -
+                    datetime.combine(datetime.min, entry_time)
+                ).total_seconds() / 3600
+                
+                # Calcular horas extra después del horario de salida
+                overtime_hours = (
+                    datetime.combine(datetime.min, exit_time) -
+                    datetime.combine(datetime.min, regular_end_time)
+                ).total_seconds() / 3600
+                
+                return max(0, regular_hours), max(0, overtime_hours)
+            
+        # Para empleados sin horas extra, calcular solo horas regulares
+        total_hours = (
+            datetime.combine(datetime.min, exit_time) -
+            datetime.combine(datetime.min, entry_time)
+        ).total_seconds() / 3600
+        
+        return max(0, total_hours), 0
+
+    def get_employee_hours(self, employee_name):
+        """Obtiene las horas trabajadas y extra para un empleado"""
+        total_regular_hours = 0
+        total_overtime_hours = 0
+        hours_details = []
+        
+        try:
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            
+            for sheet in attendance_sheets:
+                df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+                
+                positions = [
+                    {'name_col': 'J', 'entry_col': 'B', 'exit_col': 'I', 'day_col': 'A'},
+                    {'name_col': 'Y', 'entry_col': 'Q', 'exit_col': 'X', 'day_col': 'P'},
+                    {'name_col': 'AN', 'entry_col': 'AF', 'exit_col': 'AM', 'day_col': 'AE'}
+                ]
+                
+                for position in positions:
+                    try:
+                        name_col = self.get_column_index(position['name_col'])
+                        name_cell = df.iloc[2, name_col]
+                        
+                        if pd.isna(name_cell) or str(name_cell).strip() != employee_name:
+                            continue
+                            
+                        entry_col = self.get_column_index(position['entry_col'])
+                        exit_col = self.get_column_index(position['exit_col'])
+                        day_col = self.get_column_index(position['day_col'])
+                        
+                        for row in range(11, 42):
+                            try:
+                                day_value = df.iloc[row, day_col]
+                                if pd.isna(day_value):
+                                    continue
+                                    
+                                day_str = str(day_value).strip()
+                                if 'absence' in day_str.lower() or any(abbr in day_str.lower() for abbr in ['sa', 'su']):
+                                    continue
+                                    
+                                entry_time = df.iloc[row, entry_col]
+                                exit_time = df.iloc[row, exit_col]
+                                
+                                if not pd.isna(entry_time) and not pd.isna(exit_time):
+                                    # Convertir a time() si son strings o datetime
+                                    if isinstance(entry_time, str):
+                                        entry_time = pd.to_datetime(entry_time).time()
+                                    elif isinstance(entry_time, datetime):
+                                        entry_time = entry_time.time()
+                                        
+                                    if isinstance(exit_time, str):
+                                        exit_time = pd.to_datetime(exit_time).time()
+                                    elif isinstance(exit_time, datetime):
+                                        exit_time = exit_time.time()
+                                    
+                                    # No mostrar salidas para empleados especiales
+                                    schedule = self.get_employee_schedule(employee_name)
+                                    if schedule.get('hide_exit'):
+                                        continue
+                                    
+                                    regular_hours, overtime_hours = self.calculate_worked_hours(
+                                        employee_name, entry_time, exit_time)
+                                        
+                                    total_regular_hours += regular_hours
+                                    total_overtime_hours += overtime_hours
+                                    
+                                    hours_details.append({
+                                        'day': self.translate_day_abbreviation(day_str),
+                                        'entry': entry_time.strftime('%H:%M'),
+                                        'exit': exit_time.strftime('%H:%M'),
+                                        'regular_hours': f"{regular_hours:.2f}",
+                                        'overtime_hours': f"{overtime_hours:.2f}" if overtime_hours > 0 else None
+                                    })
+                                    
+                            except Exception as e:
+                                print(f"Error processing row {row+1}: {str(e)}")
+                                continue
+                                
+                    except Exception as e:
+                        print(f"Error processing position {position['name_col']}: {str(e)}")
+                        continue
+                        
+        except Exception as e:
+            print(f"Error calculating hours: {str(e)}")
+            
+        return total_regular_hours, total_overtime_hours, hours_details
+
+
 
     def count_lunch_overtime_days(self, employee_name):
         """Returns a list of days and total minutes when the employee exceeded lunch time"""

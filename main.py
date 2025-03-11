@@ -392,7 +392,7 @@ def create_missing_records_section(stats, processor):
 
 def create_monthly_summary(processor, attendance_summary):
     """Create a general monthly summary"""
-    # Initialize counters for totals
+    # Initialize counters for totals and detail dictionaries
     total_absences = 0
     total_late_minutes = 0
     total_lunch_overtime_minutes = 0
@@ -404,21 +404,109 @@ def create_monthly_summary(processor, attendance_summary):
     total_late_arrivals = 0
     total_late_arrival_minutes = 0
 
+    # Diccionarios para almacenar detalles por empleado
+    absence_details = {}
+    late_details = {}
+    lunch_details = {}
+    early_details = {}
+    mid_day_details = {}
+    missing_entry_details = {}
+    missing_exit_details = {}
+    missing_lunch_details = {}
+    late_arrival_details = {}
+
     # Get stats for all employees
     for employee_name in attendance_summary['employee_name'].unique():
         stats = processor.get_employee_stats(employee_name)
 
-        # Sumar las estadísticas de cada empleado
-        total_absences += len(stats['absence_days']) if stats['absence_days'] else 0
+        # Absences
+        emp_absences = len(stats['absence_days']) if stats['absence_days'] else 0
+        if emp_absences > 0:
+            absence_details[employee_name] = emp_absences
+        total_absences += emp_absences
+
+        # Late minutes
+        if stats['late_minutes'] > 0:
+            late_details[employee_name] = f"{stats['late_minutes']:.0f} minutos"
         total_late_minutes += stats['late_minutes']
+
+        # Lunch overtime
+        if stats['total_lunch_minutes'] > 0:
+            lunch_details[employee_name] = f"{stats['total_lunch_minutes']:.0f} minutos"
         total_lunch_overtime_minutes += stats['total_lunch_minutes']
+
+        # Early departures
+        if stats['early_minutes'] > 0:
+            early_details[employee_name] = f"{stats['early_minutes']:.0f} minutos"
         total_early_departure_minutes += stats['early_minutes']
-        total_mid_day_departures += stats['mid_day_departures'] if not 'ppp' in employee_name.lower() else 0
-        total_missing_entry += len(stats['missing_entry_days']) if stats['missing_entry_days'] else 0
-        total_missing_exit += len(stats['missing_exit_days']) if stats['missing_exit_days'] else 0
-        total_missing_lunch += len(stats['missing_lunch_days']) if stats['missing_lunch_days'] else 0
-        total_late_arrivals += len(stats['late_arrivals']) if stats['late_arrivals'] else 0
+
+        # Mid-day departures
+        if not 'ppp' in employee_name.lower():
+            emp_mid_day = stats['mid_day_departures']
+            if emp_mid_day > 0:
+                mid_day_details[employee_name] = emp_mid_day
+            total_mid_day_departures += emp_mid_day
+
+        # Missing entries
+        emp_missing_entry = len(stats['missing_entry_days']) if stats['missing_entry_days'] else 0
+        if emp_missing_entry > 0:
+            missing_entry_details[employee_name] = emp_missing_entry
+        total_missing_entry += emp_missing_entry
+
+        # Missing exits
+        emp_missing_exit = len(stats['missing_exit_days']) if stats['missing_exit_days'] else 0
+        if emp_missing_exit > 0:
+            missing_exit_details[employee_name] = emp_missing_exit
+        total_missing_exit += emp_missing_exit
+
+        # Missing lunch
+        emp_missing_lunch = len(stats['missing_lunch_days']) if stats['missing_lunch_days'] else 0
+        if emp_missing_lunch > 0:
+            missing_lunch_details[employee_name] = emp_missing_lunch
+        total_missing_lunch += emp_missing_lunch
+
+        # Late arrivals (después de 8:10)
+        emp_late_arrivals = len(stats['late_arrivals']) if stats['late_arrivals'] else 0
+        if emp_late_arrivals > 0:
+            late_arrival_details[employee_name] = f"{emp_late_arrivals} días ({stats['late_arrival_minutes']:.0f} min)"
+        total_late_arrivals += emp_late_arrivals
         total_late_arrival_minutes += stats['late_arrival_minutes']
+
+    # Función para formatear detalles
+    def format_details(details_dict):
+        if not details_dict:
+            return "No hay registros"
+        return "\n".join(f"• {name}: {value}" for name, value in details_dict.items())
+
+    # Define the metrics to display with updated descriptions and hover details
+    summary_metrics = [
+        ('Total Inasistencias', total_absences, "Total ausencias", 
+         f"Detalles de inasistencias por persona:\n\n{format_details(absence_details)}"),
+
+        ('Total Minutos de Llegada Tarde', f"{total_late_minutes:.0f}", "Total minutos", 
+         f"Detalles de llegadas tarde por persona:\n\n{format_details(late_details)}"),
+
+        ('Total Minutos Exceso Almuerzo', f"{total_lunch_overtime_minutes:.0f}", "Total minutos", 
+         f"Detalles de exceso en almuerzo por persona:\n\n{format_details(lunch_details)}"),
+
+        ('Total Minutos Retiro Anticipado', f"{total_early_departure_minutes:.0f}", "Total minutos", 
+         f"Detalles de retiros anticipados por persona:\n\n{format_details(early_details)}"),
+
+        ('Total Retiros Durante Horario', total_mid_day_departures, "Total retiros", 
+         f"Detalles de retiros durante horario por persona:\n\n{format_details(mid_day_details)}"),
+
+        ('Total Ingresos con Retraso', total_late_arrivals, "Total ingresos >8:10", 
+         f"Detalles de ingresos posteriores a 8:10 por persona:\n\n{format_details(late_arrival_details)}"),
+
+        ('Total Sin Registro de Entrada', total_missing_entry, "Total registros", 
+         f"Detalles de registros de entrada faltantes por persona:\n\n{format_details(missing_entry_details)}"),
+
+        ('Total Sin Registro de Salida', total_missing_exit, "Total registros", 
+         f"Detalles de registros de salida faltantes por persona:\n\n{format_details(missing_exit_details)}"),
+
+        ('Total Sin Registro de Almuerzo', total_missing_lunch, "Total registros", 
+         f"Detalles de registros de almuerzo faltantes por persona:\n\n{format_details(missing_lunch_details)}")
+    ]
 
     # Display the totals using the same card format as individual employees
     st.markdown("""
@@ -426,19 +514,6 @@ def create_monthly_summary(processor, attendance_summary):
             <h3>📈 Métricas Generales del Mes</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
     """, unsafe_allow_html=True)
-
-    # Define the metrics to display with updated descriptions
-    summary_metrics = [
-        ('Total Inasistencias', total_absences, "Total ausencias", "Total de ausencias en el mes"),
-        ('Total Minutos de Llegada Tarde', f"{total_late_minutes:.0f}", "Total minutos", "Total de minutos de llegada tarde en el mes"),
-        ('Total Minutos Exceso Almuerzo', f"{total_lunch_overtime_minutes:.0f}", "Total minutos", "Total de minutos de exceso en tiempo de almuerzo"),
-        ('Total Minutos Retiro Anticipado', f"{total_early_departure_minutes:.0f}", "Total minutos", "Total de minutos de salida anticipada"),
-        ('Total Retiros Durante Horario', total_mid_day_departures, "Total retiros", "Total de retiros durante horario laboral"),
-        ('Total Ingresos con Retraso', total_late_arrivals, "Total ingresos >8:10", f"Total de ingresos posteriores a 8:10 ({total_late_arrival_minutes:.0f} minutos)"),
-        ('Total Sin Registro de Entrada', total_missing_entry, "Total registros", "Total de registros de entrada faltantes"),
-        ('Total Sin Registro de Salida', total_missing_exit, "Total registros", "Total de registros de salida faltantes"),
-        ('Total Sin Registro de Almuerzo', total_missing_lunch, "Total registros", "Total de registros de almuerzo faltantes")
-    ]
 
     # Display each metric in a card
     for label, value, subtitle, hover_text in summary_metrics:

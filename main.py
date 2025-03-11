@@ -251,7 +251,7 @@ def create_employee_dashboard(processor, employee_name):
 
     auth_metrics = [
         ('Retiros Anticipados', len(early_departure_days) if early_departure_days else 0, f"{stats['early_minutes']:.0f} minutos en total", f"Días con salida anticipada:\n{early_departure_days_text}"),
-        ('Ingresos con Retraso', len(late_days) if late_days else 0, f"{stats['late_minutes']:.0f} minutos en total", f"Días con llegada tarde:\n{late_days_text}"),
+        ('Ingresos con Retraso', len(stats['authorized_late_days']) if stats['authorized_late_days'] else 0, f"{stats['authorized_late_minutes']:.0f} minutos en total", f"Días con llegada después de las 08:10:\n{processor.format_list_in_columns(stats['authorized_late_days']) if stats['authorized_late_days'] else 'No hay días registrados'}"),
     ]
 
     # Solo agregar "Retiros Durante Horario" si no es PPP

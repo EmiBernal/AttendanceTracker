@@ -546,6 +546,103 @@ class ExcelProcessor:
             print(f"Error general: {str(e)}")
             return [], [], []
 
+    def is_authorized_late_arrival(self, employee_name, entry_time):
+        """Determina si la llegada requiere autorización (después de las 08:10)"""
+        if not entry_time:
+            return False
+            
+        authorized_late_time = datetime.strptime('8:10', '%H:%M').time()
+        return entry_time > authorized_late_time
+
+    def count_authorized_late_days(self, employee_name):
+        """Cuenta los días que el empleado llegó después de las 08:10"""
+        try:
+            authorized_late_days = []
+            total_late_minutes = 0
+            authorized_late_time = datetime.strptime('8:10', '%H:%M').time()
+
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+
+            for sheet in attendance_sheets:
+                try:
+                    print(f"\nProcesando hoja: {sheet}")
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+
+                    positions = [
+                        {'name_col': 'J', 'entry_col': 'B', 'day_col': 'A'},
+                        {'name_col': 'Y', 'entry_col': 'Q', 'day_col': 'P'},
+                        {'name_col': 'AN', 'entry_col': 'AF', 'day_col': 'AE'}
+                    ]
+
+                    for position in positions:
+                        try:
+                            name_col_index = self.get_column_index(position['name_col'])
+                            name_cell = df.iloc[2, name_col_index]
+
+                            if pd.isna(name_cell):
+                                continue
+
+                            employee_cell = str(name_cell).strip()
+                            if employee_cell == employee_name:
+                                entry_col = self.get_column_index(position['entry_col'])
+                                day_col = self.get_column_index(position['day_col'])
+
+                                for row in range(11, 42):
+                                    try:
+                                        day_value = df.iloc[row, day_col]
+                                        if pd.isna(day_value):
+                                            continue
+
+                                        day_str = str(day_value).strip().lower()
+                                        if day_str == '' or day_str == 'nan' or day_str == 'absence':
+                                            continue
+
+                                        entry_time = df.iloc[row, entry_col]
+                                        if not pd.isna(entry_time):
+                                            try:
+                                                if isinstance(entry_time, str):
+                                                    entry_time = pd.to_datetime(entry_time).time()
+                                                elif isinstance(entry_time, datetime):
+                                                    entry_time = entry_time.time()
+                                                else:
+                                                    continue
+
+                                                if entry_time > authorized_late_time:
+                                                    late_minutes = (
+                                                        datetime.combine(datetime.min, entry_time) -
+                                                        datetime.combine(datetime.min, authorized_late_time)
+                                                    ).total_seconds() / 60
+                                                    total_late_minutes += late_minutes
+
+                                                    formatted_day = self.translate_day_abbreviation(day_str)
+                                                    authorized_late_days.append(formatted_day)
+                                                    print(f"Llegada con retraso en fila {row+1}: {late_minutes:.0f} minutos (hora: {entry_time}), Dia: {formatted_day}")
+
+                                            except Exception as e:
+                                                print(f"Error procesando hora de entrada en fila {row+1}: {str(e)}")
+                                                continue
+
+                                    except Exception as e:
+                                        print(f"Error en fila {row+1}: {str(e)}")
+                                        continue
+
+                        except Exception as e:
+                            print(f"Error procesando posición {position['name_col']}: {str(e)}")
+                            continue
+
+                except Exception as e:
+                    print(f"Error procesando hoja {sheet}: {str(e)}")
+                    continue
+
+            print(f"Total días con retraso autorizado: {len(authorized_late_days)}")
+            print(f"Total minutos de retraso autorizado: {total_late_minutes:.0f}")
+            return authorized_late_days, total_late_minutes
+
+        except Exception as e:
+            print(f"Error general: {str(e)}")
+            return [], 0
+
     def format_list_in_columns(self, items, items_per_column=8):
         """
         Format a list of items into columns, with exactly 8 items per column.

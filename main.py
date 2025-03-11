@@ -401,20 +401,24 @@ def create_monthly_summary(processor, attendance_summary):
     total_missing_entry = 0
     total_missing_exit = 0
     total_missing_lunch = 0
+    total_late_arrivals = 0
+    total_late_arrival_minutes = 0
 
     # Get stats for all employees
     for employee_name in attendance_summary['employee_name'].unique():
         stats = processor.get_employee_stats(employee_name)
-        total_absences += stats['absences']
+
+        # Sumar las estadísticas de cada empleado
+        total_absences += len(stats['absence_days']) if stats['absence_days'] else 0
         total_late_minutes += stats['late_minutes']
         total_lunch_overtime_minutes += stats['total_lunch_minutes']
         total_early_departure_minutes += stats['early_minutes']
-        total_mid_day_departures += stats['mid_day_departures'] if 'mid_day_departures' in stats else 0
+        total_mid_day_departures += stats['mid_day_departures'] if not 'ppp' in employee_name.lower() else 0
         total_missing_entry += len(stats['missing_entry_days']) if stats['missing_entry_days'] else 0
         total_missing_exit += len(stats['missing_exit_days']) if stats['missing_exit_days'] else 0
         total_missing_lunch += len(stats['missing_lunch_days']) if stats['missing_lunch_days'] else 0
-
-        print(f"Debug - {employee_name} mid-day departures: {stats.get('mid_day_departures', 0)}")
+        total_late_arrivals += len(stats['late_arrivals']) if stats['late_arrivals'] else 0
+        total_late_arrival_minutes += stats['late_arrival_minutes']
 
     # Display the totals using the same card format as individual employees
     st.markdown("""
@@ -430,6 +434,7 @@ def create_monthly_summary(processor, attendance_summary):
         ('Total Minutos Exceso Almuerzo', f"{total_lunch_overtime_minutes:.0f}", "Total minutos", "Total de minutos de exceso en tiempo de almuerzo"),
         ('Total Minutos Retiro Anticipado', f"{total_early_departure_minutes:.0f}", "Total minutos", "Total de minutos de salida anticipada"),
         ('Total Retiros Durante Horario', total_mid_day_departures, "Total retiros", "Total de retiros durante horario laboral"),
+        ('Total Ingresos con Retraso', total_late_arrivals, "Total ingresos >8:10", f"Total de ingresos posteriores a 8:10 ({total_late_arrival_minutes:.0f} minutos)"),
         ('Total Sin Registro de Entrada', total_missing_entry, "Total registros", "Total de registros de entrada faltantes"),
         ('Total Sin Registro de Salida', total_missing_exit, "Total registros", "Total de registros de salida faltantes"),
         ('Total Sin Registro de Almuerzo', total_missing_lunch, "Total registros", "Total de registros de almuerzo faltantes")

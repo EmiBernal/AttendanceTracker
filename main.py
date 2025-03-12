@@ -171,6 +171,69 @@ st.markdown("""
     .warning { color: #FBBF24; }
     .danger { color: #EF4444; }
     .success { color: #10B981; }
+
+    /* Sidebar styling */
+    .css-1d391kg {  /* Sidebar container */
+        background: linear-gradient(180deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0.1) 100%);
+        padding: 1rem;
+        border-right: 1px solid rgba(49, 51, 63, 0.2);
+    }
+
+    /* General summary button styling */
+    .stButton > button {
+        width: 100%;
+        border: none;
+        background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        margin: 0.5rem 0;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(33, 150, 243, 0.2);
+    }
+
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+        background: linear-gradient(135deg, #1E88E5 0%, #1565C0 100%);
+    }
+
+    .stButton > button:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(33, 150, 243, 0.2);
+    }
+
+    /* Selectbox styling */
+    .stSelectbox > div > div {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(49, 51, 63, 0.2);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .stSelectbox > div > div:hover {
+        border-color: #2196F3;
+        box-shadow: 0 0 0 1px #2196F3;
+    }
+
+    /* Subheader styling in sidebar */
+    .sidebar .stSubheader {
+        color: #2196F3;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid rgba(33, 150, 243, 0.1);
+    }
+
+    /* Help text styling */
+    .stSelectbox .help {
+        color: rgba(250, 250, 250, 0.6);
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 

@@ -379,6 +379,211 @@ class ExcelProcessor:
         
         return max(0, total_hours), 0
 
+    def get_weeks_in_month(self):
+        """Returns a list of tuples with (start_date, end_date) for each week in the month"""
+        try:
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            
+            # Read the first sheet to get the date range
+            df = pd.read_excel(self.excel_file, sheet_name=attendance_sheets[0], header=None)
+            
+            # Get all dates from the day column (column A)
+            dates = []
+            for row in range(11, 42):  # Rows 12-42
+                try:
+                    day_value = df.iloc[row, 0]  # Column A
+                    if pd.notna(day_value) and isinstance(day_value, str):
+                        day_num = ''.join(filter(str.isdigit, day_value))
+                        if day_num:
+                            dates.append(int(day_num))
+                except Exception as e:
+                    print(f"Error processing date in row {row+1}: {str(e)}")
+                    continue
+            
+            # Sort dates and group into weeks
+            dates.sort()
+            weeks = []
+            current_week = []
+            
+            for date in dates:
+                if not current_week or date - current_week[-1] <= 7:
+                    current_week.append(date)
+                else:
+                    weeks.append((min(current_week), max(current_week)))
+                    current_week = [date]
+            
+            if current_week:
+                weeks.append((min(current_week), max(current_week)))
+            
+            return weeks
+            
+        except Exception as e:
+            print(f"Error getting weeks in month: {str(e)}")
+            return [(1, 7), (8, 14), (15, 21), (22, 31)]  # Default weeks if error
+
+    def get_weekly_stats(self, start_date, end_date):
+        """Calculate statistics for a specific week"""
+        try:
+            # Initialize statistics
+            stats = {
+                'total_irregularities': 0,
+                'irregularities_breakdown': {
+                    'Llegadas tarde': 0,
+                    'Salidas tempranas': 0,
+                    'Ausencias': 0,
+                    'Exceso almuerzo': 0
+                },
+                'perfect_attendance': 0,
+                'perfect_employees': [],
+                'most_late_day': 'N/A',
+                'most_late_count': 0,
+                'late_details': '',
+                'most_early_day': 'N/A',
+                'most_early_count': 0,
+                'early_details': '',
+                'most_absent_day': 'N/A',
+                'most_absent_count': 0,
+                'absence_details': ''
+            }
+
+            # Process each sheet for the given date range
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+
+            daily_stats = {}  # To track statistics by day
+            employee_records = {}  # To track perfect attendance
+
+            for sheet in attendance_sheets:
+                try:
+                    df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+                    
+                    # Process each employee position
+                    positions = [
+                        {'name_col': 'J', 'entry_col': 'B', 'exit_col': 'I', 'day_col': 'A'},
+                        {'name_col': 'Y', 'entry_col': 'Q', 'exit_col': 'X', 'day_col': 'P'},
+                        {'name_col': 'AN', 'entry_col': 'AF', 'exit_col': 'AM', 'day_col': 'AE'}
+                    ]
+
+                    for position in positions:
+                        name_col = self.get_column_index(position['name_col'])
+                        entry_col = self.get_column_index(position['entry_col'])
+                        exit_col = self.get_column_index(position['exit_col'])
+                        day_col = self.get_column_index(position['day_col'])
+
+                        try:
+                            employee_name = str(df.iloc[2, name_col]).strip()
+                            if pd.isna(employee_name):
+                                continue
+
+                            # Initialize employee record if not exists
+                            if employee_name not in employee_records:
+                                employee_records[employee_name] = {'irregularities': 0}
+
+                            # Check each day in the date range
+                            for row in range(11, 42):
+                                try:
+                                    day_value = df.iloc[row, day_col]
+                                    if pd.isna(day_value):
+                                        continue
+
+                                    day_str = str(day_value).strip()
+                                    day_num = int(''.join(filter(str.isdigit, day_str)))
+
+                                    if start_date <= day_num <= end_date:
+                                        # Initialize daily stats if not exists
+                                        if day_num not in daily_stats:
+                                            daily_stats[day_num] = {
+                                                'late': 0, 'early': 0, 'absent': 0
+                                            }
+
+                                        # Check for irregularities
+                                        if 'absence' in day_str.lower():
+                                            daily_stats[day_num]['absent'] += 1
+                                            employee_records[employee_name]['irregularities'] += 1
+                                            stats['irregularities_breakdown']['Ausencias'] += 1
+                                            continue
+
+                                        entry_time = df.iloc[row, entry_col]
+                                        exit_time = df.iloc[row, exit_col]
+
+                                        if pd.notna(entry_time):
+                                            if isinstance(entry_time, str):
+                                                entry_time = pd.to_datetime(entry_time).time()
+                                            elif isinstance(entry_time, pd.Timestamp):
+                                                entry_time = entry_time.time()
+
+                                            if self.is_late_arrival(employee_name, entry_time):
+                                                daily_stats[day_num]['late'] += 1
+                                                employee_records[employee_name]['irregularities'] += 1
+                                                stats['irregularities_breakdown']['Llegadas tarde'] += 1
+
+                                        if pd.notna(exit_time):
+                                            if isinstance(exit_time, str):
+                                                exit_time = pd.to_datetime(exit_time).time()
+                                            elif isinstance(exit_time, pd.Timestamp):
+                                                exit_time = exit_time.time()
+
+                                            if self.is_early_departure(employee_name, exit_time):
+                                                daily_stats[day_num]['early'] += 1
+                                                employee_records[employee_name]['irregularities'] += 1
+                                                stats['irregularities_breakdown']['Salidas tempranas'] += 1
+
+                                except Exception as e:
+                                    print(f"Error processing row {row+1}: {str(e)}")
+                                    continue
+
+                        except Exception as e:
+                            print(f"Error processing position {position['name_col']}: {str(e)}")
+                            continue
+
+                except Exception as e:
+                    print(f"Error processing sheet {sheet}: {str(e)}")
+                    continue
+
+            # Calculate final statistics
+            stats['total_irregularities'] = sum(stats['irregularities_breakdown'].values())
+            stats['perfect_attendance'] = sum(1 for emp in employee_records.values() if emp['irregularities'] == 0)
+            stats['perfect_employees'] = [name for name, record in employee_records.items() if record['irregularities'] == 0]
+
+            # Find days with most issues
+            if daily_stats:
+                most_late = max(daily_stats.items(), key=lambda x: x[1]['late'])
+                most_early = max(daily_stats.items(), key=lambda x: x[1]['early'])
+                most_absent = max(daily_stats.items(), key=lambda x: x[1]['absent'])
+
+                stats['most_late_day'] = f"Día {most_late[0]}"
+                stats['most_late_count'] = most_late[1]['late']
+                stats['late_details'] = f"{most_late[1]['late']} llegadas tarde"
+
+                stats['most_early_day'] = f"Día {most_early[0]}"
+                stats['most_early_count'] = most_early[1]['early']
+                stats['early_details'] = f"{most_early[1]['early']} salidas tempranas"
+
+                stats['most_absent_day'] = f"Día {most_absent[0]}"
+                stats['most_absent_count'] = most_absent[1]['absent']
+                stats['absence_details'] = f"{most_absent[1]['absent']} ausencias"
+
+            return stats
+
+        except Exception as e:
+            print(f"Error getting weekly stats: {str(e)}")
+            return {
+                'total_irregularities': 0,
+                'irregularities_breakdown': {},
+                'perfect_attendance': 0,
+                'perfect_employees': [],
+                'most_late_day': 'N/A',
+                'most_late_count': 0,
+                'late_details': 'Sin datos',
+                'most_early_day': 'N/A',
+                'most_early_count': 0,
+                'early_details': 'Sin datos',
+                'most_absent_day': 'N/A',
+                'most_absent_count': 0,
+                'absence_details': 'Sin datos'
+            }
+
     def get_employee_hours(self, employee_name):
         """Obtiene las horas trabajadas y extra para un empleado"""
         total_regular_hours = 0

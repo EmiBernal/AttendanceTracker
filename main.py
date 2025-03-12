@@ -674,6 +674,7 @@ def create_monthly_summary(processor, attendance_summary):
             <div class="stat-card">
                 <div class="content">
                     <div class="metric-label">{label}</div>
+                    <div<replit_final_file>
                     <div class="metric-value {status}">{value}</div>
                     <div class="metric-label">{subtitle}</div>
                 </div>
@@ -681,7 +682,7 @@ def create_monthly_summary(processor, attendance_summary):
             </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("</div></div>", unsafe_allowhtml=True)
+    st.markdown("</div></div>", unsafe_allow_html=True)
 
     # Add weekly summary section
     create_weekly_summary(processor, attendance_summary)

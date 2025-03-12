@@ -237,8 +237,8 @@ st.markdown("""
 
     .stButton > button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
-        background: linear-gradient(135deg, #2563EB 0%, #1E3A8A 100%);
+        box-shadow: 0 6px 12px rgba(96, 165, 250, 0.4);
+        background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%);
     }
 
     .stButton > button:hover:before {
@@ -690,7 +690,7 @@ def main():
 
                 st.subheader("👤 Selección de Empleado")
                 selected_employee = st.selectbox(
-                    "Selecciona unempleado",
+                    "Selecciona un empleado",
                     attendance_summary['employee_name'].unique()
                 )
 

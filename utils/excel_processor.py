@@ -91,6 +91,45 @@ class ExcelProcessor:
             
         return stats
 
+    def get_employee_department(self, employee_name):
+        """Get the department for a specific employee from the Excel file"""
+        try:
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            
+            # Process each sheet
+            for sheet in attendance_sheets:
+                df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+                
+                positions = [
+                    {'name_col': 'J', 'dept_col': 'E'},  # Primera posición
+                    {'name_col': 'Y', 'dept_col': 'T'},  # Segunda posición
+                    {'name_col': 'AN', 'dept_col': 'AI'} # Tercera posición
+                ]
+                
+                for position in positions:
+                    try:
+                        name_col = self.get_column_index(position['name_col'])
+                        dept_col = self.get_column_index(position['dept_col'])
+                        
+                        # Check row 3 (index 2) for employee name
+                        cell_name = str(df.iloc[2, name_col]).strip()
+                        
+                        if cell_name == employee_name:
+                            # Department is in row 3
+                            department = str(df.iloc[2, dept_col]).strip()
+                            if pd.notna(department) and department != "":
+                                return department
+                    
+                    except Exception as e:
+                        print(f"Error checking position {position['name_col']}: {str(e)}")
+                        continue
+                
+        except Exception as e:
+            print(f"Error getting department: {str(e)}")
+        
+        return "No especificado"  # Default if department not found
+
     def __init__(self, file):
         self.excel_file = pd.ExcelFile(file)
         self.DEFAULT_WORK_START_TIME = datetime.strptime('7:50', '%H:%M').time()

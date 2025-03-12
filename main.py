@@ -252,6 +252,39 @@ st.markdown("""
         color: white;
     }
 
+    /* Sidebar button styling */
+    .css-1d391kg .stButton > button {  /* Target only sidebar buttons */
+        width: 100%;
+        border: none;
+        background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
+        color: white !important;
+        padding: 0.75rem 1.5rem;
+        margin: 0.75rem 0;
+        border-radius: 12px;
+        font-weight: 500;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .css-1d391kg .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(96, 165, 250, 0.4);
+        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        color: white !important;
+    }
+
+    .css-1d391kg .stButton > button:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        color: white !important;
+    }
+
+    .css-1d391kg .stButton > button * {
+        color: white !important;
+    }
+
     /* Selectbox styling */
     .stSelectbox > div > div {
         background: rgba(31, 41, 55, 0.8);
@@ -647,7 +680,7 @@ def create_monthly_summary(processor, attendance_summary):
         ('Total Retiros Durante Horario', total_mid_day_departures, "Total retiros", 
          f"Detalles de retiros durante horario por persona:\n\n{format_details(mid_day_details)}"),
 
-        ('Total Ingresos con Retraso', total_late_arrivals, "Total ingresos >8:10", 
+        ('Total Ingresos con Retraso', totallate_arrivals, "Total ingresos >8:10", 
          f"Detalles de ingresos posteriores a 8:10 por persona:\n\n{format_details(late_arrival_details)}"),
 
         ('Total Sin Registro de Entrada', total_missing_entry, "Total registros", 

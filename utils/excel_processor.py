@@ -487,7 +487,8 @@ class ExcelProcessor:
 
                         try:
                             employee_name = str(df.iloc[2, name_col]).strip()
-                            if pd.isna(employee_name) or employee_name == "":
+                            # Skip invalid employee names
+                            if pd.isna(employee_name) or employee_name.lower() in ['nan', 'leave early (mm)', 'early leave (mm)', '']:
                                 continue
 
                             if employee_name not in employee_records:
@@ -558,10 +559,10 @@ class ExcelProcessor:
             # Calculate final statistics
             stats['total_irregularities'] = sum(stats['irregularities_breakdown'].values())
             
-            # Filter out perfect attendance employees (excluding "leave early" and "NaN")
+            # Filter valid employees (no invalid names)
             valid_employees = [name for name, record in employee_records.items() 
                              if record['irregularities'] == 0 and 
-                             name.strip() not in ['leave early (mm)', 'NaN', '']]
+                             name.lower() not in ['nan', 'leave early (mm)', 'early leave (mm)', '']]
             
             stats['perfect_attendance'] = len(valid_employees)
             stats['perfect_employees'] = valid_employees

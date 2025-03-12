@@ -474,9 +474,9 @@ class ExcelProcessor:
                     df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
                     
                     positions = [
-                        {'name_col': 'J', 'entry_col': 'B', 'exit_col': 'I', 'day_col': 'A', 'absence_col': 'G'},
-                        {'name_col': 'Y', 'entry_col': 'Q', 'exit_col': 'X', 'day_col': 'P', 'absence_col': 'V'},
-                        {'name_col': 'AN', 'entry_col': 'AF', 'exit_col': 'AM', 'day_col': 'AE', 'absence_col': 'AK'}
+                        {'name_col': 'J', 'entry_col': 'B', 'exit_col': 'I', 'day_col': 'A'},
+                        {'name_col': 'Y', 'entry_col': 'Q', 'exit_col': 'X', 'day_col': 'P'},
+                        {'name_col': 'AN', 'entry_col': 'AF', 'exit_col': 'AM', 'day_col': 'AE'}
                     ]
 
                     for position in positions:
@@ -484,7 +484,6 @@ class ExcelProcessor:
                         entry_col = self.get_column_index(position['entry_col'])
                         exit_col = self.get_column_index(position['exit_col'])
                         day_col = self.get_column_index(position['day_col'])
-                        absence_col = self.get_column_index(position['absence_col'])
 
                         try:
                             employee_name = str(df.iloc[2, name_col]).strip()
@@ -511,12 +510,8 @@ class ExcelProcessor:
                                             daily_stats[day_num] = {'late': [], 'early': [], 'absent': []}
                                             daily_details[day_num] = {'late': [], 'early': [], 'absent': []}
 
-                                        # Check for absence and its reason
-                                        absence_value = df.iloc[row, absence_col]
-                                        if pd.notna(absence_value) and str(absence_value).strip() != "":
-                                            absence_reason = str(absence_value).strip()
+                                        if 'absence' in day_str.lower():
                                             daily_stats[day_num]['absent'].append(employee_name)
-                                            daily_details[day_num]['absent'].append(f"{employee_name} ({absence_reason})")
                                             employee_records[employee_name]['irregularities'] += 1
                                             stats['irregularities_breakdown']['Ausencias'] += 1
                                             continue
@@ -542,19 +537,9 @@ class ExcelProcessor:
                                             elif isinstance(exit_time, pd.Timestamp):
                                                 exit_time = exit_time.time()
 
-                                            schedule = self.get_employee_schedule(employee_name)
                                             if self.is_early_departure(employee_name, exit_time):
                                                 daily_stats[day_num]['early'].append(employee_name)
-                                                # Calcular cuánto tiempo antes se retiró
-                                                early_minutes = (
-                                                    datetime.combine(datetime.min, schedule['end_time']) -
-                                                    datetime.combine(datetime.min, exit_time)
-                                                ).total_seconds() / 60
-                                                
-                                                daily_details[day_num]['early'].append(
-                                                    f"{employee_name} (salió a las {exit_time.strftime('%H:%M')}, "
-                                                    f"{int(early_minutes)} minutos antes del horario)"
-                                                )
+                                                daily_details[day_num]['early'].append(f"{employee_name} (salió a las {exit_time.strftime('%H:%M')})")
                                                 employee_records[employee_name]['irregularities'] += 1
                                                 stats['irregularities_breakdown']['Salidas tempranas'] += 1
 
@@ -599,7 +584,7 @@ class ExcelProcessor:
                 most_absent_day = max(daily_stats.items(), key=lambda x: len(x[1]['absent']))
                 stats['most_absent_day'] = f"Día {most_absent_day[0]}"
                 stats['most_absent_count'] = len(most_absent_day[1]['absent'])
-                stats['absence_details'] = "\n".join(daily_details[most_absent_day[0]]['absent'])
+                stats['absence_details'] = ", ".join(most_absent_day[1]['absent'])
 
             return stats
 

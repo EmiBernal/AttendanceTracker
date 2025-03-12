@@ -1,6 +1,5 @@
 import streamlit as st
 from utils.excel_processor import ExcelProcessor
-from utils.milestone_celebrations import process_celebrations  # Add this import
 
 # Page configuration
 st.set_page_config(
@@ -179,8 +178,11 @@ def create_employee_dashboard(processor, employee_name):
     """Create a detailed dashboard for a single employee"""
     stats = processor.get_employee_stats(employee_name)
 
-    # Check and display any milestone celebrations
-    process_celebrations(stats)
+    # Get specific days information
+    absence_days = processor.get_absence_days(employee_name)
+    late_days = stats['late_days']  # Use the list directly from stats
+    early_departure_days = stats['early_departure_days']
+    lunch_overtime_days = stats['lunch_overtime_days']
 
     # Header with employee info
     st.markdown(f"""
@@ -205,11 +207,11 @@ def create_employee_dashboard(processor, employee_name):
     """, unsafe_allow_html=True)
 
     # Format days lists for hover text
-    absence_days_text = processor.format_list_in_columns(stats['absence_days']) if stats['absence_days'] else "No hay días registrados"
-    late_days_text = processor.format_list_in_columns(stats['late_days']) if stats['late_days'] else "No hay días registrados"
-    lunch_days_text = processor.format_lunch_overtime_text(stats['lunch_overtime_days'])
+    absence_days_text = processor.format_list_in_columns(absence_days) if absence_days else "No hay días registrados"
+    late_days_text = processor.format_list_in_columns(late_days) if late_days else "No hay días registrados"
+    lunch_days_text = processor.format_lunch_overtime_text(lunch_overtime_days)
     mid_day_departures_count, mid_day_departures_text = processor.format_mid_day_departures_text(employee_name)
-    early_departure_days_text = processor.format_list_in_columns(stats['early_departure_days']) if stats['early_departure_days'] else "No hay días registrados"
+    early_departure_days_text = processor.format_list_in_columns(early_departure_days) if early_departure_days else "No hay días registrados"
 
 
     # Regular Attendance Metrics
@@ -220,9 +222,9 @@ def create_employee_dashboard(processor, employee_name):
     """, unsafe_allow_html=True)
 
     regular_metrics = [
-        ('Inasistencias', len(stats['absence_days']) if stats['absence_days'] else 0, "Total días", f"Días sin asistir al trabajo:\n{absence_days_text}"),
-        ('Días con Llegada Tarde', len(stats['late_days']) if stats['late_days'] else 0, f"{stats['late_minutes']:.0f} minutos en total", f"Días con llegada tarde:\n{late_days_text}"),
-        ('Días con Exceso en Almuerzo', len(stats['lunch_overtime_days']) if stats['lunch_overtime_days'] else 0, f"{stats['total_lunch_minutes']:.0f} minutos en total", f"Días con exceso:\n{lunch_days_text}")
+        ('Inasistencias', len(absence_days) if absence_days else 0, "Total días", f"Días sin asistir al trabajo:\n{absence_days_text}"),
+        ('Días con Llegada Tarde', len(late_days) if late_days else 0, f"{stats['late_minutes']:.0f} minutos en total", f"Días con llegada tarde:\n{late_days_text}"),
+        ('Días con Exceso en Almuerzo', len(lunch_overtime_days) if lunch_overtime_days else 0, f"{stats['total_lunch_minutes']:.0f} minutos en total", f"Días con exceso:\n{lunch_days_text}")
     ]
 
     for label, value, subtitle, hover_text in regular_metrics:
@@ -248,7 +250,7 @@ def create_employee_dashboard(processor, employee_name):
     """, unsafe_allow_html=True)
 
     auth_metrics = [
-        ('Retiros Anticipados', len(stats['early_departure_days']) if stats['early_departure_days'] else 0, f"{stats['early_minutes']:.0f} minutos en total", f"Días con salida anticipada:\n{early_departure_days_text}"),
+        ('Retiros Anticipados', len(early_departure_days) if early_departure_days else 0, f"{stats['early_minutes']:.0f} minutos en total", f"Días con salida anticipada:\n{early_departure_days_text}"),
         ('Ingresos con Retraso', len(stats['late_arrivals']) if stats['late_arrivals'] else 0, f"{stats['late_arrival_minutes']:.0f} minutos en total", f"Días con ingreso posterior a 8:10:\n{processor.format_list_in_columns(stats['late_arrivals']) if stats['late_arrivals'] else 'No hay días registrados'}")
     ]
 

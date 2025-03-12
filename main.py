@@ -174,66 +174,110 @@ st.markdown("""
 
     /* Sidebar styling */
     .css-1d391kg {  /* Sidebar container */
-        background: linear-gradient(180deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0.1) 100%);
-        padding: 1rem;
-        border-right: 1px solid rgba(49, 51, 63, 0.2);
+        background: linear-gradient(180deg, rgba(17, 24, 39, 0.95) 0%, rgba(31, 41, 55, 0.95) 100%);
+        padding: 1.5rem;
+        border-right: 1px solid rgba(75, 85, 99, 0.3);
+        backdrop-filter: blur(10px);
     }
 
     /* General summary button styling */
     .stButton > button {
         width: 100%;
         border: none;
-        background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+        background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
         color: white;
         padding: 0.75rem 1.5rem;
-        margin: 0.5rem 0;
-        border-radius: 8px;
+        margin: 0.75rem 0;
+        border-radius: 12px;
         font-weight: 500;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 4px rgba(33, 150, 243, 0.2);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stButton > button:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.2),
+            transparent
+        );
+        transition: 0.5s;
     }
 
     .stButton > button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
-        background: linear-gradient(135deg, #1E88E5 0%, #1565C0 100%);
+        box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+        background: linear-gradient(135deg, #2563EB 0%, #1E3A8A 100%);
+    }
+
+    .stButton > button:hover:before {
+        left: 100%;
     }
 
     .stButton > button:active {
         transform: translateY(0);
-        box-shadow: 0 2px 4px rgba(33, 150, 243, 0.2);
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
     }
 
     /* Selectbox styling */
     .stSelectbox > div > div {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(49, 51, 63, 0.2);
-        border-radius: 8px;
-        transition: all 0.3s ease;
+        background: rgba(31, 41, 55, 0.8);
+        border: 1px solid rgba(75, 85, 99, 0.4);
+        border-radius: 12px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(8px);
+        color: #E5E7EB;
     }
 
     .stSelectbox > div > div:hover {
-        border-color: #2196F3;
-        box-shadow: 0 0 0 1px #2196F3;
+        border-color: #3B82F6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        background: rgba(31, 41, 55, 0.9);
     }
 
     /* Subheader styling in sidebar */
     .sidebar .stSubheader {
-        color: #2196F3;
+        color: #60A5FA;
         font-size: 1.1rem;
         font-weight: 600;
-        margin-top: 1.5rem;
-        margin-bottom: 0.75rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid rgba(33, 150, 243, 0.1);
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid rgba(59, 130, 246, 0.2);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
 
     /* Help text styling */
     .stSelectbox .help {
-        color: rgba(250, 250, 250, 0.6);
+        color: rgba(209, 213, 219, 0.8);
         font-size: 0.9rem;
-        margin-top: 0.25rem;
+        margin-top: 0.5rem;
+        font-style: italic;
     }
+
+    /* File uploader styling */
+    .stFileUploader {
+        background: rgba(31, 41, 55, 0.6);
+        border: 2px dashed rgba(59, 130, 246, 0.4);
+        border-radius: 12px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .stFileUploader:hover {
+        border-color: #3B82F6;
+        background: rgba(31, 41, 55, 0.8);
+    }
+
 </style>
 """, unsafe_allow_html=True)
 

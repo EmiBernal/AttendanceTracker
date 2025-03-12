@@ -1,5 +1,6 @@
 import streamlit as st
 from utils.excel_processor import ExcelProcessor
+import pandas as pd
 
 # Page configuration
 st.set_page_config(
@@ -9,9 +10,42 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Updated CSS for hover cards and metrics with larger sizes for summary cards
+# Custom CSS para la barra lateral y componentes
 st.markdown("""
 <style>
+    /* Estilo minimalista para la barra lateral */
+    .css-1d391kg {
+        background-color: #f8f9fa;
+        padding: 1rem;
+    }
+
+    /* Estilo para títulos en la barra lateral */
+    .sidebar .sidebar-content h3 {
+        color: #1f2937;
+        font-size: 1.2rem;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Estilo para los selectbox y botones */
+    .stSelectbox, .stButton {
+        margin-bottom: 1rem;
+    }
+
+    /* Estilo para el uploader */
+    .stUploader {
+        border: 2px dashed #e5e7eb;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background-color: #ffffff;
+    }
+
+    /* Hover effect para botones */
+    .stButton>button:hover {
+        border-color: #1f2937;
+        color: #1f2937;
+    }
     /* Base transitions */
     .stApp {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -478,40 +512,52 @@ def get_status(value, warning_threshold=3, danger_threshold=5):
 def main():
     st.title("📊 Control de Acceso Gampack")
 
-    # File uploader in sidebar
+    # Sidebar mejorada y minimalista
     with st.sidebar:
-        st.subheader("📂 Fuente de Datos")
+        st.markdown("### 📁 Archivos")
+
+        # File uploader con estilo mejorado
         uploaded_file = st.file_uploader(
-            "Sube el archivo Excel",
+            "Cargar Excel",
             type=['xlsx', 'xls'],
-            help="Sube el archivo Excel de asistencia"
+            help="Selecciona el archivo Excel de asistencia"
         )
 
-    if uploaded_file:
-        try:
-            processor = ExcelProcessor(uploaded_file)
-            attendance_summary = processor.process_attendance_summary()
+        # Botón para ver el Excel (solo visible cuando hay un archivo cargado)
+        if uploaded_file is not None:
+            # Leer el Excel para mostrar
+            with st.expander("🔍 Ver Excel"):
+                df = pd.read_excel(uploaded_file)
+                st.dataframe(df, use_container_width=True)
 
-            # Employee selector and view selector in sidebar
-            with st.sidebar:
-                st.subheader("📋 Vistas Disponibles")
-                show_summary = st.button("Ver Resumen General del Mes")
+        # Separador visual
+        st.markdown("---")
 
-                st.subheader("👤 Selección de Empleado")
+        # Selector de vista y empleado (solo visible cuando hay un archivo cargado)
+        if uploaded_file:
+            st.markdown("### 👁️ Vista")
+            show_summary = st.button("📊 Resumen General", use_container_width=True)
+
+            try:
+                processor = ExcelProcessor(uploaded_file)
+                attendance_summary = processor.process_attendance_summary()
+
+                st.markdown("### 👤 Empleado")
                 selected_employee = st.selectbox(
-                    "Selecciona un empleado",
-                    attendance_summary['employee_name'].unique()
+                    "Seleccionar empleado",
+                    attendance_summary['employee_name'].unique(),
+                    key="employee_selector"
                 )
 
-            # Show either monthly summary or employee dashboard
-            if show_summary:
-                create_monthly_summary(processor, attendance_summary)
-            else:
-                create_employee_dashboard(processor, selected_employee)
+                # Mostrar el dashboard correspondiente
+                if show_summary:
+                    create_monthly_summary(processor, attendance_summary)
+                else:
+                    create_employee_dashboard(processor, selected_employee)
 
-        except Exception as e:
-            st.error(f"Error procesando el archivo: {str(e)}")
-            st.exception(e)
+            except Exception as e:
+                st.error(f"Error al procesar el archivo: {str(e)}")
+                st.exception(e)
 
 if __name__ == "__main__":
     main()

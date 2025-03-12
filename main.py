@@ -1,5 +1,8 @@
 import streamlit as st
 from utils.excel_processor import ExcelProcessor
+import os
+import webbrowser
+from pathlib import Path
 
 # Page configuration
 st.set_page_config(
@@ -280,6 +283,18 @@ st.markdown("""
 
 </style>
 """, unsafe_allow_html=True)
+
+def save_uploaded_file(uploaded_file):
+    """Save the uploaded file and return its path"""
+    # Create uploads directory if it doesn't exist
+    save_dir = Path("uploads")
+    save_dir.mkdir(exist_ok=True)
+
+    # Save file
+    file_path = save_dir / uploaded_file.name
+    with open(file_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    return str(file_path)
 
 def create_employee_dashboard(processor, employee_name):
     """Create a detailed dashboard for a single employee"""
@@ -585,6 +600,10 @@ def get_status(value, warning_threshold=3, danger_threshold=5):
 def main():
     st.title("📊 Control de Acceso Gampack")
 
+    # Initialize session state for file history if it doesn't exist
+    if 'file_history' not in st.session_state:
+        st.session_state.file_history = []
+
     # File uploader in sidebar
     with st.sidebar:
         st.subheader("📂 Fuente de Datos")
@@ -593,6 +612,30 @@ def main():
             type=['xlsx', 'xls'],
             help="Sube el archivo Excel de asistencia"
         )
+
+        # Display file history
+        st.subheader("📋 Historial de Archivos")
+
+        if uploaded_file is not None and uploaded_file.name not in [f['name'] for f in st.session_state.file_history]:
+            # Save the file and add to history
+            file_path = save_uploaded_file(uploaded_file)
+            st.session_state.file_history.append({
+                'name': uploaded_file.name,
+                'path': file_path
+            })
+
+        # Show file history with open buttons
+        for file in st.session_state.file_history:
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.write(file['name'])
+            with col2:
+                if st.button("📂 Abrir", key=f"open_{file['name']}"):
+                    # Open file in default application (Excel)
+                    try:
+                        os.startfile(file['path'])  # Windows
+                    except AttributeError:
+                        os.system(f"xdg-open {file['path']}")  # Linux
 
     if uploaded_file:
         try:

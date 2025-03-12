@@ -671,11 +671,21 @@ def main():
     # File uploader in sidebar
     with st.sidebar:
         st.subheader("📂 Fuente de Datos")
-        uploaded_file = st.file_uploader(
-            "Sube el archivo Excel",
-            type=['xlsx', 'xls'],
-            help="Sube el archivo Excel de asistencia"
-        )
+
+        if 'current_file' not in st.session_state:
+            uploaded_file = st.file_uploader(
+                "Sube el archivo Excel",
+                type=['xlsx', 'xls'],
+                help="Sube el archivo Excel de asistencia"
+            )
+            if uploaded_file is not None:
+                st.session_state.current_file = uploaded_file
+        else:
+            st.info(f"📄 Archivo actual: {st.session_state.current_file.name}")
+            if st.button("Cargar otro archivo"):
+                del st.session_state.current_file
+                st.experimental_rerun()
+            uploaded_file = st.session_state.current_file
 
         # Display file history
         if uploaded_file is not None and uploaded_file.name not in [f['name']for f in st.session_state.file_history]:
@@ -696,7 +706,6 @@ def main():
                          >{file['name']}</a>""",
                     unsafe_allow_html=True
                 )
-
 
     if uploaded_file:
         try:

@@ -543,7 +543,7 @@ def create_missing_records_section(stats, processor, employee_name):
     st.markdown("</div></div>", unsafe_allow_html=True)
 
 def create_monthly_summary(processor, attendance_summary):
-    """Create a general monthly summary with weekly breakdown"""
+    """Create a general monthly summary"""
     # Initialize counters for totals and detail dictionaries
     total_absences = 0
     total_late_minutes = 0
@@ -675,7 +675,8 @@ def create_monthly_summary(processor, attendance_summary):
                 <div class="content">
                     <div class="metric-label">{label}</div>
                     <div class="metric-value {status}">{value}</div>
-                    <div class="metric-label">{subtitle}</div>                </div>
+                    <div class="metric-label">{subtitle}</div>
+                </div>
                 <div class="hover-text">{hover_text}</div>
             </div>
         """, unsafe_allow_html=True)
@@ -683,8 +684,7 @@ def create_monthly_summary(processor, attendance_summary):
     st.markdown("</div></div>", unsafe_allow_html=True)
 
     # Add weekly summary section
-    create_weekly_summary(processor, attendance_summary)
-
+    #create_weekly_summary(processor, attendance_summary) #Removed
 
 
 def create_weekly_summary(processor, attendance_summary):
@@ -848,7 +848,6 @@ def main():
             if show_summary:
                 create_monthly_summary(processor, attendance_summary)
             elif show_weekly:
-                # Placeholder for weekly summary - you can implement this function later
                 create_weekly_summary(processor, attendance_summary)
             else:
                 create_employee_dashboard(processor, selected_employee)

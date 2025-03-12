@@ -684,7 +684,7 @@ def main():
             st.info(f"📄 Archivo actual: {st.session_state.current_file.name}")
             if st.button("Cargar otro archivo"):
                 del st.session_state.current_file
-                st.experimental_rerun()
+                st.rerun()
             uploaded_file = st.session_state.current_file
 
         # Display file history

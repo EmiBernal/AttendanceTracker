@@ -674,10 +674,8 @@ def create_monthly_summary(processor, attendance_summary):
             <div class="stat-card">
                 <div class="content">
                     <div class="metric-label">{label}</div>
-                    <div<replit_final_file>
                     <div class="metric-value {status}">{value}</div>
-                    <div class="metric-label">{subtitle}</div>
-                </div>
+                    <div class="metric-label">{subtitle}</div>                </div>
                 <div class="hover-text">{hover_text}</div>
             </div>
         """, unsafe_allow_html=True)

@@ -92,33 +92,32 @@ class ExcelProcessor:
         return stats
 
     def get_employee_department(self, employee_name):
-        """Get the department for a specific employee from the Excel file"""
-        try:
-            # Read the Summary sheet
-            df = pd.read_excel(self.excel_file, sheet_name='Summary', header=None)
-            
-            # Look for the employee name in column B (index 1) starting from row 5
-            for row in range(4, len(df)):  # Start from index 4 (row 5)
-                try:
-                    name = str(df.iloc[row, 1]).strip()  # Column B (index 1)
-                    if name == employee_name:
-                        department = str(df.iloc[row, 2]).strip()  # Column C (index 2)
-                        if pd.notna(department) and department != "":
-                            return department
-                except Exception as e:
-                    print(f"Error checking row {row+1}: {str(e)}")
-                    continue
-                    
-        except Exception as e:
-            print(f"Error getting department from Summary: {str(e)}")
-        
-        return "No especificado"  # Default if department not found
+        """Get the department for a specific employee from cache"""
+        return self._department_cache.get(employee_name, "No especificado")
 
     def __init__(self, file):
         self.excel_file = pd.ExcelFile(file)
         self.DEFAULT_WORK_START_TIME = datetime.strptime('7:50', '%H:%M').time()
         self.DEFAULT_WORK_END_TIME = datetime.strptime('17:10', '%H:%M').time()
         self.LUNCH_TIME_LIMIT = 20  # minutos máximos permitidos para almuerzo
+        
+        # Cache for department data
+        self._department_cache = {}
+        self._summary_df = None
+        
+        # Initialize department cache
+        try:
+            self._summary_df = pd.read_excel(self.excel_file, sheet_name='Summary', header=None)
+            for row in range(4, len(self._summary_df)):
+                try:
+                    name = str(self._summary_df.iloc[row, 1]).strip()
+                    dept = str(self._summary_df.iloc[row, 2]).strip()
+                    if pd.notna(name) and pd.notna(dept):
+                        self._department_cache[name] = dept
+                except:
+                    continue
+        except:
+            print("Error initializing department cache")
 
         # Excepciones de horarios especiales
         self.SPECIAL_SCHEDULES = {
@@ -405,64 +404,62 @@ class ExcelProcessor:
     def get_weeks_in_month(self):
         """Returns a list of tuples with (start_date, end_date) for each week in the month"""
         try:
-            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
-            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            if not hasattr(self, '_cached_weeks'):
+                exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+                first_sheet = pd.read_excel(self.excel_file, 
+                                         sheet_name=self.excel_file.sheet_names[exceptional_index],
+                                         header=None)
+                
+                dates = []
+                for row in range(11, 42):
+                    try:
+                        day_value = first_sheet.iloc[row, 0]
+                        if pd.notna(day_value) and isinstance(day_value, str):
+                            day_str = str(day_value).strip()
+                            if any(abbr in day_str.lower() for abbr in ['sa', 'su']) or not any(c.isdigit() for c in day_str):
+                                continue
+                            day_num = ''.join(filter(str.isdigit, day_str))
+                            if day_num:
+                                dates.append(int(day_num))
+                    except:
+                        continue
+
+                dates.sort()
+                weeks = []
+                week_ranges = [(1, 7), (8, 14), (15, 21), (22, 31)]
+                
+                for start, end in week_ranges:
+                    week_dates = [d for d in dates if start <= d <= end]
+                    if week_dates:
+                        weeks.append((min(week_dates), max(week_dates)))
+                    else:
+                        weeks.append((start, end))
+                
+                while len(weeks) < 4:
+                    if not weeks:
+                        weeks.append((1, 7))
+                    else:
+                        last_end = weeks[-1][1]
+                        next_start = last_end + 1
+                        weeks.append((next_start, min(next_start + 6, 31)))
+                
+                self._cached_weeks = weeks[:4]
             
-            # Read the first sheet to get the date range
-            df = pd.read_excel(self.excel_file, sheet_name=attendance_sheets[0], header=None)
-            
-            # Get all dates from the day column (column A)
-            dates = []
-            for row in range(11, 42):  # Rows 12-42
-                try:
-                    day_value = df.iloc[row, 0]  # Column A
-                    if pd.notna(day_value) and isinstance(day_value, str):
-                        day_str = str(day_value).strip()
-                        # Skip weekends and non-numeric days
-                        if any(abbr in day_str.lower() for abbr in ['sa', 'su']) or not any(c.isdigit() for c in day_str):
-                            continue
-                        day_num = ''.join(filter(str.isdigit, day_str))
-                        if day_num:
-                            dates.append(int(day_num))
-                except Exception as e:
-                    print(f"Error processing date in row {row+1}: {str(e)}")
-                    continue
-            
-            # Sort dates and group into weeks
-            dates.sort()
-            weeks = []
-            
-            # Always ensure 4 weeks are created
-            week_ranges = [(1, 7), (8, 14), (15, 21), (22, 31)]
-            
-            for start, end in week_ranges:
-                week_dates = [d for d in dates if start <= d <= end]
-                if week_dates:
-                    weeks.append((min(week_dates), max(week_dates)))
-                else:
-                    # If no dates in range, use range bounds
-                    weeks.append((start, end))
-            
-            # Ensure exactly 4 weeks
-            while len(weeks) < 4:
-                if not weeks:
-                    weeks.append((1, 7))
-                else:
-                    last_end = weeks[-1][1]
-                    next_start = last_end + 1
-                    weeks.append((next_start, min(next_start + 6, 31)))
-            
-            return weeks[:4]  # Return exactly 4 weeks
+            return self._cached_weeks
             
         except Exception as e:
             print(f"Error getting weeks in month: {str(e)}")
-            # Always return 4 weeks
             return [(1, 7), (8, 14), (15, 21), (22, 31)]
 
     def get_weekly_stats(self, start_date, end_date):
-        """Calculate statistics for a specific week"""
+        """Calculate statistics for a specific week with optimized processing"""
+        # Cache key for weekly stats
+        cache_key = f"week_stats_{start_date}_{end_date}"
+        
+        if hasattr(self, cache_key):
+            return getattr(self, cache_key)
+            
         try:
-            # Initialize statistics
             stats = {
                 'total_irregularities': 0,
                 'irregularities_breakdown': {
@@ -610,11 +607,13 @@ class ExcelProcessor:
                 stats['most_absent_count'] = len(most_absent_day[1]['absent'])
                 stats['absence_details'] = ", ".join(most_absent_day[1]['absent'])
 
+            # Cache the results before returning
+            setattr(self, cache_key, stats)
             return stats
 
         except Exception as e:
             print(f"Error getting weekly stats: {str(e)}")
-            return {
+            default_stats = {
                 'total_irregularities': 0,
                 'irregularities_breakdown': {},
                 'perfect_attendance': 0,
@@ -629,6 +628,8 @@ class ExcelProcessor:
                 'most_absent_count': 0,
                 'absence_details': 'Sin datos'
             }
+            setattr(self, cache_key, default_stats)
+            return default_stats
 
     def get_employee_hours(self, employee_name):
         """Obtiene las horas trabajadas y extra para un empleado"""

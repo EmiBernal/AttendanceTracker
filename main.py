@@ -382,41 +382,6 @@ st.markdown("""
     .streamlit-expanderContent > div {
         transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-
-    /* Loading message styles */
-    .loading-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        width: 100%;
-        position: fixed; /* Makes it cover the entire screen */
-        top: 0;
-        left: 0;
-        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-        z-index: 1000; /* Ensures it's on top */
-    }
-
-    .loading-spinner {
-        border: 8px solid #f3f3f3; /* Light grey */
-        border-top: 8px solid #3498db; /* Blue */
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        animation: spin 2s linear infinite;
-    }
-
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    .loading-text {
-        font-size: 18px;
-        color: white;
-        margin-top: 10px;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -812,15 +777,6 @@ def get_status(value, warning_threshold=3, danger_threshold=5):
         # Si no se puede convertir a número, retornar 'warning' por defecto
         return 'warning'
 
-def show_loading_message(message="Procesando datos..."):
-    """Shows a loading message with animation"""
-    st.markdown("""
-        <div class="loading-container">
-            <div class="loading-spinner"></div>
-            <div class="loading-text">{}</div>
-        </div>
-    """.format(message), unsafe_allow_html=True)
-
 def main():
     st.title("📊 Control de Acceso Gampack")
 
@@ -839,7 +795,6 @@ def main():
                 help="Sube el archivo Excel de asistencia"
             )
             if uploaded_file is not None:
-                show_loading_message("Cargando archivo...")
                 st.session_state.current_file = uploaded_file
         else:
             st.info(f"📄 Archivo actual: {st.session_state.current_file.name}")
@@ -870,7 +825,6 @@ def main():
 
     if uploaded_file:
         try:
-            show_loading_message("Procesando datos...")
             processor = ExcelProcessor(uploaded_file)
             attendance_summary = processor.process_attendance_summary()
 
@@ -892,13 +846,10 @@ def main():
 
             # Show either monthly summary, weekly summary or employee dashboard
             if show_summary:
-                show_loading_message("Generando resumen mensual...")
                 create_monthly_summary(processor, attendance_summary)
             elif show_weekly:
-                show_loading_message("Generando resumen semanal...")
                 create_weekly_summary(processor, attendance_summary)
             else:
-                show_loading_message("Cargando datos del empleado...")
                 create_employee_dashboard(processor, selected_employee)
 
         except Exception as e:

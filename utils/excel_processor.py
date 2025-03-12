@@ -394,7 +394,11 @@ class ExcelProcessor:
                 try:
                     day_value = df.iloc[row, 0]  # Column A
                     if pd.notna(day_value) and isinstance(day_value, str):
-                        day_num = ''.join(filter(str.isdigit, day_value))
+                        day_str = str(day_value).strip()
+                        # Skip weekends and non-numeric days
+                        if any(abbr in day_str.lower() for abbr in ['sa', 'su']) or not any(c.isdigit() for c in day_str):
+                            continue
+                        day_num = ''.join(filter(str.isdigit, day_str))
                         if day_num:
                             dates.append(int(day_num))
                 except Exception as e:
@@ -404,23 +408,33 @@ class ExcelProcessor:
             # Sort dates and group into weeks
             dates.sort()
             weeks = []
-            current_week = []
             
-            for date in dates:
-                if not current_week or date - current_week[-1] <= 7:
-                    current_week.append(date)
+            # Always ensure 4 weeks are created
+            week_ranges = [(1, 7), (8, 14), (15, 21), (22, 31)]
+            
+            for start, end in week_ranges:
+                week_dates = [d for d in dates if start <= d <= end]
+                if week_dates:
+                    weeks.append((min(week_dates), max(week_dates)))
                 else:
-                    weeks.append((min(current_week), max(current_week)))
-                    current_week = [date]
+                    # If no dates in range, use range bounds
+                    weeks.append((start, end))
             
-            if current_week:
-                weeks.append((min(current_week), max(current_week)))
+            # Ensure exactly 4 weeks
+            while len(weeks) < 4:
+                if not weeks:
+                    weeks.append((1, 7))
+                else:
+                    last_end = weeks[-1][1]
+                    next_start = last_end + 1
+                    weeks.append((next_start, min(next_start + 6, 31)))
             
-            return weeks
+            return weeks[:4]  # Return exactly 4 weeks
             
         except Exception as e:
             print(f"Error getting weeks in month: {str(e)}")
-            return [(1, 7), (8, 14), (15, 21), (22, 31)]  # Default weeks if error
+            # Always return 4 weeks
+            return [(1, 7), (8, 14), (15, 21), (22, 31)]
 
     def get_weekly_stats(self, start_date, end_date):
         """Calculate statistics for a specific week"""
@@ -453,12 +467,12 @@ class ExcelProcessor:
 
             daily_stats = {}  # To track statistics by day
             employee_records = {}  # To track perfect attendance
+            daily_details = {}  # To track detailed information by day
 
             for sheet in attendance_sheets:
                 try:
                     df = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
                     
-                    # Process each employee position
                     positions = [
                         {'name_col': 'J', 'entry_col': 'B', 'exit_col': 'I', 'day_col': 'A'},
                         {'name_col': 'Y', 'entry_col': 'Q', 'exit_col': 'X', 'day_col': 'P'},
@@ -473,14 +487,12 @@ class ExcelProcessor:
 
                         try:
                             employee_name = str(df.iloc[2, name_col]).strip()
-                            if pd.isna(employee_name):
+                            if pd.isna(employee_name) or employee_name == "":
                                 continue
 
-                            # Initialize employee record if not exists
                             if employee_name not in employee_records:
                                 employee_records[employee_name] = {'irregularities': 0}
 
-                            # Check each day in the date range
                             for row in range(11, 42):
                                 try:
                                     day_value = df.iloc[row, day_col]
@@ -488,18 +500,18 @@ class ExcelProcessor:
                                         continue
 
                                     day_str = str(day_value).strip()
+                                    if not any(char.isdigit() for char in day_str):
+                                        continue
+                                        
                                     day_num = int(''.join(filter(str.isdigit, day_str)))
 
                                     if start_date <= day_num <= end_date:
-                                        # Initialize daily stats if not exists
                                         if day_num not in daily_stats:
-                                            daily_stats[day_num] = {
-                                                'late': 0, 'early': 0, 'absent': 0
-                                            }
+                                            daily_stats[day_num] = {'late': [], 'early': [], 'absent': []}
+                                            daily_details[day_num] = {'late': [], 'early': [], 'absent': []}
 
-                                        # Check for irregularities
                                         if 'absence' in day_str.lower():
-                                            daily_stats[day_num]['absent'] += 1
+                                            daily_stats[day_num]['absent'].append(employee_name)
                                             employee_records[employee_name]['irregularities'] += 1
                                             stats['irregularities_breakdown']['Ausencias'] += 1
                                             continue
@@ -514,7 +526,8 @@ class ExcelProcessor:
                                                 entry_time = entry_time.time()
 
                                             if self.is_late_arrival(employee_name, entry_time):
-                                                daily_stats[day_num]['late'] += 1
+                                                daily_stats[day_num]['late'].append(employee_name)
+                                                daily_details[day_num]['late'].append(f"{employee_name} (llegó a las {entry_time.strftime('%H:%M')})")
                                                 employee_records[employee_name]['irregularities'] += 1
                                                 stats['irregularities_breakdown']['Llegadas tarde'] += 1
 
@@ -525,7 +538,8 @@ class ExcelProcessor:
                                                 exit_time = exit_time.time()
 
                                             if self.is_early_departure(employee_name, exit_time):
-                                                daily_stats[day_num]['early'] += 1
+                                                daily_stats[day_num]['early'].append(employee_name)
+                                                daily_details[day_num]['early'].append(f"{employee_name} (salió a las {exit_time.strftime('%H:%M')})")
                                                 employee_records[employee_name]['irregularities'] += 1
                                                 stats['irregularities_breakdown']['Salidas tempranas'] += 1
 
@@ -543,26 +557,34 @@ class ExcelProcessor:
 
             # Calculate final statistics
             stats['total_irregularities'] = sum(stats['irregularities_breakdown'].values())
-            stats['perfect_attendance'] = sum(1 for emp in employee_records.values() if emp['irregularities'] == 0)
-            stats['perfect_employees'] = [name for name, record in employee_records.items() if record['irregularities'] == 0]
+            
+            # Filter out perfect attendance employees (excluding "leave early" and "NaN")
+            valid_employees = [name for name, record in employee_records.items() 
+                             if record['irregularities'] == 0 and 
+                             name.strip() not in ['leave early (mm)', 'NaN', '']]
+            
+            stats['perfect_attendance'] = len(valid_employees)
+            stats['perfect_employees'] = valid_employees
 
-            # Find days with most issues
+            # Find days with most issues and include detailed information
             if daily_stats:
-                most_late = max(daily_stats.items(), key=lambda x: x[1]['late'])
-                most_early = max(daily_stats.items(), key=lambda x: x[1]['early'])
-                most_absent = max(daily_stats.items(), key=lambda x: x[1]['absent'])
+                # Most late arrivals
+                most_late_day = max(daily_stats.items(), key=lambda x: len(x[1]['late']))
+                stats['most_late_day'] = f"Día {most_late_day[0]}"
+                stats['most_late_count'] = len(most_late_day[1]['late'])
+                stats['late_details'] = "\n".join(daily_details[most_late_day[0]]['late'])
 
-                stats['most_late_day'] = f"Día {most_late[0]}"
-                stats['most_late_count'] = most_late[1]['late']
-                stats['late_details'] = f"{most_late[1]['late']} llegadas tarde"
+                # Most early departures
+                most_early_day = max(daily_stats.items(), key=lambda x: len(x[1]['early']))
+                stats['most_early_day'] = f"Día {most_early_day[0]}"
+                stats['most_early_count'] = len(most_early_day[1]['early'])
+                stats['early_details'] = "\n".join(daily_details[most_early_day[0]]['early'])
 
-                stats['most_early_day'] = f"Día {most_early[0]}"
-                stats['most_early_count'] = most_early[1]['early']
-                stats['early_details'] = f"{most_early[1]['early']} salidas tempranas"
-
-                stats['most_absent_day'] = f"Día {most_absent[0]}"
-                stats['most_absent_count'] = most_absent[1]['absent']
-                stats['absence_details'] = f"{most_absent[1]['absent']} ausencias"
+                # Most absences
+                most_absent_day = max(daily_stats.items(), key=lambda x: len(x[1]['absent']))
+                stats['most_absent_day'] = f"Día {most_absent_day[0]}"
+                stats['most_absent_count'] = len(most_absent_day[1]['absent'])
+                stats['absence_details'] = ", ".join(most_absent_day[1]['absent'])
 
             return stats
 

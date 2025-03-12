@@ -549,10 +549,10 @@ def main():
                     key="employee_selector"
                 )
 
-                # Mostrar el dashboard correspondiente
+                # Mostrar el dashboard en la página principal, no en la barra lateral
                 if show_summary:
                     create_monthly_summary(processor, attendance_summary)
-                else:
+                elif selected_employee:
                     create_employee_dashboard(processor, selected_employee)
 
             except Exception as e:

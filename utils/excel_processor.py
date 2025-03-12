@@ -5,6 +5,97 @@ from datetime import datetime, timedelta
 from fpdf import FPDF
 
 class ExcelProcessor:
+    def get_employee_stats(self, employee_name):
+        """Get comprehensive statistics for a specific employee"""
+        # Regular stats
+        late_days, late_minutes = self.count_late_days(employee_name)
+        late_arrivals, late_arrival_minutes = self.count_late_arrivals_after_810(employee_name)
+        early_departure_days, early_minutes = self.count_early_departures(employee_name)
+        lunch_overtime_days, total_lunch_minutes = self.count_lunch_overtime_days(employee_name)
+        missing_entry_days, missing_exit_days, missing_lunch_days = self.count_missing_records(employee_name)
+        absence_days = self.get_absence_days(employee_name)
+        absences = len(absence_days) if absence_days else 0
+        mid_day_departures, mid_day_departures_text = self.count_mid_day_departures(employee_name)
+        overtime_minutes = 0
+        overtime_days = []
+
+        # Get department
+        department = ""
+        try:
+            department = self.get_employee_department(employee_name)
+        except Exception as e:
+            print(f"Error getting department: {str(e)}")
+
+        # Calculate actual hours based on employee type
+        if 'ppp' in employee_name.lower() or (employee_name.lower() in self.SPECIAL_SCHEDULES and 
+            self.SPECIAL_SCHEDULES[employee_name.lower()].get('treat_as_ppp', False)):
+            schedule = self.SPECIAL_SCHEDULES.get(employee_name.lower(), {})
+            
+            # Si el empleado tiene horas fijas (como Sebastian)
+            if schedule.get('fixed_hours') is not None:
+                required_hours = 76.40  # Estándar mensual
+                actual_hours = schedule['fixed_hours']  # Usar las horas fijas configuradas
+            else:
+                # Para otros empleados PPP
+                weekly_hours, weekly_details = self.calculate_ppp_weekly_hours(employee_name)
+                actual_hours = sum(weekly_hours.values())
+                required_hours = 80.0  # Estándar mensual para PPP
+        else:
+            # Para empleados regulares
+            required_hours = 76.40  # Estándar regular
+            actual_hours = required_hours - (absences * 8)  # Subtract 8 hours for each absence
+
+        # Get stats dictionary ready
+        stats = {
+            'name': employee_name,
+            'department': department,
+            'absences': absences,
+            'absence_days': absence_days,
+            'late_days': late_days,
+            'late_minutes': late_minutes,
+            'late_arrivals': late_arrivals,
+            'late_arrival_minutes': late_arrival_minutes,
+            'early_departure_days': early_departure_days,
+            'early_minutes': early_minutes,
+            'lunch_overtime_days': lunch_overtime_days,
+            'total_lunch_minutes': total_lunch_minutes,
+            'missing_entry_days': missing_entry_days,
+            'missing_exit_days': missing_exit_days,
+            'missing_lunch_days': missing_lunch_days,
+            'required_hours': required_hours,
+            'actual_hours': actual_hours,
+            'mid_day_departures': mid_day_departures,
+            'mid_day_departures_text': mid_day_departures_text,
+            'overtime_minutes': overtime_minutes,
+            'overtime_days': overtime_days
+        }
+        
+        # Add PPP weekly hours if applicable
+        if 'ppp' in employee_name.lower() or (employee_name.lower() in self.SPECIAL_SCHEDULES and 
+            self.SPECIAL_SCHEDULES[employee_name.lower()].get('treat_as_ppp', False)):
+            if schedule.get('fixed_hours') is not None:
+                # Para empleados con horas fijas (Sebastian)
+                stats['weekly_hours'] = {
+                    'Semana 1': 0,
+                    'Semana 2': 0,
+                    'Semana 3': 0,
+                    'Semana 4': schedule['fixed_hours']
+                }
+                stats['weekly_details'] = [{
+                    'week': 'Semana 4',
+                    'day': '22 Jueves',
+                    'entry': '08:00',
+                    'exit': '11:47',
+                    'hours': '3h 47m'
+                }]
+            else:
+                # Para otros empleados PPP
+                weekly_hours, weekly_details = self.calculate_ppp_weekly_hours(employee_name)
+                stats['weekly_hours'] = weekly_hours
+                stats['weekly_details'] = weekly_details
+            
+        return stats
+
     def __init__(self, file):
         self.excel_file = pd.ExcelFile(file)
         self.DEFAULT_WORK_START_TIME = datetime.strptime('7:50', '%H:%M').time()

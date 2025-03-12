@@ -133,7 +133,7 @@ st.markdown("""
     }
 
     .stat-card .hover-text {
-        position: fixed;
+        position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
@@ -141,20 +141,21 @@ st.markdown("""
         transition: all 0.3s ease;
         font-size: 15px;
         font-weight: 500;
-        color: #E2E8F0;
+        color: #FFFFFF;
         background: rgba(17, 25, 40, 0.95);
         padding: 20px;
         border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         pointer-events: none;
         white-space: pre-line;
         text-align: left;
         max-width: 90%;
-        line-height: 1.5;
+        line-height: 1.6;
         min-width: 300px;
         max-height: 80vh;
         overflow-y: auto;
-        z-index: 1001;
+        z-index: 9999;
+        border: 1px solid rgba(59, 130, 246, 0.5);
     }
 
     /* Custom scrollbar styling */
@@ -174,7 +175,7 @@ st.markdown("""
 
     .stat-card:hover .hover-text {
         opacity: 1;
-        z-index: 1001;
+        z-index: 9999;
     }
 
     .metric-value {
@@ -671,8 +672,7 @@ def create_monthly_summary(processor, attendance_summary):
     for label, value, subtitle, hover_text in summary_metrics:
         status = get_status(value)
         st.markdown(f"""
-            <div class="stat-card">
-                <div class="content">
+            <div class="stat-card<div class="content">
                     <div class="metric-label">{label}</div>
                     <div class="metric-value {status}">{value}</div>
                     <div class="metric-label">{subtitle}</div>

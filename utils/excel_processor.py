@@ -27,23 +27,22 @@ class ExcelProcessor:
             print(f"Error getting department: {str(e)}")
 
         # Calculate actual hours based on employee type
-        if 'ppp' in employee_name.lower() or (employee_name.lower() in self.SPECIAL_SCHEDULES and 
-            self.SPECIAL_SCHEDULES[employee_name.lower()].get('treat_as_ppp', False)):
-            schedule = self.SPECIAL_SCHEDULES.get(employee_name.lower(), {})
-            
-            # Si el empleado tiene horas fijas (como Sebastian)
-            if schedule.get('fixed_hours') is not None:
-                required_hours = 76.40  # Estándar mensual
-                actual_hours = schedule['fixed_hours']  # Usar las horas fijas configuradas
-            else:
-                # Para otros empleados PPP
-                weekly_hours, weekly_details = self.calculate_ppp_weekly_hours(employee_name)
-                actual_hours = sum(weekly_hours.values())
-                required_hours = 80.0  # Estándar mensual para PPP
+        if employee_name.lower() == 'sebastian':
+            # Sebastian tiene un horario fijo de 3 horas y 47 minutos
+            actual_hours = 3.78  # 3h 47m en decimal
+            required_hours = 3.78  # Su horario requerido es igual a sus horas fijas
+        elif 'ppp' in employee_name.lower():
+            # Para otros empleados PPP
+            weekly_hours, weekly_details = self.calculate_ppp_weekly_hours(employee_name)
+            actual_hours = sum(weekly_hours.values())
+            required_hours = 80.0  # Estándar mensual para PPP
         else:
             # Para empleados regulares
             required_hours = 76.40  # Estándar regular
             actual_hours = required_hours - (absences * 8)  # Subtract 8 hours for each absence
+
+        # Asegurar que las horas no sean negativas
+        actual_hours = max(0, actual_hours)
 
         # Get stats dictionary ready
         stats = {
@@ -71,28 +70,24 @@ class ExcelProcessor:
         }
         
         # Add PPP weekly hours if applicable
-        if 'ppp' in employee_name.lower() or (employee_name.lower() in self.SPECIAL_SCHEDULES and 
-            self.SPECIAL_SCHEDULES[employee_name.lower()].get('treat_as_ppp', False)):
-            if schedule.get('fixed_hours') is not None:
-                # Para empleados con horas fijas (Sebastian)
-                stats['weekly_hours'] = {
-                    'Semana 1': 0,
-                    'Semana 2': 0,
-                    'Semana 3': 0,
-                    'Semana 4': schedule['fixed_hours']
-                }
-                stats['weekly_details'] = [{
-                    'week': 'Semana 4',
-                    'day': '22 Jueves',
-                    'entry': '08:00',
-                    'exit': '11:47',
-                    'hours': '3h 47m'
-                }]
-            else:
-                # Para otros empleados PPP
-                weekly_hours, weekly_details = self.calculate_ppp_weekly_hours(employee_name)
-                stats['weekly_hours'] = weekly_hours
-                stats['weekly_details'] = weekly_details
+        if employee_name.lower() == 'sebastian':
+            stats['weekly_hours'] = {
+                'Semana 1': 0,
+                'Semana 2': 0,
+                'Semana 3': 0,
+                'Semana 4': 3.78  # Sus horas fijas en la última semana
+            }
+            stats['weekly_details'] = [{
+                'week': 'Semana 4',
+                'day': '22 Jueves',
+                'entry': '08:00',
+                'exit': '11:47',
+                'hours': '3h 47m'
+            }]
+        elif 'ppp' in employee_name.lower():
+            weekly_hours, weekly_details = self.calculate_ppp_weekly_hours(employee_name)
+            stats['weekly_hours'] = weekly_hours
+            stats['weekly_details'] = weekly_details
             
         return stats
 

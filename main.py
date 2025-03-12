@@ -661,24 +661,16 @@ def main():
                 'path': file_path
             })
 
-        # Show file history with open buttons
+        # Show file history with modern styling
         if st.session_state.file_history:
             st.subheader("📋 Historial de Archivos")
             for file in st.session_state.file_history:
-                if st.markdown(
+                st.markdown(
                     f"""<a href="javascript:void(0)" 
                          class="file-link" 
-                         target="_blank"
                          >{file['name']}</a>""",
                     unsafe_allow_html=True
-                ):
-                    try:
-                        if os.name == 'nt':  # Windows
-                            os.startfile(file['path'])
-                        else:  # Linux/Mac
-                            webbrowser.open(f"file://{file['path']}")
-                    except Exception as e:
-                        st.error(f"No se pudo abrir el archivo: {str(e)}")
+                )
 
 
     if uploaded_file:
@@ -698,7 +690,7 @@ def main():
 
                 st.subheader("👤 Selección de Empleado")
                 selected_employee = st.selectbox(
-                    "Selecciona un empleado",
+                    "Selecciona unempleado",
                     attendance_summary['employee_name'].unique()
                 )
 

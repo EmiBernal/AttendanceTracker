@@ -238,7 +238,8 @@ st.markdown("""
     .stButton > button:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 12px rgba(96, 165, 250, 0.4);
-        background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%);
+        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        color: white;
     }
 
     .stButton > button:hover:before {
@@ -248,6 +249,7 @@ st.markdown("""
     .stButton > button:active {
         transform: translateY(0);
         box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        color: white;
     }
 
     /* Selectbox styling */
@@ -676,7 +678,7 @@ def main():
         )
 
         # Display file history
-        if uploaded_file is not None and uploaded_file.name not in [f['name'] for f in st.session_state.file_history]:
+        if uploaded_file is not None and uploaded_file.name not in [f['name']for f in st.session_state.file_history]:
             # Save the file and add to history
             file_path = save_uploaded_file(uploaded_file)
             st.session_state.file_history.append({

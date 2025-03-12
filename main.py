@@ -322,6 +322,29 @@ st.markdown("""
             transform: translateY(0);
         }
     }
+
+    /* Section transitions */
+    .stMarkdown, .element-container {
+        animation: fadeInUp 0.6s ease-out forwards;
+    }
+
+    /* View transitions */
+    .main .block-container {
+        transition: opacity 0.3s ease-in-out;
+    }
+
+    /* Add animation for stat cards */
+    .stat-card {
+        animation: fadeInUp 0.6s ease-out forwards;
+        animation-fill-mode: both;
+    }
+
+    /* Stagger animations for multiple cards */
+    .stat-group > div > div:nth-child(1) { animation-delay: 0.1s; }
+    .stat-group > div > div:nth-child(2) { animation-delay: 0.2s; }
+    .stat-group > div > div:nth-child(3) { animation-delay: 0.3s; }
+    .stat-group > div > div:nth-child(4) { animation-delay: 0.4s; }
+    .stat-group > div > div:nth-child(5) { animation-delay: 0.5s; }
 </style>
 """, unsafe_allow_html=True)
 

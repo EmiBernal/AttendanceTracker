@@ -701,9 +701,9 @@ def main():
             st.subheader("📋 Historial de Archivos")
             for file in st.session_state.file_history:
                 st.markdown(
-                    f"""<a href="javascript:void(0)" 
+                    f"""<div 
                          class="file-link" 
-                         >{file['name']}</a>""",
+                         >{file['name']}</div>""",
                     unsafe_allow_html=True
                 )
 

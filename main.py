@@ -20,15 +20,34 @@ st.markdown("""
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    /* File history link styling */
+    .file-link {
+        display: block;
+        padding: 0.75rem 1rem;
+        margin: 0.5rem 0;
+        color: #E2E8F0;
+        text-decoration: none;
+        background: rgba(31, 41, 55, 0.6);
+        border-radius: 8px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(75, 85, 99, 0.3);
+        cursor: pointer;
+    }
+
+    .file-link:hover {
+        background: rgba(31, 41, 55, 0.8);
+        transform: translateX(5px);
+        border-color: #3B82F6;
+        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
+    }
+
+    .file-link:active {
+        transform: translateX(2px);
+    }
+
+    .file-link::before {
+        content: "📄 ";
+        margin-right: 0.5rem;
     }
 
     /* Info group styling */
@@ -281,16 +300,24 @@ st.markdown("""
         background: rgba(31, 41, 55, 0.8);
     }
 
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
 def save_uploaded_file(uploaded_file):
     """Save the uploaded file and return its path"""
-    # Create uploads directory if it doesn't exist
     save_dir = Path("uploads")
     save_dir.mkdir(exist_ok=True)
 
-    # Save file
     file_path = save_dir / uploaded_file.name
     with open(file_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
@@ -614,8 +641,6 @@ def main():
         )
 
         # Display file history
-        st.subheader("📋 Historial de Archivos")
-
         if uploaded_file is not None and uploaded_file.name not in [f['name'] for f in st.session_state.file_history]:
             # Save the file and add to history
             file_path = save_uploaded_file(uploaded_file)
@@ -625,17 +650,16 @@ def main():
             })
 
         # Show file history with open buttons
-        for file in st.session_state.file_history:
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                st.write(file['name'])
-            with col2:
-                if st.button("📂 Abrir", key=f"open_{file['name']}"):
-                    # Open file in default application (Excel)
-                    try:
-                        os.startfile(file['path'])  # Windows
-                    except AttributeError:
-                        os.system(f"xdg-open {file['path']}")  # Linux
+        if st.session_state.file_history:
+            st.subheader("📋 Historial de Archivos")
+            for file in st.session_state.file_history:
+                st.markdown(
+                    f"""<div class="file-link" 
+                         onclick="window.open('file://{file['path']}', '_blank')"
+                         >{file['name']}</div>""",
+                    unsafe_allow_html=True
+                )
+
 
     if uploaded_file:
         try:

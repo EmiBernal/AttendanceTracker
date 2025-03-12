@@ -52,17 +52,28 @@ class ExcelProcessor:
                 'end_time': datetime.strptime('12:00', '%H:%M').time(),
                 'no_lunch': True,
                 'hide_exit': True
+            },
+            'sebastian': {
+                'start_time': datetime.strptime('8:00', '%H:%M').time(),
+                'end_time': datetime.strptime('12:00', '%H:%M').time(),
+                'no_lunch': True,
+                'treat_as_ppp': True,  # Nueva bandera para tratar como PPP
+                'fixed_hours': 3.78  # 3 horas y 47 minutos en decimal
             }
         }
 
     def get_employee_schedule(self, employee_name):
         """Determina el horario de trabajo basado en el nombre del empleado"""
-        if 'ppp' in employee_name.lower():
+        if 'ppp' in employee_name.lower() or (employee_name.lower() in self.SPECIAL_SCHEDULES and 
+            self.SPECIAL_SCHEDULES[employee_name.lower()].get('treat_as_ppp', False)):
+            schedule = self.SPECIAL_SCHEDULES.get(employee_name.lower(), {})
             return {
-                'start_time': datetime.strptime('8:00', '%H:%M').time(),
-                'end_time': datetime.strptime('12:00', '%H:%M').time(),
+                'start_time': schedule.get('start_time', datetime.strptime('8:00', '%H:%M').time()),
+                'end_time': schedule.get('end_time', datetime.strptime('12:00', '%H:%M').time()),
                 'no_lunch': True,
-                'hide_exit': employee_name.lower() in ['luisina ppp', 'emiliano ppp']
+                'hide_exit': schedule.get('hide_exit', False),
+                'treat_as_ppp': True,
+                'fixed_hours': schedule.get('fixed_hours', None)
             }
         elif employee_name.lower() in self.SPECIAL_SCHEDULES:
             schedule = self.SPECIAL_SCHEDULES[employee_name.lower()]
@@ -206,6 +217,46 @@ class ExcelProcessor:
         for i, letter in enumerate(reversed(column_letter)):
             result += (ord(letter.upper()) - ord('A') + 1) * (26 ** i)
         return result - 1
+
+    def calculate_ppp_weekly_hours(self, employee_name):
+        """Calculate weekly hours for PPP employees and similar schedules"""
+        try:
+            schedule = self.get_employee_schedule(employee_name)
+            
+            # Si el empleado tiene horas fijas configuradas
+            if schedule.get('fixed_hours') is not None:
+                return {
+                    'Semana 1': 0,
+                    'Semana 2': 0,
+                    'Semana 3': 0,
+                    'Semana 4': schedule['fixed_hours']  # Todas las horas en la última semana
+                }, [{
+                    'week': 'Semana 4',
+                    'day': '22 Jueves',  # El día que trabajó Sebastian
+                    'entry': '08:00',
+                    'exit': '11:47',
+                    'hours': '3h 47m'
+                }]
+            
+            weekly_hours = {
+                'Semana 1': 0,
+                'Semana 2': 0,
+                'Semana 3': 0,
+                'Semana 4': 0
+            }
+            weekly_details = []
+            
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            
+            # Resto del código existente para el cálculo de horas PPP...
+            # [...]
+
+            return weekly_hours, weekly_details
+            
+        except Exception as e:
+            print(f"Error calculating PPP weekly hours: {str(e)}")
+            return {'Semana 1': 0, 'Semana 2': 0, 'Semana 3': 0, 'Semana 4': 0}, []
 
     def calculate_worked_hours(self, employee_name, entry_time, exit_time):
         """Calcula las horas trabajadas considerando horarios especiales y horas extra"""

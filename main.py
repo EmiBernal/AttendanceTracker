@@ -669,7 +669,12 @@ def main():
             # Employee selector and view selector in sidebar
             with st.sidebar:
                 st.subheader("📋 Vistas Disponibles")
-                show_summary = st.button("Ver Resumen General del Mes")
+
+                # Contenedor para los botones de resumen
+                resumen_container = st.container()
+                with resumen_container:
+                    show_summary = st.button("Ver Resumen General del Mes")
+                    show_weekly = st.button("Ver Resumen Semanal")
 
                 st.subheader("👤 Selección de Empleado")
                 selected_employee = st.selectbox(
@@ -677,9 +682,12 @@ def main():
                     attendance_summary['employee_name'].unique()
                 )
 
-            # Show either monthly summary or employee dashboard
+            # Show either monthly summary, weekly summary or employee dashboard
             if show_summary:
                 create_monthly_summary(processor, attendance_summary)
+            elif show_weekly:
+                # Placeholder for weekly summary - you can implement this function later
+                st.info("🚧 Funcionalidad de Resumen Semanal en desarrollo")
             else:
                 create_employee_dashboard(processor, selected_employee)
 

@@ -178,6 +178,12 @@ def create_employee_dashboard(processor, employee_name):
     """Create a detailed dashboard for a single employee"""
     stats = processor.get_employee_stats(employee_name)
 
+    # Get specific days information
+    absence_days = processor.get_absence_days(employee_name)
+    late_days = stats['late_days']  # Use the list directly from stats
+    early_departure_days = stats['early_departure_days']
+    lunch_overtime_days = stats['lunch_overtime_days']
+
     # Header with employee info
     st.markdown(f"""
         <div class="info-group">
@@ -190,42 +196,22 @@ def create_employee_dashboard(processor, employee_name):
     hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100) if stats['required_hours'] > 0 else 0
     hours_status = 'success' if hours_ratio >= 95 else 'warning' if hours_ratio >= 85 else 'danger'
 
-    # Prepare detailed hours text for hover
-    hours_details = "Registro de asistencia por semana:\n\n"
-
-    if 'weekly_hours' in stats:
-        weekly_hours = stats['weekly_hours']
-        weekly_details = stats['weekly_details']
-
-        for week, hours in weekly_hours.items():
-            if hours > 0:  # Solo mostrar semanas con horas trabajadas
-                hours_details += f"{week}: {hours:.2f} horas\n"
-                # Filter details for this week
-                week_details = [detail for detail in weekly_details if detail['week'] == week]
-                if week_details:
-                    for detail in week_details:
-                        hours_details += f"  • {detail['day']}: {detail['entry']} - {detail['exit']}\n"
-                    hours_details += "\n"
-
-    # Hours Summary stat-card
     st.markdown(f"""
-        <div class="stat-card">
-            <div class="content">
-                <div class="metric-label">Horas Trabajadas</div>
-                <div class="metric-value {hours_status}">
-                    {stats['actual_hours']:.1f}/{stats['required_hours']:.1f}
-                </div>
-                <div class="metric-label">({hours_ratio:.1f}%)</div>
+        <div class="info-group">
+            <h3>📊 Resumen de Horas</h3>
+            <div class="metric-value {hours_status}">
+                {stats['actual_hours']:.1f}/{stats['required_hours']:.1f}
             </div>
-            <div class="hover-text">{hours_details}</div>
+            <div class="metric-label">({hours_ratio:.1f}%)</div>
         </div>
     """, unsafe_allow_html=True)
 
     # Format days lists for hover text
-    absence_days_text = processor.format_list_in_columns(stats['absence_days']) if stats['absence_days'] else "No hay días registrados"
-    late_days_text = processor.format_list_in_columns(stats['late_days']) if stats['late_days'] else "No hay días registrados"
-    lunch_days_text = processor.format_lunch_overtime_text(stats['lunch_overtime_days'])
-    early_departure_days_text = processor.format_list_in_columns(stats['early_departure_days']) if stats['early_departure_days'] else "No hay días registrados"
+    absence_days_text = processor.format_list_in_columns(absence_days) if absence_days else "No hay días registrados"
+    late_days_text = processor.format_list_in_columns(late_days) if late_days else "No hay días registrados"
+    lunch_days_text = processor.format_lunch_overtime_text(lunch_overtime_days)
+    mid_day_departures_count, mid_day_departures_text = processor.format_mid_day_departures_text(employee_name)
+    early_departure_days_text = processor.format_list_in_columns(early_departure_days) if early_departure_days else "No hay días registrados"
 
 
     # Regular Attendance Metrics
@@ -236,9 +222,9 @@ def create_employee_dashboard(processor, employee_name):
     """, unsafe_allow_html=True)
 
     regular_metrics = [
-        ('Inasistencias', len(stats['absence_days']) if stats['absence_days'] else 0, "Total días", f"Días sin asistir al trabajo:\n{absence_days_text}"),
-        ('Días con Llegada Tarde', len(stats['late_days']) if stats['late_days'] else 0, f"{stats['late_minutes']:.0f} minutos en total", f"Días con llegada tarde:\n{late_days_text}"),
-        ('Días con Exceso en Almuerzo', len(stats['lunch_overtime_days']) if stats['lunch_overtime_days'] else 0, f"{stats['total_lunch_minutes']:.0f} minutos en total", f"Días con exceso:\n{lunch_days_text}")
+        ('Inasistencias', len(absence_days) if absence_days else 0, "Total días", f"Días sin asistir al trabajo:\n{absence_days_text}"),
+        ('Días con Llegada Tarde', len(late_days) if late_days else 0, f"{stats['late_minutes']:.0f} minutos en total", f"Días con llegada tarde:\n{late_days_text}"),
+        ('Días con Exceso en Almuerzo', len(lunch_overtime_days) if lunch_overtime_days else 0, f"{stats['total_lunch_minutes']:.0f} minutos en total", f"Días con exceso:\n{lunch_days_text}")
     ]
 
     for label, value, subtitle, hover_text in regular_metrics:
@@ -264,13 +250,13 @@ def create_employee_dashboard(processor, employee_name):
     """, unsafe_allow_html=True)
 
     auth_metrics = [
-        ('Retiros Anticipados', len(stats['early_departure_days']) if stats['early_departure_days'] else 0, f"{stats['early_minutes']:.0f} minutos en total", f"Días con salida anticipada:\n{early_departure_days_text}"),
+        ('Retiros Anticipados', len(early_departure_days) if early_departure_days else 0, f"{stats['early_minutes']:.0f} minutos en total", f"Días con salida anticipada:\n{early_departure_days_text}"),
         ('Ingresos con Retraso', len(stats['late_arrivals']) if stats['late_arrivals'] else 0, f"{stats['late_arrival_minutes']:.0f} minutos en total", f"Días con ingreso posterior a 8:10:\n{processor.format_list_in_columns(stats['late_arrivals']) if stats['late_arrivals'] else 'No hay días registrados'}")
     ]
 
     # Solo agregar "Retiros Durante Horario" si no es PPP
     if not 'ppp' in employee_name.lower():
-        auth_metrics.append(('Retiros Durante Horario', stats['mid_day_departures'], "Total salidas", f"Salidas durante horario laboral:\n{processor.format_mid_day_departures_text(employee_name)[1]}"))
+        auth_metrics.append(('Retiros Durante Horario', mid_day_departures_count, "Total salidas", f"Salidas durante horario laboral:\n{mid_day_departures_text}"))
 
     for label, value, subtitle, hover_text in auth_metrics:
         status = get_status(value)

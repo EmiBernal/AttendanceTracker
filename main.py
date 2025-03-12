@@ -213,7 +213,6 @@ def create_employee_dashboard(processor, employee_name):
     mid_day_departures_count, mid_day_departures_text = processor.format_mid_day_departures_text(employee_name)
     early_departure_days_text = processor.format_list_in_columns(early_departure_days) if early_departure_days else "No hay días registrados"
 
-
     # Regular Attendance Metrics
     st.markdown("""
         <div class="stat-group">
@@ -254,8 +253,8 @@ def create_employee_dashboard(processor, employee_name):
         ('Ingresos con Retraso', len(stats['late_arrivals']) if stats['late_arrivals'] else 0, f"{stats['late_arrival_minutes']:.0f} minutos en total", f"Días con ingreso posterior a 8:10:\n{processor.format_list_in_columns(stats['late_arrivals']) if stats['late_arrivals'] else 'No hay días registrados'}")
     ]
 
-    # Solo agregar "Retiros Durante Horario" si no es PPP
-    if not 'ppp' in employee_name.lower():
+    # Solo agregar "Retiros Durante Horario" si no es PPP ni Ana
+    if not 'ppp' in employee_name.lower() and employee_name.lower() != 'ana':
         auth_metrics.append(('Retiros Durante Horario', mid_day_departures_count, "Total salidas", f"Salidas durante horario laboral:\n{mid_day_departures_text}"))
 
     for label, value, subtitle, hover_text in auth_metrics:
@@ -278,96 +277,28 @@ def create_employee_dashboard(processor, employee_name):
 
     st.markdown("</div></div>", unsafe_allow_html=True)
 
-    # Horas Extras section (solo para agustin taba)
-    if employee_name.lower() == 'agustin taba':
-        overtime_days_text = processor.format_list_in_columns(stats['overtime_days']) if stats['overtime_days'] else "No hay días registrados"
-
-        # Calcular horas y minutos totales
-        total_hours = int(stats['overtime_minutes'] // 60)
-        total_minutes = int(stats['overtime_minutes'] % 60)
-
-        st.markdown("""
-            <div class="stat-group">
-                <h3>⏰ Horas Extras</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-        """, unsafe_allow_html=True)
-
-        st.markdown(f"""
-            <div class="stat-card">
-                <div class="content">
-                    <div class="metric-label">Total Horas Extras</div>
-                    <div class="metric-value success">{total_hours}h {total_minutes}m</div>
-                    <div class="metric-label">Horas acumuladas</div>
-                    <div class="metric-label">{stats['overtime_minutes']:.0f} minutos en total</div>
-                </div>
-                <div class="hover-text">Días con horas extras:\n{overtime_days_text}</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("</div></div>", unsafe_allow_html=True)
-
-    # PPP Weekly Hours section
-    if 'ppp' in employee_name.lower() and stats.get('weekly_hours'):
-        weekly_hours = stats['weekly_hours']
-        weekly_details = stats['weekly_details']
-
-        # Prepare hover text
-        hover_text = "Horas trabajadas por semana:\n\n"
-        total_hours = 0
-        for week, hours in weekly_hours.items():
-            hover_text += f"{week}: {hours:.1f} horas\n"
-            # Filter details for this week
-            week_details = [detail for detail in weekly_details if detail['week'] == week]
-            if week_details:
-                hover_text += "Detalle:\n"
-                for detail in week_details:
-                    hover_text += f"  • {detail['day']}: "
-                    hover_text += f"{detail['entry']} - {detail['exit']} ({detail['hours']})"
-                    if 'extra_hours' in detail:
-                        hover_text += f"\n    Extra: {detail['extra_entry']} - {detail['extra_exit']} ({detail['extra_hours']})"
-                    hover_text += "\n"
-            hover_text += "\n"
-            total_hours += hours
-
-        # Calculate status based on 80-hour monthly standard
-        status = 'success' if total_hours >= 80 else 'danger'
-        compliance_text = "Cumplió con el estándar mensual" if total_hours >= 80 else "No cumplió con el estándar mensual"
-
-        st.markdown("""
-            <div class="stat-group">
-                <h3>⏰ Horas Trabajadas por Semana</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-        """, unsafe_allow_html=True)
-
-        st.markdown(f"""
-            <div class="stat-card">
-                <div class="content">
-                    <div class="metric-label">Total Horas Trabajadas</div>
-                    <div class="metric-value {status}">{total_hours:.1f}/80.0</div>
-                    <div class="metric-label">{compliance_text}</div>
-                    <div class="metric-label">Estándar: 20 horas por semana</div>
-                </div>
-                <div class="hover-text">{hover_text}</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("</div></div>", unsafe_allow_html=True)
-
     # Missing Records Section
-    create_missing_records_section(stats, processor)
+    create_missing_records_section(stats, processor, employee_name)
 
-def create_missing_records_section(stats, processor):
+# Updated create_missing_records_section to include employee_name parameter
+def create_missing_records_section(stats, processor, employee_name):
     """Creates a section for displaying missing records"""
     # Format the lists using the column format
     missing_entry_text = processor.format_list_in_columns(stats['missing_entry_days']) if stats['missing_entry_days'] else "No hay días registrados"
     missing_exit_text = processor.format_list_in_columns(stats['missing_exit_days']) if stats['missing_exit_days'] else "No hay días registrados"
     missing_lunch_text = processor.format_list_in_columns(stats['missing_lunch_days']) if stats['missing_lunch_days'] else "No hay días registrados"
 
+    # Create list of missing records metrics, excluding "Sin Registro de Salida" for Ana
     missing_records = [
         ('Sin Registro de Entrada', len(stats['missing_entry_days']) if stats['missing_entry_days'] else 0, "Total días sin marcar", missing_entry_text),
-        ('Sin Registro de Salida', len(stats['missing_exit_days']) if stats['missing_exit_days'] else 0, "Total días sin marcar", missing_exit_text),
         ('Sin Registro de Almuerzo', len(stats['missing_lunch_days']) if stats['missing_lunch_days'] else 0, "Total días sin marcar", missing_lunch_text)
     ]
+
+    # Add "Sin Registro de Salida" only if the employee is not Ana
+    if employee_name.lower() != 'ana':
+        missing_records.append(
+            ('Sin Registro de Salida', len(stats['missing_exit_days']) if stats['missing_exit_days'] else 0, "Total días sin marcar", missing_exit_text)
+        )
 
     st.markdown("""
         <div class="stat-group">

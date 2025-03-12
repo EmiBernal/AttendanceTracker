@@ -665,12 +665,20 @@ def main():
         if st.session_state.file_history:
             st.subheader("📋 Historial de Archivos")
             for file in st.session_state.file_history:
-                st.markdown(
-                    f"""<div class="file-link" 
-                         onclick="window.open('file://{file['path']}', '_blank')"
-                         >{file['name']}</div>""",
+                if st.markdown(
+                    f"""<a href="file://{file['path']}" 
+                         class="file-link" 
+                         target="_blank"
+                         >{file['name']}</a>""",
                     unsafe_allow_html=True
-                )
+                ):
+                    try:
+                        if os.name == 'nt':  # Windows
+                            os.startfile(file['path'])
+                        else:  # Linux/Mac
+                            os.system(f"xdg-open '{file['path']}'")
+                    except Exception as e:
+                        st.error(f"No se pudo abrir el archivo: {str(e)}")
 
 
     if uploaded_file:

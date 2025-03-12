@@ -32,6 +32,7 @@ st.markdown("""
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid rgba(75, 85, 99, 0.3);
         cursor: pointer;
+        animation: slideIn 0.3s ease-out forwards;
     }
 
     .file-link:hover {
@@ -298,6 +299,17 @@ st.markdown("""
     .stFileUploader:hover {
         border-color: #3B82F6;
         background: rgba(31, 41, 55, 0.8);
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
     }
 
     @keyframes fadeInUp {

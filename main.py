@@ -196,13 +196,37 @@ def create_employee_dashboard(processor, employee_name):
     hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100) if stats['required_hours'] > 0 else 0
     hours_status = 'success' if hours_ratio >= 95 else 'warning' if hours_ratio >= 85 else 'danger'
 
+    # Prepare detailed hours text for hover
+    hours_details = "Desglose de horas trabajadas:\n\n"
+
+    if 'weekly_hours' in stats:
+        weekly_hours = stats['weekly_hours']
+        weekly_details = stats['weekly_details']
+
+        for week, hours in weekly_hours.items():
+            hours_details += f"{week}: {hours:.2f} horas\n"
+            # Filter details for this week
+            week_details = [detail for detail in weekly_details if detail['week'] == week]
+            if week_details:
+                hours_details += "Detalle:\n"
+                for detail in week_details:
+                    hours_details += f"  • {detail['day']}: "
+                    hours_details += f"{detail['entry']} - {detail['exit']} ({detail['hours']})"
+                    if 'extra_hours' in detail:
+                        hours_details += f"\n    Extra: {detail['extra_entry']} - {detail['extra_exit']} ({detail['extra_hours']})"
+                    hours_details += "\n"
+            hours_details += "\n"
+
     st.markdown(f"""
         <div class="info-group">
             <h3>📊 Resumen de Horas</h3>
-            <div class="metric-value {hours_status}">
-                {stats['actual_hours']:.1f}/{stats['required_hours']:.1f}
+            <div class="content">
+                <div class="metric-value {hours_status}">
+                    {stats['actual_hours']:.1f}/{stats['required_hours']:.1f}
+                </div>
+                <div class="metric-label">({hours_ratio:.1f}%)</div>
             </div>
-            <div class="metric-label">({hours_ratio:.1f}%)</div>
+            <div class="hover-text">{hours_details}</div>
         </div>
     """, unsafe_allow_html=True)
 

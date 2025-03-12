@@ -680,7 +680,7 @@ def create_monthly_summary(processor, attendance_summary):
         ('Total Retiros Durante Horario', total_mid_day_departures, "Total retiros", 
          f"Detalles de retiros durante horario por persona:\n\n{format_details(mid_day_details)}"),
 
-        ('Total Ingresos con Retraso', totallate_arrivals, "Total ingresos >8:10", 
+        ('Total Ingresos con Retraso', total_late_arrivals, "Total ingresos >8:10", 
          f"Detalles de ingresos posteriores a 8:10 por persona:\n\n{format_details(late_arrival_details)}"),
 
         ('Total Sin Registro de Entrada', total_missing_entry, "Total registros", 

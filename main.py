@@ -347,6 +347,41 @@ st.markdown("""
     .stat-group > div > div:nth-child(3) { animation-delay: 0.3s; }
     .stat-group > div > div:nth-child(4) { animation-delay: 0.4s; }
     .stat-group > div > div:nth-child(5) { animation-delay: 0.5s; }
+
+    /* Tab transitions */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: rgba(31, 41, 55, 0.5);
+        padding: 0.5rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        height: auto;
+        padding: 0.5rem 1rem;
+        color: #E2E8F0;
+        border-radius: 8px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background-color: rgba(31, 41, 55, 0.3);
+    }
+
+    .stTabs [aria-selected="true"] {
+        background-color: #3B82F6 !important;
+        color: white !important;
+    }
+
+    /* Expander transitions */
+    .streamlit-expanderContent {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(31, 41, 55, 0.4);
+        border-radius: 0 0 12px 12px;
+    }
+
+    /* Smooth height transitions for expandable content */
+    .streamlit-expanderContent > div {
+        transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -508,7 +543,7 @@ def create_missing_records_section(stats, processor, employee_name):
     st.markdown("</div></div>", unsafe_allow_html=True)
 
 def create_monthly_summary(processor, attendance_summary):
-    """Create a general monthly summary"""
+    """Create a general monthly summary with weekly breakdown"""
     # Initialize counters for totals and detail dictionaries
     total_absences = 0
     total_late_minutes = 0
@@ -646,7 +681,89 @@ def create_monthly_summary(processor, attendance_summary):
             </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("</div></div>", unsafe_allow_html=True)
+    st.markdown("</div></div>", unsafe_allowhtml=True)
+
+    # Add weekly summary section
+    create_weekly_summary(processor, attendance_summary)
+
+
+
+def create_weekly_summary(processor, attendance_summary):
+    """Create a weekly summary view with animations and transitions"""
+
+    # Get all weeks in the current month
+    weeks = processor.get_weeks_in_month()
+
+    # Create tabs for week selection with smooth transitions
+    st.markdown("""
+        <div class="stat-group">
+            <h3>📊 Resumen Semanal</h3>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Week selector with animation
+    week_tabs = st.tabs([f"Semana {i+1}" for i in range(len(weeks))])
+
+    # Process each week
+    for week_idx, (week_tab, (start_date, end_date)) in enumerate(zip(week_tabs, weeks)):
+        with week_tab:
+            # Get weekly statistics
+            weekly_stats = processor.get_weekly_stats(start_date, end_date)
+
+            # Display main metrics with staggered animation
+            st.markdown("""
+                <div class="stat-group">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+            """, unsafe_allow_html=True)
+
+            # Define the metrics to show
+            weekly_metrics = [
+                ('Total Irregularidades', weekly_stats['total_irregularities'], 
+                 "Suma de todas las irregularidades", "Desglose de irregularidades:\n" + 
+                 "\n".join([f"•{k}: {v}" for k, v in weekly_stats['irregularities_breakdown'].items()])),
+
+                ('Asistencia Perfecta', weekly_stats['perfect_attendance'], 
+                 "Empleados sin irregularidades", "Empleados con asistencia perfecta:\n" + 
+                 "\n".join([f"• {name}" for name in weekly_stats['perfect_employees']])),
+
+                ('Día con más Tardanzas', weekly_stats['most_late_day'], 
+                 f"{weekly_stats['most_late_count']} llegadas tarde", 
+                 "Detalle de llegadas tarde:\n" + weekly_stats['late_details']),
+
+                ('Día con más Retiros', weekly_stats['most_early_day'], 
+                 f"{weekly_stats['most_early_count']} retiros anticipados", 
+                 "Detalle de retiros anticipados:\n" + weekly_stats['early_details']),
+
+                ('Día con más Ausencias', weekly_stats['most_absent_day'], 
+                 f"{weekly_stats['most_absent_count']} ausencias", 
+                 "Detalle de ausencias:\n" + weekly_stats['absence_details'])
+            ]
+
+            # Display each metric with staggered animation
+            for idx, (label, value, subtitle, hover_text) in enumerate(weekly_metrics):
+                status = get_status(value)
+                st.markdown(f"""
+                    <div class="stat-card" style="animation-delay: {idx * 0.1}s">
+                        <div class="content">
+                            <div class="metric-label">{label}</div>
+                            <div class="metric-value {status}">{value}</div>
+                            <div class="metric-label">{subtitle}</div>
+                        </div>
+                        <div class="hover-text">{hover_text}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("</div></div>", unsafe_allow_html=True)
+
+            # Add expandable details section
+            with st.expander("Ver Detalles Adicionales"):
+                # Display additional weekly information here
+                st.markdown("""
+                    <div class="stat-group" style="animation: fadeInUp 0.6s ease-out forwards;">
+                        <h4>Detalles de la Semana</h4>
+                        <!-- Add more detailed weekly statistics here -->
+                    </div>
+                """, unsafe_allow_html=True)
 
 def get_status(value, warning_threshold=3, danger_threshold=5):
     """Determina el estado (success, warning, danger) basado en el valor"""
@@ -733,7 +850,7 @@ def main():
                 create_monthly_summary(processor, attendance_summary)
             elif show_weekly:
                 # Placeholder for weekly summary - you can implement this function later
-                st.info("🚧 Funcionalidad de Resumen Semanal en desarrollo")
+                create_weekly_summary(processor, attendance_summary)
             else:
                 create_employee_dashboard(processor, selected_employee)
 

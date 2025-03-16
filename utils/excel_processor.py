@@ -3,6 +3,7 @@ import numpy as np
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 from fpdf import FPDF
+from functools import lru_cache
 
 class ExcelProcessor:
     def get_employee_stats(self, employee_name):
@@ -101,25 +102,17 @@ class ExcelProcessor:
         self.DEFAULT_WORK_END_TIME = datetime.strptime('17:10', '%H:%M').time()
         self.LUNCH_TIME_LIMIT = 20  # minutos máximos permitidos para almuerzo
         
-        # Cache for department data
+        # Caches para optimización
         self._department_cache = {}
+        self._dataframe_cache = {}
         self._summary_df = None
+        self._week_cache = None
+        self._stats_cache = {}
         
-        # Initialize department cache
-        try:
-            self._summary_df = pd.read_excel(self.excel_file, sheet_name='Summary', header=None)
-            for row in range(4, len(self._summary_df)):
-                try:
-                    name = str(self._summary_df.iloc[row, 1]).strip()
-                    dept = str(self._summary_df.iloc[row, 2]).strip()
-                    if pd.notna(name) and pd.notna(dept):
-                        self._department_cache[name] = dept
-                except:
-                    continue
-        except:
-            print("Error initializing department cache")
-
-        # Excepciones de horarios especiales
+        # Initialize all caches
+        self._initialize_caches()
+        
+        # Initialize special schedules after caches
         self.SPECIAL_SCHEDULES = {
             'soledad silv': {
                 'half_day': True,
@@ -169,6 +162,36 @@ class ExcelProcessor:
                 'fixed_hours': 3.78  # 3 horas y 47 minutos en decimal
             }
         }
+        
+    def _initialize_caches(self):
+        """Initialize all caches on startup"""
+        try:
+            # Cache departamentos
+            self._summary_df = pd.read_excel(self.excel_file, sheet_name='Summary', header=None)
+            for row in range(4, len(self._summary_df)):
+                try:
+                    name = str(self._summary_df.iloc[row, 1]).strip()
+                    dept = str(self._summary_df.iloc[row, 2]).strip()
+                    if pd.notna(name) and pd.notna(dept):
+                        self._department_cache[name] = dept
+                except:
+                    continue
+                    
+            # Cache hojas de asistencia
+            exceptional_index = self.excel_file.sheet_names.index('Exceptional')
+            attendance_sheets = self.excel_file.sheet_names[exceptional_index:]
+            
+            for sheet in attendance_sheets:
+                self._dataframe_cache[sheet] = pd.read_excel(self.excel_file, sheet_name=sheet, header=None)
+                
+        except Exception as e:
+            print(f"Error initializing caches: {str(e)}")
+            
+    def _get_sheet_data(self, sheet_name):
+        """Get cached sheet data or load if not cached"""
+        if sheet_name not in self._dataframe_cache:
+            self._dataframe_cache[sheet_name] = pd.read_excel(self.excel_file, sheet_name=sheet_name, header=None)
+        return self._dataframe_cache[sheet_name]
 
     def get_employee_schedule(self, employee_name):
         """Determina el horario de trabajo basado en el nombre del empleado"""

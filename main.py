@@ -12,6 +12,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Aquí es donde se ajusta el puerto para la nube
+port = os.getenv("PORT", 8501)  # Usa el puerto proporcionado por el entorno o 8501 como valor por defecto
+
 # Updated CSS for hover cards and metrics with larger sizes for summary cards
 st.markdown("""
 <style>

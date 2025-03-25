@@ -239,7 +239,7 @@ def create_employee_dashboard(processor, employee_name):
     # Hours Summary - Full Width
     st.markdown("""
         <div class="info-group">
-            <h3>📊 Resumen de Horas</h3>
+            <h3>📊Horas trabajadas:</h3>
     """, unsafe_allow_html=True)
 
     hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100) if stats['required_hours'] > 0 else 0

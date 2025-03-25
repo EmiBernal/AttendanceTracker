@@ -3335,12 +3335,11 @@ class ExcelProcessor:
             pdf.cell(0, 10, f"Departamento: {stats['department']}", 0, 1)
             pdf.ln(5)
 
-            pdf.cell(0, 10, 'Resumen de Horas:', 0, 1)
+            pdf.cell(0, 10, 'Horas trabajadas:', 0, 1)
             pdf.set_font('Arial', '', 12)
-            pdf.cell(0, 10, f"Horas Requeridas: {stats['required_hours']:.1f}", 0, 1)
             pdf.cell(0, 10, f"Horas Trabajadas: {stats['actual_hours']:.1f}", 0, 1)
-            pdf.cell(0, 10, f"Porcentaje Completado: {(stats['actual_hours'] / stats['required_hours'] * 100):.1f}%", 0, 1)
             pdf.ln(5)
+
 
             pdf.set_font('Arial', 'B', 12)
             pdf.cell(0, 10, 'Métricas de Asistencia:', 0, 1)

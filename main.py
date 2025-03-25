@@ -456,12 +456,13 @@ def create_employee_dashboard(processor, employee_name):
     st.markdown(f"""
         <div class="info-group">
             <h3>📊 Resumen de Horas</h3>
-            <div class="metric-value {hours_status}">
-                {stats['actual_hours']:.1f}/{stats['required_hours']:.1f}
-            </div>
-            <div class="metric-label">({hours_ratio:.1f}%)</div>
+            <div class="metric-label">Horas trabajadas:</div>
+            <div class="metric-value">
+                {stats['actual_hours']:.1f}
+            </div>  
         </div>
     """, unsafe_allow_html=True)
+
 
     # Format days lists for hover text
     absence_days_text = processor.format_list_in_columns(absence_days) if absence_days else "No hay días registrados"

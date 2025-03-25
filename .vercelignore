@@ -1,0 +1,11 @@
+# Ignorar los archivos de datos
+data/
+
+# Ignorar las carpetas de pruebas
+tests/
+
+# Ignorar archivos de caché de Python
+__pycache__/
+
+# Ignorar archivos de log
+*.log

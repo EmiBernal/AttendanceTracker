@@ -900,7 +900,7 @@ def main():
             elif show_weekly:
                 create_weekly_summary(processor, attendance_summary)
             else:
-                create_employee_dashboard(processor, selected_employee)
+                create_employee_dashboard(processor, selected_employee, month_name)
 
         except Exception as e:
             st.error(f"Error procesando el archivo: {str(e)}")

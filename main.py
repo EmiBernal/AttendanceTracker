@@ -421,14 +421,25 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Diccionario para mapear el numero del mes a su nombre
+month_names = {
+    "01": "Enero", "02": "Febrero", "03": "Marzo", "04": "Abril",
+    "05": "Mayo", "06": "Junio", "07": "Julio", "08": "Agosto",
+    "09": "Septiembre", "10": "Octubre", "11": "Noviembre", "12": "Diciembre"
+}
+
 def save_uploaded_file(uploaded_file):
-    """Save the uploaded file and return its path"""
+    """Guardar el archivo subido y devolver su ruta junto con el mes"""
     save_dir = Path("uploads")
     save_dir.mkdir(exist_ok=True)
 
+    #Guardamos el archivo en el directorio 'uploads'
     file_path = save_dir / uploaded_file.name
     with open(file_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
+    month_code = upload_file.name[:2]
+    month_name = month_names.get(month_code, "Mes desconocido")
+    
     return str(file_path)
 
 def create_employee_dashboard(processor, employee_name):
@@ -440,6 +451,9 @@ def create_employee_dashboard(processor, employee_name):
     late_days = stats['late_days']  # Use the list directly from stats
     early_departure_days = stats['early_departure_days']
     lunch_overtime_days = stats['lunch_overtime_days']
+
+    # Muestra el nombre del empleado junto con el mes de forma estilizada
+    st.markdown(f"### Dashboard para {employee_name} - **Control de Acceso Gampack**: <span style='color: blue;'>{month_name}</span>", unsafe_allow_html=True)
 
     # Header with employee info
     st.markdown(f"""

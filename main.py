@@ -455,7 +455,7 @@ def create_employee_dashboard(processor, employee_name, month_name):
     lunch_overtime_days = stats['lunch_overtime_days']
 
     # Muestra el nombre del empleado junto con el mes de forma estilizada
-    st.markdown(f"### Dashboard para {employee_name} - **Control de Acceso Gampack**: <span style='color: blue;'>{month_name}</span>", unsafe_allow_html=True)
+    st.markdown(f"### Dashboard para {employee_name} - **Control de Acceso Gampack**: <span style='color: #0bd8d8;'>{month_name}</span>", unsafe_allow_html=True)
 
     # Header with employee info
     st.markdown(f"""

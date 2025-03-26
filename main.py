@@ -437,7 +437,7 @@ def save_uploaded_file(uploaded_file):
     file_path = save_dir / uploaded_file.name
     with open(file_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
-    month_code = upload_file.name[:2]
+    month_code = uploaded_file.name[:2]
     month_name = month_names.get(month_code, "Mes desconocido")
     
     return str(file_path)

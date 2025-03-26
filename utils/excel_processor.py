@@ -8,7 +8,7 @@ from functools import lru_cache
 class ExcelProcessor:
     def get_employee_stats(self, employee_name):
         """Get comprehensive statistics for a specific employee"""
-        # Regular stats
+        # Estadisticas regulares
         late_days, late_minutes = self.count_late_days(employee_name)
         late_arrivals, late_arrival_minutes = self.count_late_arrivals_after_810(employee_name)
         early_departure_days, early_minutes = self.count_early_departures(employee_name)
@@ -20,32 +20,23 @@ class ExcelProcessor:
         overtime_minutes = 0
         overtime_days = []
 
-        # Get department
+        # Departamento
         department = ""
         try:
             department = self.get_employee_department(employee_name)
         except Exception as e:
             print(f"Error getting department: {str(e)}")
 
-        # Calculate actual hours based on employee type
-        if employee_name.lower() == 'sebastian':
-            # Sebastian tiene un horario fijo de 3 horas y 47 minutos
-            actual_hours = 3.78  # 3h 47m en decimal
-            required_hours = 3.78  # Su horario requerido es igual a sus horas fijas
-        elif 'ppp' in employee_name.lower():
-            # Para otros empleados PPP
-            weekly_hours, weekly_details = self.calculate_ppp_weekly_hours(employee_name)
-            actual_hours = sum(weekly_hours.values())
-            required_hours = 80.0  # Estándar mensual para PPP
+        # Calcular horas requeridas según el tipo de empleado
+        if 'sebastian' in employee_name.lower() or 'ppp' in employee_name.lower():
+            required_hours = 80.0  # Estándar mensual para PPP y Sebastian
         else:
-            # Para empleados regulares
-            required_hours = 76.40  # Estándar regular
-            actual_hours = required_hours - (absences * 8)  # Subtract 8 hours for each absence
+            required_hours = 168.4  # Estándar mensual para empleados regulares
 
         # Asegurar que las horas no sean negativas
         actual_hours = max(0, actual_hours)
 
-        # Get stats dictionary ready
+        # Diccionario de estadisticas
         stats = {
             'name': employee_name,
             'department': department,
@@ -1451,14 +1442,12 @@ class ExcelProcessor:
         except Exception as e:
             print(f"Error getting department: {str(e)}")
 
-        # Calculate actual hours differently for PPP employees
-        if 'ppp' in employee_name.lower():
-            weekly_hours, weekly_details = self.calculate_ppp_weekly_hours(employee_name)
-            actual_hours = sum(weekly_hours.values())
-            required_hours = 80.0  # Estándar mensual para PPP
+        # Calcular horas requeridas según el tipo de empleado
+        if 'sebastian' in employee_name.lower() or 'ppp' in employee_name.lower():
+            required_hours = 80.0  # Estándar mensual para PPP y Sebastian
         else:
-            required_hours = 76.40  # Estándar regular
-            actual_hours = required_hours - (absences * 8)  # Subtract 8 hours for each absence
+            required_hours = 168.4  # Estándar mensual para empleados regulares
+
 
         # Get stats dictionary ready
         stats = {
@@ -2185,14 +2174,12 @@ class ExcelProcessor:
         except Exception as e:
             print(f"Error getting department: {str(e)}")
 
-        # Calculate actual hours differently for PPP employees
-        if 'ppp' in employee_name.lower():
-            weekly_hours, weekly_details = self.calculate_ppp_weekly_hours(employee_name)
-            actual_hours = sum(weekly_hours.values())
-            required_hours = 80.0  # Estándar mensual para PPP
+        # Calcular horas requeridas según el tipo de empleado
+        if 'sebastian' in employee_name.lower() or 'ppp' in employee_name.lower():
+            required_hours = 80.0  # Estándar mensual para PPP y Sebastian
         else:
-            required_hours = 76.40  # Estándar regular
-            actual_hours = required_hours - (absences * 8)  # Subtract 8 hours for each absence
+            required_hours = 168.4  # Estándar mensual para empleados regulares
+
 
         # Get stats dictionary ready
         stats = {

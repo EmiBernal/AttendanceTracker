@@ -449,9 +449,6 @@ def create_employee_dashboard(processor, employee_name):
         </div>
     """, unsafe_allow_html=True)
 
-    # Hours Summary Card
-    hours_ratio = (stats['actual_hours'] / stats['required_hours'] * 100) if stats['required_hours'] > 0 else 0
-    hours_status = 'success' if hours_ratio >= 95 else 'warning' if hours_ratio >= 85 else 'danger'
 
     st.markdown(f"""
         <div class="info-group">

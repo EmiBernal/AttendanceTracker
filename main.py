@@ -433,16 +433,18 @@ def save_uploaded_file(uploaded_file):
     save_dir = Path("uploads")
     save_dir.mkdir(exist_ok=True)
 
-    #Guardamos el archivo en el directorio 'uploads'
+    # Guardamos el archivo en el directorio 'uploads'
     file_path = save_dir / uploaded_file.name
     with open(file_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
+    
+    # Obtenemos el mes desde los primeros dos caracteres del nombre del archivo
     month_code = uploaded_file.name[:2]
     month_name = month_names.get(month_code, "Mes desconocido")
     
-    return str(file_path)
+    return str(file_path), month_name
 
-def create_employee_dashboard(processor, employee_name):
+def create_employee_dashboard(processor, employee_name, month_name):
     """Create a detailed dashboard for a single employee"""
     stats = processor.get_employee_stats(employee_name)
 

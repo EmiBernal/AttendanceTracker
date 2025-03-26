@@ -875,6 +875,7 @@ def main():
 
     if uploaded_file:
         try:
+            file_path, month_name = save_uploaded_file(uploaded_file)
             processor = ExcelProcessor(uploaded_file)
             attendance_summary = processor.process_attendance_summary()
 
